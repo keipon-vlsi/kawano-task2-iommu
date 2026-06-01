@@ -1,0 +1,45 @@
+
+=== A: no cache (full 3-level, unlimited resources) ===
+  completed         : 8000
+  total mem accesses: 24000  (3.000 /page)
+  IOTLB hit         : 0  / coalesced(MSHR): 0  / true miss(walk): 8000
+  required N (peak walks): 8
+  required buffer (peak) : 8
+  avg latency       : 300.0 ns  (p99 300.0 ns)
+  achieved throughput: 24.39 M/s  (target 24.41 M/s)
+
+=== B: PWC + coalescing ===
+  completed         : 8000
+  total mem accesses: 1017  (0.127 /page)
+  IOTLB hit         : 4965  / coalesced(MSHR): 2035  / true miss(walk): 1000
+  required N (peak walks): 1
+  required buffer (peak) : 8
+  avg latency       : 24.6 ns  (p99 100.0 ns)
+  achieved throughput: 24.42 M/s  (target 24.41 M/s)
+
+=== C: B + prefetch ===
+  completed         : 8000
+  total mem accesses: 1023  (0.128 /page)
+  IOTLB hit         : 7992  / coalesced(MSHR): 8  / true miss(walk): 1002
+  required N (peak walks): 3
+  required buffer (peak) : 8
+  avg latency       : 2.7 ns  (p99 2.5 ns)
+  achieved throughput: 24.42 M/s  (target 24.41 M/s)
+
+=== D: random IOVA (same PWC+coalesce config) ===
+  completed         : 8000
+  total mem accesses: 16131  (2.016 /page)
+  IOTLB hit         : 3  / coalesced(MSHR): 0  / true miss(walk): 7997
+  required N (peak walks): 8
+  required buffer (peak) : 8
+  avg latency       : 201.6 ns  (p99 300.0 ns)
+  achieved throughput: 24.40 M/s  (target 24.41 M/s)
+
+=== E: no-cache + finite (walker=4, buffer=4) ===
+  completed         : 8000
+  total mem accesses: 24000  (3.000 /page)
+  IOTLB hit         : 0  / coalesced(MSHR): 0  / true miss(walk): 8000
+  required N (peak walks): 4
+  required buffer (peak) : 4
+  avg latency       : 300.0 ns  (p99 300.0 ns)
+  achieved throughput: 13.33 M/s  (target 24.41 M/s)
