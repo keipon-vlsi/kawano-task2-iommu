@@ -45,6 +45,9 @@ python3 -m pytest tests/ -v
 ワイヤレートを維持できたか」「どこから落ちたか」を 1 行で示す summary
 が出ます。
 
+> 各シナリオ A〜E が何をしているか（設定とねらい）は **§10** を参照。
+> 出力ログ・図の読み方は §9 を参照。
+
 ---
 
 ## 3. 設定の中心：`SimConfig`
@@ -457,3 +460,75 @@ class PLRU(ReplacementPolicy):
 **共通の読み方**: fig2/fig4 はいずれも「水平の target 線に**いつ届くか**」を見る図。
 届く直前の X 値が、その軸での最小必要リソース（必要 N / 必要 B）。fig1/fig3 は
 構成間の相対比較で「どの最適化がどれだけ効いたか」を見る図です。
+
+---
+
+## 10. シナリオ A–E の内容
+
+`run_demo.py` が実行する 5 構成。**段階的に最適化を足し（A→B→C）**、**その前提が
+崩れる条件（D, E）**を見ることで、課題 3a–3d（必要トラフィック・必要ウォーカ数 N・
+必要バッファ B・線速維持条件）を一通り押さえる設計になっています。各構成は
+`run_demo.py` の `scenario_A()`〜`scenario_E()` で定義（編集して試せます）。
+
+| | ねらい | 主な設定差分 | 観察ポイント |
+|---|---|---|---|
+| **A** | 無キャッシュ基準 | IOTLB/PWC=無効, coalesce=1, prefetch=なし | 毎回フルウォーク。必要 N の上限・mem/pg の基準値 |
+| **B** | キャッシュ＋コアレッシング | IOTLB=256, PWC=16, coalesce=8 | mem/pg が桁で低下、必要 N 激減（3a/3b） |
+| **C** | B＋プリフェッチ | B に nextline(distance=16) を追加 | 観測遅延が hit-lat 級に崩落（遅延隠蔽） |
+| **D** | ランダム IOVA | B と同設定で trace=random | 局所性消滅でキャッシュ効果崩壊（パターン依存） |
+| **E** | 過少リソース | A 構成＋walker=4, buffer=4 | バックプレッシャで線速崖（3c/3d の不足側）|
+
+### A: 無キャッシュ基準（full 3-level, 無限リソース）
+```python
+SimConfig(iotlb=IOTLBCfg(assoc=0), pwc=PWCCfg(assoc=0),
+          coalesce_factor=1, prefetcher=PrefetchCfg(kind="none"),
+          trace=TraceCfg(kind="sequential", n=8000))   # num_walkers/buffer=None(無限)
+```
+- IOTLB も PWC も無効（`assoc=0`）なので、**全リクエストがフルウォーク**。
+- リソース無限で走らせ、`peak_walks`/`peak_buffer` から**必要 N / 必要 B の基準**を測る。
+- mem/pg はウォーク段数そのもの（single-stage=3.0 / 既定の厳密 2 段=15.0、§9-4）。
+- すべての最適化の比較対象（ベースライン）。
+
+### B: PWC + 64B コアレッシング
+```python
+SimConfig(iotlb=IOTLBCfg(assoc=256), pwc=PWCCfg(assoc=16),
+          coalesce_factor=8, prefetcher=PrefetchCfg(kind="none"),
+          trace=TraceCfg(kind="sequential", n=8000))
+```
+- PWC が上位段（L1/L2）を短絡し、leaf 1 アクセスで 64B=8 ページ分を IOTLB に温める。
+- → **mem/pg が A から桁で低下**、定常の必要ウォーカ数が激減（課題 3a/3b の中心）。
+- 連続 IOVA の「最良ケース」。`avg` は低いが、たまのミスが `p99` テールを作る。
+
+### C: B + プリフェッチ
+```python
+SimConfig(iotlb=IOTLBCfg(assoc=256), pwc=PWCCfg(assoc=16), coalesce_factor=8,
+          prefetcher=PrefetchCfg(kind="nextline", distance=16, coalesce=8),
+          trace=TraceCfg(kind="sequential", n=8000))
+```
+- next-line プリフェッチが IOTLB を**先読みで温める** → デマンドはほぼ IOTLB ヒット。
+- → **観測遅延（avg/p99）が hit-latency 級に崩落**。mem/pg は B と同等（トラフィック量は
+  変わらず、遅延を隠す）。先読み分で同時ウォークが増え `peak_walks` はやや上振れ。
+
+### D: ランダム IOVA（B と同じキャッシュ設定）
+```python
+SimConfig(iotlb=IOTLBCfg(assoc=256), pwc=PWCCfg(assoc=16), coalesce_factor=8,
+          prefetcher=PrefetchCfg(kind="none"),
+          trace=TraceCfg(kind="random", n=8000, span_pages=1_000_000, seed=0))
+```
+- アクセスがランダムで局所性が消え、**PWC/コアレッシングの効果が崩壊** → A 並みに逆戻り。
+- B の好成績が**アクセスパターン依存**であることを示す感度試験（最悪ケース寄り）。
+
+### E: 無キャッシュ + 有限リソース（walker=4, buffer=4）
+```python
+SimConfig(iotlb=IOTLBCfg(assoc=0), pwc=PWCCfg(assoc=0), coalesce_factor=1,
+          prefetcher=PrefetchCfg(kind="none"),
+          trace=TraceCfg(kind="sequential", n=8000),
+          num_walkers=4, buffer_size=4)
+```
+- A と同じ負荷を、**ウォーカ4・バッファ4 に絞って**走らせる（必要 N/B より過少）。
+- 供給能力 < 到着レートでキューが伸び、遅延が µs〜ms に爆発、**`Mps ≪ tgt` の線速崖**。
+- `Mps ≒ (walkers/必要N)×tgt` でウォーカ律速を確認できる（課題 3c/3d の「足りない側」）。
+
+> 既定では `nested=True`（厳密 2 段）かつ DDTW/PDTW 有効なので、絶対値（mem/pg・N・
+> 遅延）は上記の single-stage 説明より大きくなります。各シナリオの**相対関係**
+> （A→B で激減、D で逆戻り、E で崖）は同じです。数値の換算は §9-4 を参照。
