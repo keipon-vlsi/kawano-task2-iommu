@@ -32,6 +32,12 @@ class Metrics:
     mem_accesses: int = 0
     mem_peak_outstanding: int = 0
 
+    # --- directory-table walks (DDTW / PDTW); filled by DirectoryWalkCost ---
+    ddtw_walks: int = 0       # DDT$ misses that triggered a device-directory walk
+    pdtw_walks: int = 0       # PDT$ misses that triggered a process-directory walk
+    ddt_hits: int = 0
+    pdt_hits: int = 0
+
     def add_lat(self, x: int) -> None:
         self.latencies_cycles.append(x)
 

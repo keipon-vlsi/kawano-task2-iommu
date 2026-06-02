@@ -15,7 +15,7 @@ from .config import SimConfig
 from .caches import SetAssocCache, make_policy
 from .prefetch import make_prefetcher
 from .memory import MemoryModel
-from .walker_cost import SingleStageCost, NestedCost
+from .walker_cost import SingleStageCost, NestedCost, DirectoryWalkCost
 from .workload import make_trace
 from .metrics import Metrics
 from .engine import IOMMUEngine
@@ -40,6 +40,28 @@ def build_engine_from_config(cfg: SimConfig) -> IOMMUEngine:
     else:
         cost_model = SingleStageCost(coalesce=cfg.coalesce_factor,
                                      levels=cfg.levels)
+
+    # Metrics created here so the directory-walk cost model can write into it.
+    m = Metrics()
+
+    # Optional RISC-V directory-table walks (DDTW / PDTW). When either is on we
+    # wrap the base page-table cost model; DDT$ / PDT$ are real caches.
+    ddt_cache = pdt_cache = None
+    if cfg.ddtw_enabled or cfg.pdtw_enabled:
+        ddt_cache = SetAssocCache(num_sets=cfg.ddt.sets, assoc=cfg.ddt.assoc,
+                                  policy=make_policy(cfg.ddt.policy))
+        pdt_cache = SetAssocCache(num_sets=cfg.pdt.sets, assoc=cfg.pdt.assoc,
+                                  policy=make_policy(cfg.pdt.policy))
+        cost_model = DirectoryWalkCost(
+            cost_model,
+            ddtw_enabled=cfg.ddtw_enabled, pdtw_enabled=cfg.pdtw_enabled,
+            ddt_cache=ddt_cache, pdt_cache=pdt_cache,
+            ddt_miss=cfg.ddtw_miss_accesses(), pdt_miss=cfg.pdtw_miss_accesses(),
+            num_devices=cfg.trace.num_devices,
+            num_processes=cfg.trace.num_processes,
+            ctx_switch_every=cfg.trace.ctx_switch_every,
+            metrics=m)
+
     workload = make_trace(cfg.trace, clock_mhz=cfg.clock_mhz,
                           wire_gbs=cfg.wire_gbs, page_kb=cfg.page_kb)
 
@@ -55,7 +77,10 @@ def build_engine_from_config(cfg: SimConfig) -> IOMMUEngine:
     eng.hit_latency_cycles = cfg.hit_latency_cycles
     eng.mem_latency_cycles = cfg.mem_latency_cycles()
     eng.max_cycles = cfg.max_cycles
-    eng.m = Metrics()
+    eng.m = m
+    # Stash the directory caches so run_simulation can fold their stats.
+    eng._ddt_cache = ddt_cache
+    eng._pdt_cache = pdt_cache
 
     eng.elaborate()
     eng.apply(DefaultPassGroup())
@@ -113,4 +138,13 @@ def fmt_report(name: str, cfg: SimConfig, m: Metrics) -> str:
         f"  achieved throughput: {throughput_mps:.2f} M/s  "
         f"(target {target_mps:.2f} M/s)  sustained={sustained}",
     ]
+    if cfg.ddtw_enabled or cfg.pdtw_enabled:
+        parts = []
+        if cfg.ddtw_enabled:
+            parts.append(f"DDTW walks(DDT$ miss): {m.ddtw_walks} "
+                         f"(+{cfg.ddtw_miss_accesses()} acc each, DDT$ hit {m.ddt_hits})")
+        if cfg.pdtw_enabled:
+            parts.append(f"PDTW walks(PDT$ miss): {m.pdtw_walks} "
+                         f"(+{cfg.pdtw_miss_accesses()} acc each, PDT$ hit {m.pdt_hits})")
+        lines.append("  " + "  /  ".join(parts))
     return "\n".join(lines)

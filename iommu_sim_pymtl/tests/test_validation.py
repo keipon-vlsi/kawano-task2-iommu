@@ -27,6 +27,7 @@ def _run(cfg):
 
 def test_A_no_cache_required_walkers_around_8():
     cfg = SimConfig(
+        nested=False,                       # single-stage reference trend
         iotlb=IOTLBCfg(assoc=0), pwc=PWCCfg(assoc=0),
         coalesce_factor=1,
         prefetcher=PrefetchCfg(kind="none"),
@@ -46,6 +47,7 @@ def test_A_no_cache_required_walkers_around_8():
 
 def test_B_pwc_coalescing_collapses_memory_traffic():
     cfg = SimConfig(
+        nested=False,                       # single-stage reference trend
         iotlb=IOTLBCfg(assoc=256), pwc=PWCCfg(assoc=16),
         coalesce_factor=8,
         prefetcher=PrefetchCfg(kind="none"),
@@ -65,6 +67,7 @@ def test_B_pwc_coalescing_collapses_memory_traffic():
 
 def test_C_prefetch_collapses_observed_latency():
     cfg = SimConfig(
+        nested=False,                       # single-stage reference trend
         iotlb=IOTLBCfg(assoc=256), pwc=PWCCfg(assoc=16),
         coalesce_factor=8,
         prefetcher=PrefetchCfg(kind="nextline", distance=16, coalesce=8),
@@ -81,6 +84,7 @@ def test_C_prefetch_collapses_observed_latency():
 
 def test_D_random_iova_regresses_to_no_cache_regime():
     cfg = SimConfig(
+        nested=False,                       # single-stage reference trend
         iotlb=IOTLBCfg(assoc=256), pwc=PWCCfg(assoc=16),
         coalesce_factor=8,
         prefetcher=PrefetchCfg(kind="none"),
@@ -97,6 +101,7 @@ def test_D_random_iova_regresses_to_no_cache_regime():
 
 def test_E_finite_under_provisioning_fails_wire_rate():
     cfg = SimConfig(
+        nested=False,                       # single-stage reference trend
         iotlb=IOTLBCfg(assoc=0), pwc=PWCCfg(assoc=0),
         coalesce_factor=1,
         prefetcher=PrefetchCfg(kind="none"),

@@ -16,22 +16,22 @@ datapath stages (admit -> translate -> walk -> complete), while every policy
 (replacement, prefetch, walk-cost, memory) is plugged in via a small ABC.
 Swap a policy by editing the config — never the engine.
 """
-from .config import SimConfig, IOTLBCfg, PWCCfg, PrefetchCfg, TraceCfg
+from .config import SimConfig, IOTLBCfg, PWCCfg, PrefetchCfg, TraceCfg, DirCacheCfg
 from .caches import SetAssocCache, LRU, FIFO, RandomRepl
 from .prefetch import NoPrefetch, NextLineStride, ConfidenceStride
 from .memory import MemoryModel
-from .walker_cost import WalkPlan, SingleStageCost, NestedCost
+from .walker_cost import WalkPlan, SingleStageCost, NestedCost, DirectoryWalkCost
 from .workload import sequential, random_trace, multi_stream, wire_inter_arrival_ns
 from .metrics import Metrics
 from .engine import IOMMUEngine
 from .harness import build_engine_from_config, run_simulation
 
 __all__ = [
-    "SimConfig", "IOTLBCfg", "PWCCfg", "PrefetchCfg", "TraceCfg",
+    "SimConfig", "IOTLBCfg", "PWCCfg", "PrefetchCfg", "TraceCfg", "DirCacheCfg",
     "SetAssocCache", "LRU", "FIFO", "RandomRepl",
     "NoPrefetch", "NextLineStride", "ConfidenceStride",
     "MemoryModel",
-    "WalkPlan", "SingleStageCost", "NestedCost",
+    "WalkPlan", "SingleStageCost", "NestedCost", "DirectoryWalkCost",
     "sequential", "random_trace", "multi_stream", "wire_inter_arrival_ns",
     "Metrics", "IOMMUEngine",
     "build_engine_from_config", "run_simulation",

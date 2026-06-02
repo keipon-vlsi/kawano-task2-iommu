@@ -43,6 +43,20 @@ class PrefetchCfg:
 
 
 @dataclass
+class DirCacheCfg:
+    """Device/Process directory cache (DDT$ / PDT$).
+
+    Caches the result of a device-directory (DDTW) or process-directory (PDTW)
+    table walk so the walk is paid once per context and then served from cache.
+    Same assoc semantics as the other caches:
+      None = infinite, 0 = disabled (every context walk re-walks), >0 = entries.
+    """
+    sets: int = 1
+    assoc: Optional[int] = 32
+    policy: Literal["lru", "fifo", "random"] = "lru"
+
+
+@dataclass
 class TraceCfg:
     """Workload pattern. `n` translations into the model."""
     kind: Literal["sequential", "random", "multi_stream"] = "sequential"
@@ -52,6 +66,10 @@ class TraceCfg:
     stride_pages: int = 1         # only for multi_stream
     base_vpn: int = 0
     seed: int = 0
+    # --- device / process context (drives DDT$ / PDT$ activity) ---
+    num_devices: int = 1          # distinct device_ids in the stream
+    num_processes: int = 1        # distinct process_ids in the stream
+    ctx_switch_every: int = 0     # 0 = static context; >0 = rotate context every N walks
 
 
 @dataclass
@@ -67,11 +85,19 @@ class SimConfig:
     # --- microarchitecture ---
     coalesce_factor: int = 8           # PTEs per 64B cache line (leaf coalescing)
     levels: int = 3                    # walk levels (Sv39 => 3)
-    nested: bool = False               # if True, use NestedCost (two-stage)
-    nested_s2_residual: int = 1        # extra memory accesses per walk under nesting
+    nested: bool = True               # if True, use NestedCost (two-stage)
+    nested_s2_residual: int = 3        # extra memory accesses per walk under nesting
+
+    # --- RISC-V IOMMU directory-table walks (off by default) ---
+    ddtw_enabled: bool = False         # model Device-Directory-Table walks + DDT$
+    pdtw_enabled: bool = False         # model Process-Directory-Table walks + PDT$
+    ddt_levels: int = 3                # DDTW depth -> accesses charged on a DDT$ miss
+    pdt_levels: int = 3                # PDTW base depth (see pdtw_miss_accesses())
 
     iotlb: IOTLBCfg = field(default_factory=IOTLBCfg)
     pwc: PWCCfg = field(default_factory=PWCCfg)
+    ddt: DirCacheCfg = field(default_factory=DirCacheCfg)
+    pdt: DirCacheCfg = field(default_factory=DirCacheCfg)
     prefetcher: PrefetchCfg = field(default_factory=PrefetchCfg)
 
     num_walkers: Optional[int] = None  # None = infinite (measure required N)
@@ -109,3 +135,24 @@ class SimConfig:
     def target_throughput_per_s(self) -> float:
         page_bytes = self.page_kb * 1024
         return self.wire_gbs * 1e9 / page_bytes
+
+    def ddtw_miss_accesses(self) -> int:
+        """Memory accesses for one Device-Directory-Table walk (on a DDT$ miss).
+
+        The DDT lives in supervisor/hypervisor physical memory, so it is a
+        single-stage walk regardless of nesting: `ddt_levels` accesses (=3 for
+        a 3-level DDT)."""
+        return self.ddt_levels
+
+    def pdtw_miss_accesses(self) -> int:
+        """Memory accesses for one Process-Directory-Table walk (on a PDT$ miss).
+
+        Without nesting the PDT is a plain `pdt_levels` walk (=3). Under
+        two-stage translation the PDT base is a guest-physical address, so each
+        of the `pdt_levels` levels is itself translated by a full G-stage
+        (`levels`-deep) walk. The classic two-stage worst case is
+            (pdt_levels + 1) * (levels + 1) - 1
+        = (3+1)*(3+1)-1 = 15 for a 3-level PDT under a 3-level G-stage."""
+        if not self.nested:
+            return self.pdt_levels
+        return (self.pdt_levels + 1) * (self.levels + 1) - 1
