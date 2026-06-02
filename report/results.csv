@@ -1,0 +1,6 @@
+scenario,desc,mem_per_page,peak_walks,peak_buffer,avg_lat,p99_lat,throughput,wire_met,iotlb_hit,mshr_coalesced,walks,completed
+A,"no-cache (3-level, infinite res.)",3.0,8,8,300.0,300.0,24.39477776113512,True,0,0,8000,8000
+B,PWC + 64B coalescing,0.127125,1,8,24.600962499999994,100.0,24.416928329661737,True,4965,2035,1000,8000
+C,B + next-line prefetch,0.127875,3,8,2.65414,2.5,24.416928329661737,True,7992,8,1002,8000
+D,random IOVA (B config),2.016375,8,8,201.6384375,300.0,24.402218844955136,True,3,0,7997,8000
+E,"no-cache, walkers=4 buffer=4",3.0,4,4,300.0,300.0,13.330603225792691,False,0,0,8000,8000
