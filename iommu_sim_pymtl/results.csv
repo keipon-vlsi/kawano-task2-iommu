@@ -1,0 +1,6 @@
+scenario,completed,mem_accesses,mem_per_page,iotlb_hit,mshr_coalesced,walks_started,peak_walks,peak_buffer,avg_lat_ns,p99_lat_ns,throughput_Mps,target_Mps,sim_cycles
+A_no_cache,8000,24000,3.0,0,0,8000,8,8,300.0,300.0,24.395,24.414,131175
+B_pwc_coalesce,8000,1017,0.1271,4965,2035,1000,1,8,24.61,100.0,24.417,24.414,131056
+C_pwc_coalesce_prefetch,8000,1023,0.1279,7992,8,1002,3,8,2.66,2.5,24.417,24.414,131056
+D_random_iova,8000,16131,2.0164,3,0,7997,8,8,201.64,300.0,24.402,24.414,131135
+E_no_cache_finite,8000,24000,3.0,0,0,8000,4,4,136392.98,269895.0,13.331,24.414,240049
