@@ -290,3 +290,124 @@ class PLRU(ReplacementPolicy):
 
 `run_demo.py` を走らせるとこの「8 → 1 → 3 → 8 → 4(failed)」の値が
 そのまま `required N (peak walks)` 行に出ます。
+
+> 注: 上の 8/1/3/8/4 は **single-stage（`nested=False`）** の値です。
+> 既定の `SimConfig` は `nested=True`（2 段変換）なので、`run_demo.py`
+> をそのまま回すとメモリ往復が増え、A の必要 N は 8 ではなく 15 になり
+> ます（§9-4 参照）。
+
+---
+
+## 9. シミュレーションログと図の読み方
+
+`run_demo.py` の出力は 2 段構成です。**(A) シナリオごとの詳細ブロック**
+（`harness.fmt_report`）と、**(B) 末尾の A–E 比較表**。さらに
+`report/gen_results.py` が **(C) 4 枚の図** を描きます。順に解説します。
+
+### 9-1. (A) シナリオごとの詳細ブロック
+
+```
+=== B: PWC + coalescing ===
+  completed         : 8000
+  total mem accesses: 2068  (0.259 /page)
+  IOTLB hit         : 4965  / coalesced(MSHR): 2035  / true miss(walk): 1000
+  required N (peak walks): 2
+  required buffer (peak) : 15
+  avg latency       : 81.0 ns (p99 320.0 ns)
+  achieved throughput: 24.42 M/s  (target 24.41 M/s)  sustained=YES
+```
+
+| 行 | 中身 | 読み方 |
+|---|---|---|
+| `completed` | 完了したデマンド変換数 | ワークロード `n` と一致するのが正常（取りこぼし無し） |
+| `total mem accesses` | 累積メモリアクセス＋`/page`値 | **`/page` が効率の主指標**。`mem_accesses / completed`。低いほどキャッシュ/コアレッシング/ネスト設定が効いている |
+| `IOTLB hit` | 最終 IOTLB ヒット数 | 既に翻訳済みで walk 不要だった件数 |
+| `coalesced(MSHR)` | 飛行中 walk への相乗り数 | 同一 64B ラインの後続が、先行 walk の完了を待って便乗（追加メモリ往復なし） |
+| `true miss(walk)` | 実際にメモリへ行った walk 本数 | `hit + coalesced + true_miss = completed`（プリフェッチ除く）の関係 |
+| `required N (peak walks)` | 同時飛行 walk のピーク | **必要な並列ウォーカ数**。無限資源時は設計値そのもの |
+| `required buffer (peak)` | バッファ占有のピーク | **必要なトランザクションバッファ深度** |
+| `avg latency / p99` | 到着→完了の平均/99%遅延(ns) | §9-3 参照。avg と p99 の乖離＝テールの大きさ |
+| `achieved throughput` | 達成スループット(M/s)＋target | `sustained=YES/no` がワイヤレート維持の合否。判定は `≥ 0.995×target` |
+
+**整合チェックの勘所**:
+- `hit + coalesced + true_miss == completed` になっていなければ取りこぼし。
+- Little の法則: `required N ≒ avg_latency / 到着間隔(40.96ns)`。
+  例: B は 81ns/40.96 ≒ 2 → `peak_walks=2` と一致。
+
+### 9-2. (B) A–E 比較表
+
+```
+==== A-E comparison ====
+   scenario   mem/pg  peak_N  peak_buf  avg_ns  p99_ns     Mps    tgt
+ A_no_cache      6.0      15        15   600.0   600.0  24.373  24.414
+ ...
+```
+
+| 列 | 由来 | 意味 |
+|---|---|---|
+| `scenario` | `cfg.label` | 構成名 |
+| `mem/pg` | `mem_accesses/completed` | 1ページあたりのページテーブルメモリ往復回数（トラフィック効率） |
+| `peak_N` | `peak_walks` | 必要並列ウォーカ数 |
+| `peak_buf` | `peak_buffer` | 必要バッファ深度 |
+| `avg_ns` | `avg_lat_cycles×ns/cycle` | 平均変換遅延 |
+| `p99_ns` | `p99_lat_cycles×ns/cycle` | 99%タイル遅延（テール） |
+| `Mps` | `completed/span` | 達成スループット（百万変換/秒） |
+| `tgt` | `target_throughput_per_s` | 目標=ワイヤレート（800GbE÷4KB ≈ 24.414 M/s） |
+
+**解釈の3軸**:
+1. **`Mps` vs `tgt` = 合否**。`Mps ≥ tgt` なら線速維持。E だけが落ちる（崖）。
+2. **`peak_N`・`peak_buf` = 必要ハード量**。Little 則で遅延×到着レートと連動。
+   遅延が長い構成ほど多くのウォーカ/バッファを要する。
+3. **`avg` と `p99` の差 = テールの素性**。
+   - C: avg≈p99（ほぼ全件がヒット遅延に潰れ、プリフェッチが効いている）
+   - B: avg 81 / p99 320（普段速いが、時々のフルウォークがテールを作る）
+   - A/D: avg≈p99（全件フルウォークでばらつき無し）
+
+**典型ストーリー（既定 nested=True の場合）**:
+- `A`: キャッシュ無し → mem/pg 大、N 大。基準。
+- `B`: PWC＋コアレッシングで mem/pg が桁で低下、N 激減。
+- `C`: +プリフェッチで遅延が hit-lat 級に崩落（mem/pg は B と同等、隠蔽が効く）。
+- `D`: ランダム IOVA で局所性消滅 → A 並みに逆戻り（最適化はパターン依存）。
+- `E`: ウォーカ/バッファ過少 → キュー爆発で遅延が µs〜オーダに、`Mps≪tgt` の**崖**。
+  `Mps ≒ (walkers/必要N)×tgt` でウォーカ律速を確認できる。
+
+### 9-3. 遅延(avg / p99)の定義と単位
+
+- 遅延は **「リクエスト到着 → 変換完了」のデマンド側遅延**（ASSUMPTIONS.md）。
+  プリフェッチは遅延に計上しない（キャッシュを温めるだけ）。
+- **p99** = 遅延を昇順ソートし下から 99% 目の値（`metrics.py:45-49`）。
+  「99% のリクエストはこの時間以内、最悪 1% だけがこれより遅い」というテール指標。
+- 内部は **cycle 単位**。ns 換算は `× cfg.ns_per_cycle()`（400MHz なら ×2.5）。
+- E のように供給能力 < 到着レートだとキューが線形に伸び、遅延が際限なく
+  増大する（avg・p99 とも µs〜ms に飛ぶ）。これは「過負荷の崖」のサイン。
+
+### 9-4. nested の有無で数値がどう変わるか
+
+`mem/pg`（コールドウォーク）は `3 × (1 + nested_s2_residual)`:
+
+| 設定 | mem/pg(A, no-cache) | A の必要 N |
+|---|---|---|
+| `nested=False`（single-stage） | 3.0 | 8 |
+| `nested=True, s2_residual=1` | 6.0 | 15 |
+| `nested=True, s2_residual=2` | 9.0 | 23 |
+| `nested=True, s2_residual=3`（G-stage を3段とみなす） | 12.0 | 30 |
+
+> `s2_residual=3` は「各 S1 アクセスに G-stage(S2) の3段ウォークが付く」近似。
+> 厳密な2段 Sv39 の最悪値は `(3+1)(3+1)−1 = 15` アクセスだが、本モデルは
+> 一様倍率のため 12 止まり（最終リーフ GPA の追加 G-stage を別建てできない）。
+> 相対比較には十分。詳細は `walker_cost.py` の `NestedCost` を参照。
+
+### 9-5. (C) レポート図の読み方（`report/figures/`）
+
+`cd report && python3 gen_results.py` で 4 枚を再生成できます。
+
+| 図 | 軸 | 何を示すか / 読み方 |
+|---|---|---|
+| `fig1_latency_vs_config.png` | X=構成(A〜D)、左Y=平均遅延ns、右Y=必要ウォーカN | 二重Y軸。**遅延と必要 N が連動**（Little 則）して、A→B→C で下がり D で戻る様子。最左バー(A)が最悪、C で最小。 |
+| `fig2_throughput_vs_walkers.png` | X=ウォーカ数N（no-cache, バッファ無限）、Y=スループット | **3c の崖**。N を増やすとスループットが線形に伸び、ある点で target(水平線)に飽和。飽和開始点が「必要 N」。 |
+| `fig3_mem_per_page.png` | X=構成、Y=mem/page | **トラフィック効率**の棒グラフ。キャッシュ/コアレッシングで桁が落ち、ランダムで戻るのを一目で比較。 |
+| `fig4_throughput_vs_buffer.png` | X=バッファ深度（no-cache, ウォーカ十分）、Y=スループット | **3d の崖**。バッファが浅いとバックプレッシャで律速、ある深度で target に飽和。飽和開始点が「必要 B」。 |
+
+**共通の読み方**: fig2/fig4 はいずれも「水平の target 線に**いつ届くか**」を見る図。
+届く直前の X 値が、その軸での最小必要リソース（必要 N / 必要 B）。fig1/fig3 は
+構成間の相対比較で「どの最適化がどれだけ効いたか」を見る図です。
