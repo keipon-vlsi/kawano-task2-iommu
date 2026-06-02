@@ -245,6 +245,9 @@ class PLRU(ReplacementPolicy):
 | `avg_lat_cycles` / `p99_lat_cycles` | 平均/p99 翻訳レイテンシ（cycle 単位、ns 換算は `cfg.ns_per_cycle()` を掛ける） |
 | `first_arrival_cycle` / `last_complete_cycle` | スループット計算に使う両端時刻                                 |
 | `sim_cycles`             | 終了までに走らせたシミュレーション cycle 数                               |
+| `ddtw_walks`             | DDT$ ミスで発生した **デバイスディレクトリウォーク**回数（`ddtw_enabled` 時のみ。1ミス=`ddtw_miss_accesses()`アクセス追加） |
+| `pdtw_walks`             | PDT$ ミスで発生した **プロセスディレクトリウォーク**回数（`pdtw_enabled` 時のみ。1ミス=`pdtw_miss_accesses()`アクセス追加） |
+| `ddt_hits` / `pdt_hits`  | DDT$ / PDT$ のヒット数（コンテキストが温まって以降の償却ヒット）           |
 
 `results.csv` / `sweep.csv` も同じ値群を CSV に書いています。
 
@@ -333,6 +336,36 @@ class PLRU(ReplacementPolicy):
 - `hit + coalesced + true_miss == completed` になっていなければ取りこぼし。
 - Little の法則: `required N ≒ avg_latency / 到着間隔(40.96ns)`。
   例: B は 81ns/40.96 ≒ 2 → `peak_walks=2` と一致。
+
+**DDTW / PDTW 行**（`ddtw_enabled` / `pdtw_enabled` を有効にしたときだけ出る）:
+
+```
+  DDTW walks(DDT$ miss): 1 (+3 acc each, DDT$ hit 499)  /  PDTW walks(PDT$ miss): 1 (+15 acc each, PDT$ hit 499)
+```
+
+| 項目 | 中身 | 読み方 |
+|---|---|---|
+| `DDTW walks(DDT$ miss)` | デバイスディレクトリウォーク回数（`m.ddtw_walks`） | DDT$ がミスした回数。デバイス文脈が変わる/初出のときだけ増える |
+| `(+N acc each)` | 1ウォークあたり追加メモリアクセス（`ddtw_miss_accesses()`） | 既定 **3**（DDTはスーパーバイザ物理空間 = 単段。nesting と無関係） |
+| `DDT$ hit` | DDT$ ヒット数（`m.ddt_hits`） | 文脈が温まって以降の償却ヒット |
+| `PDTW walks(PDT$ miss)` | プロセスディレクトリウォーク回数（`m.pdtw_walks`） | PDT$ がミスした回数。(device_id, process_id) が変わる/初出のとき増える |
+| `(+N acc each)` | 1ウォークあたり追加アクセス（`pdtw_miss_accesses()`） | **nested=False → 3 / nested=True → 15**（PDTベースがGPA→各段をG-stage変換） |
+| `PDT$ hit` | PDT$ ヒット数（`m.pdt_hits`） | 償却ヒット |
+
+**読み方**:
+- 単一デバイス・単一プロセス（既定 `num_devices=1, num_processes=1`）なら、
+  DDTW・PDTW とも **初回 1 回だけ cold ミス**、以降は全ヒット → 定常コスト ~0。
+  これが「DDT$/PDT$ による文脈ウォークの償却」を表す。
+- `TraceCfg(num_devices, num_processes, ctx_switch_every)` で文脈を切り替えると、
+  切り替えのたびに cold ミスが増え、`ddtw_walks` / `pdtw_walks` が伸びる
+  （= コンテキストスイッチの実コスト）。`ctx_switch_every` を小さくし
+  `num_devices`/`num_processes` を `DirCacheCfg.assoc` より大きくすると、
+  ディレクトリキャッシュが溢れて毎回再ウォーク（スラッシング）になる。
+- 文脈ウォークは `mem_accesses` にも上乗せされるので、`/page` 値が
+  わずかに増える（償却後はほぼ無視できる量）。
+
+> DDT$/PDT$ を無効化（`DirCacheCfg(assoc=0)`）すると毎ウォークで再ウォーク
+> され、`ddtw_walks == walks_started` になる（キャッシュ無し時の上限コスト）。
 
 ### 9-2. (B) A–E 比較表
 
