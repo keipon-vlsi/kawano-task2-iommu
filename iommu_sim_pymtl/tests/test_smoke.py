@@ -58,7 +58,7 @@ def test_cost_models():
     p = SingleStageCost(coalesce=8).cost(123, pwc)
     assert p.accesses >= 1
     assert len(p.iotlb_keys) == 8
-    pn = NestedCost(coalesce=8, s2_residual=1).cost(123, pwc)
+    pn = NestedCost(coalesce=8, s2_levels=3).cost(123, pwc)
     assert pn.accesses >= p.accesses
 
 

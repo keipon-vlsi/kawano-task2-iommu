@@ -12,6 +12,8 @@ N = 2000
 
 
 def _cfg(**kw):
+    # DDTW/PDTW pinned off here so each test controls them explicitly,
+    # independent of the SimConfig default.
     base = dict(
         label="dir",
         iotlb=IOTLBCfg(sets=1, assoc=256, policy="lru"),
@@ -19,6 +21,7 @@ def _cfg(**kw):
         coalesce_factor=8,
         prefetcher=PrefetchCfg(kind="none"),
         trace=TraceCfg(kind="sequential", n=N),
+        ddtw_enabled=False, pdtw_enabled=False,
     )
     base.update(kw)
     return SimConfig(**base)

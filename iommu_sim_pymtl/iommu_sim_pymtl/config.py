@@ -84,13 +84,13 @@ class SimConfig:
 
     # --- microarchitecture ---
     coalesce_factor: int = 8           # PTEs per 64B cache line (leaf coalescing)
-    levels: int = 3                    # walk levels (Sv39 => 3)
-    nested: bool = True               # if True, use NestedCost (two-stage)
-    nested_s2_residual: int = 3        # extra memory accesses per walk under nesting
+    levels: int = 3                    # S1 walk levels (Sv39 => 3)
+    nested: bool = True                # if True, use NestedCost (exact two-stage)
+    s2_levels: Optional[int] = None    # G-stage (second-stage) walk depth; None => same as `levels`
 
     # --- RISC-V IOMMU directory-table walks (off by default) ---
-    ddtw_enabled: bool = False         # model Device-Directory-Table walks + DDT$
-    pdtw_enabled: bool = False         # model Process-Directory-Table walks + PDT$
+    ddtw_enabled: bool = True         # model Device-Directory-Table walks + DDT$
+    pdtw_enabled: bool = True         # model Process-Directory-Table walks + PDT$
     ddt_levels: int = 3                # DDTW depth -> accesses charged on a DDT$ miss
     pdt_levels: int = 3                # PDTW base depth (see pdtw_miss_accesses())
 
@@ -136,6 +136,10 @@ class SimConfig:
         page_bytes = self.page_kb * 1024
         return self.wire_gbs * 1e9 / page_bytes
 
+    def s2_depth(self) -> int:
+        """G-stage (second-stage) walk depth. Defaults to the S1 `levels`."""
+        return self.levels if self.s2_levels is None else self.s2_levels
+
     def ddtw_miss_accesses(self) -> int:
         """Memory accesses for one Device-Directory-Table walk (on a DDT$ miss).
 
@@ -150,9 +154,9 @@ class SimConfig:
         Without nesting the PDT is a plain `pdt_levels` walk (=3). Under
         two-stage translation the PDT base is a guest-physical address, so each
         of the `pdt_levels` levels is itself translated by a full G-stage
-        (`levels`-deep) walk. The classic two-stage worst case is
-            (pdt_levels + 1) * (levels + 1) - 1
+        (`s2_depth()`-deep) walk. The classic two-stage worst case is
+            (pdt_levels + 1) * (s2_levels + 1) - 1
         = (3+1)*(3+1)-1 = 15 for a 3-level PDT under a 3-level G-stage."""
         if not self.nested:
             return self.pdt_levels
-        return (self.pdt_levels + 1) * (self.levels + 1) - 1
+        return (self.pdt_levels + 1) * (self.s2_depth() + 1) - 1

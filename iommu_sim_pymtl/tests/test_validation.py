@@ -175,5 +175,5 @@ def test_nested_translation_increases_memory_traffic():
         trace=TraceCfg(kind="sequential", n=N),
     )
     m_s, _, _ = _run(SimConfig(nested=False, **common))
-    m_n, _, _ = _run(SimConfig(nested=True, nested_s2_residual=1, **common))
+    m_n, _, _ = _run(SimConfig(nested=True, **common))
     assert m_n.mem_accesses > m_s.mem_accesses

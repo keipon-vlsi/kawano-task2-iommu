@@ -36,7 +36,7 @@ def build_engine_from_config(cfg: SimConfig) -> IOMMUEngine:
     if cfg.nested:
         cost_model = NestedCost(coalesce=cfg.coalesce_factor,
                                 levels=cfg.levels,
-                                s2_residual=cfg.nested_s2_residual)
+                                s2_levels=cfg.s2_depth())
     else:
         cost_model = SingleStageCost(coalesce=cfg.coalesce_factor,
                                      levels=cfg.levels)

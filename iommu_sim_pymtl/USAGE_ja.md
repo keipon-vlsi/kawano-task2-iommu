@@ -159,10 +159,16 @@ cfg.coalesce_factor = 4      # 例：ライン幅 32 B
 ### 4-9. 2 段アドレス変換（nested）を試したい
 ```python
 cfg.nested = True
-cfg.nested_s2_residual = 1   # S1 1 回あたり追加で必要な S2 アクセス
+cfg.s2_levels = None   # G-stage(第2段)の段数。None = S1 の levels と同じ(=3)
 ```
-`walker_cost.py` の `NestedCost` が使われ、メモリトラフィックが
-おおよそ 2 倍以上に伸びるはずです。
+`walker_cost.py` の `NestedCost`（**厳密モデル**）が使われます。コールド
+（PWC 無し）の 1 ウォークは `acc + (acc+1)*s2_levels`。3 段 S1 × 3 段 G-stage
+なら `3 + 4*3 = 15` アクセス（= RISC-V 2 段変換の最悪値
+`(levels+1)*(s2_levels+1)-1`）。PWC で上位段が短絡されると `acc` が減り
+ネストコストも減ります（例 `acc=1` → `1 + 2*3 = 7`）。詳しくは §9-4。
+
+> 旧 `nested_s2_residual`（粗い一様倍率）は厳密モデルに置き換えられ廃止
+> されました。G-stage の深さは `s2_levels`（既定 = `levels`）で指定します。
 
 ### 4-10. Walker 並列度・トランザクションバッファを変えたい
 ```python
@@ -295,9 +301,9 @@ class PLRU(ReplacementPolicy):
 そのまま `required N (peak walks)` 行に出ます。
 
 > 注: 上の 8/1/3/8/4 は **single-stage（`nested=False`）** の値です。
-> 既定の `SimConfig` は `nested=True`（2 段変換）なので、`run_demo.py`
-> をそのまま回すとメモリ往復が増え、A の必要 N は 8 ではなく 15 になり
-> ます（§9-4 参照）。
+> 既定の `SimConfig` は `nested=True`（厳密 2 段変換）なので、`run_demo.py`
+> をそのまま回すと A は mem/page=**15**、必要 N は 8 ではなく **約 37** に
+> なります（§9-4 参照）。
 
 ---
 
@@ -376,6 +382,10 @@ class PLRU(ReplacementPolicy):
  ...
 ```
 
+> 上の数値は **illustrative**（`s2_levels=1` 相当の一例）。実際の値は
+> `nested` / `s2_levels` / DDTW・PDTW 設定で変わります。既定の厳密 2 段
+> （`s2_levels=3`）では A は mem/pg=15.0, peak_N≈37（§9-4 の表）。
+
 | 列 | 由来 | 意味 |
 |---|---|---|
 | `scenario` | `cfg.label` | 構成名 |
@@ -416,19 +426,22 @@ class PLRU(ReplacementPolicy):
 
 ### 9-4. nested の有無で数値がどう変わるか
 
-`mem/pg`（コールドウォーク）は `3 × (1 + nested_s2_residual)`:
+`NestedCost` は**厳密モデル**で、コールド（PWC 無し, no-cache）の 1 ウォークは
+`acc + (acc+1)*s2_levels`（`acc`=S1 アクセス数, no-cache なら 3）。よって
+`mem/pg = 3 + 4*s2_levels`（= RISC-V 2 段の最悪値 `(levels+1)(s2_levels+1)−1`）:
 
 | 設定 | mem/pg(A, no-cache) | A の必要 N |
 |---|---|---|
 | `nested=False`（single-stage） | 3.0 | 8 |
-| `nested=True, s2_residual=1` | 6.0 | 15 |
-| `nested=True, s2_residual=2` | 9.0 | 23 |
-| `nested=True, s2_residual=3`（G-stage を3段とみなす） | 12.0 | 30 |
+| `nested=True, s2_levels=1` | 7.0 | 18 |
+| `nested=True, s2_levels=2` | 11.0 | 27 |
+| `nested=True, s2_levels=3`（既定 = `levels`） | **15.0** | **37** |
 
-> `s2_residual=3` は「各 S1 アクセスに G-stage(S2) の3段ウォークが付く」近似。
-> 厳密な2段 Sv39 の最悪値は `(3+1)(3+1)−1 = 15` アクセスだが、本モデルは
-> 一様倍率のため 12 止まり（最終リーフ GPA の追加 G-stage を別建てできない）。
-> 相対比較には十分。詳細は `walker_cost.py` の `NestedCost` を参照。
+> PWC が上位段を短絡すると `acc` が減り、ネストコストも下がります（例
+> `acc=1` → `1 + 2*3 = 7`）。`s2_levels=None` のとき G-stage 深さは S1 の
+> `levels` に追従します。`PDTW` のミスコスト（`pdtw_miss_accesses()`）も
+> 同じ `(pdt_levels+1)(s2_levels+1)−1` で、本体ウォークと整合します。
+> （旧 `nested_s2_residual` の粗い一様倍率は廃止。）
 
 ### 9-5. (C) レポート図の読み方（`report/figures/`）
 

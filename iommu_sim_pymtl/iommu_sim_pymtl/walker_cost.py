@@ -135,18 +135,30 @@ class DirectoryWalkCost(WalkCostModel):
 
 
 class NestedCost(SingleStageCost):
-    """Two-stage: each S1 access additionally costs `s2_residual` memory
-    accesses for the S2 walk that translates the S1 page-table address.
+    """Two-stage (host + guest) translation -- EXACT cost model.
 
-    This is a coarse model — for full fidelity you would carry a dedicated
-    S2 PWC. It is enough to expose the order-of-magnitude trend (nested
-    translation roughly doubles or triples memory traffic per walk)."""
-    def __init__(self, coalesce: int = 8, levels: int = 3, s2_residual: int = 1):
+    The base single-stage walk issues `acc` S1 page-table reads (after PWC
+    short-circuiting). Under two-stage translation every guest-physical address
+    touched must itself be resolved by a full G-stage (second-stage) walk of
+    depth `s2_levels`:
+      - each of the `acc` S1 PTE pointers (they live at guest-physical addrs), and
+      - the final translated leaf GPA (the data page).
+    So the nested walk costs
+
+        acc + (acc + 1) * s2_levels
+
+    For a cold 3-level S1 walk under a 3-level G-stage: 3 + 4*3 = 15 -- the
+    classic RISC-V two-stage worst case, equal to (levels+1)*(s2_levels+1) - 1.
+    PWC short-circuiting upper S1 levels lowers `acc`, which lowers the nested
+    cost as well (e.g. acc=1 -> 1 + 2*3 = 7). `s2_levels` defaults to the S1
+    `levels`. (No dedicated S2 PWC is modelled, i.e. each G-stage walk is cold.)
+    """
+    def __init__(self, coalesce: int = 8, levels: int = 3, s2_levels: int = None):
         super().__init__(coalesce=coalesce, levels=levels)
-        self.s2 = s2_residual
+        self.s2_levels = levels if s2_levels is None else s2_levels
 
     def cost(self, vpn, pwc) -> WalkPlan:
         p = super().cost(vpn, pwc)
-        # Each of the {root, L1, leaf} accesses needs an S2 translation.
-        p.accesses += self.s2 * p.accesses
+        # Each S1 PTE pointer + the final leaf GPA needs a full G-stage walk.
+        p.accesses += (p.accesses + 1) * self.s2_levels
         return p
