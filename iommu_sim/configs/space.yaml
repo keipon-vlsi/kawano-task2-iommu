@@ -1,0 +1,41 @@
+# Design-space sweep for the PPA Pareto (usage_manual §6).
+# `base` is a full config; `grid` lists the axes to enumerate (cartesian product).
+# Resources are FIXED (finite) here so area/energy differ meaningfully and the
+# wire-rate filter is meaningful. Architectural knobs vary across the grid.
+base:
+  mode: nested
+  superpage: off
+  caches:
+    iotlb:     {entries: 64, assoc: 4}
+    s1_pwc:    {l2: {entries: 4, assoc: full}, l1: {entries: 8, assoc: full}}
+    s2_pwc:    {entries: 8, assoc: full}
+    table_gpa: {entries: 16, assoc: full}
+    data_gpa:  {enabled: false, entries: 64, assoc: 4}
+    ddtc:      {entries: 16, assoc: full}
+    pdtc:      {enabled: false}
+    msi:       {entries: 16}
+    lookup_mode: hybrid
+    walk_trigger: demand
+    coalesce_factor: 8
+  walkers:  {num_walkers: 4, pipeline_depth: 2}
+  buffers:  {iommu_req_buffer: 16, io_bridge_buffer: 16}
+  prefetch: {algo: off, distance: 16, confidence: 2}
+  memory:   {latency_cycles: 40, max_outstanding: null, bank_parallel: true, coalescing_effective: true}
+  timing:   {clock_mhz: 400, lookup_cycles: 2, arbitration_cycles: 1, hit_latency_cycles: 1}
+  workload:
+    iova_pattern: sequential
+    data_gpa: sequential
+    n_requests: 8000
+    invalidation: {rate: 0, target: s1, granularity: context}
+    fault_rate: 0
+    context_switch_rate: 0
+    n_devices: 1
+    n_pasids: 1
+  pa: {scale_factor: null}
+
+grid:
+  caches.coalesce_factor: [1, 8]
+  caches.iotlb.entries: [32, 64]
+  prefetch.algo: [off, next_line, stride]
+  walkers.num_walkers: [2, 4, 8]
+  buffers.iommu_req_buffer: [8, 16]

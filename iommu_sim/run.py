@@ -1,104 +1,111 @@
-"""Assembly example. Change the arguments here, or swap in different classes,
-to reconfigure the simulation.
+"""Single-run CLI (usage_manual §2/§4).
 
-In addition to the performance metrics, each scenario now also prints a
-first-order area & power estimate (see estimator.py / ESTIMATOR_ja.md) and
-writes a frozen JSON prediction record under ./freeze/."""
+    python3 run.py --config configs/baseline.yaml
+    python3 run.py --config configs/baseline.yaml --measure peaks   # 3c/3d (infinite res)
+    python3 run.py --config configs/baseline.yaml --emit-trace out/trace.csv
+
+Prints every metric in design_doc §8: throughput & wire_rate_met, peak_walks (3c),
+peak_buffer (3d), memory peak-outstanding & bandwidth, I/O-bridge peak, per-cache
+hit/miss, accesses/translation, latency avg/max/p99 (cycles & ns), miss-penalty by
+type, and per-module normalized area/power + energy/translation. Also writes a
+frozen-prediction JSON (config hash + normalized PPA)."""
+from __future__ import annotations
+
+import argparse
 import os
 import re
 
-from caches import SetAssocCache, LRU
-from prefetch import NoPrefetch, NextLinePrefetch
-from memory import MemoryModel
-from walker import SingleStageCost
-from workload import sequential, random_trace, wire_inter_arrival_ns
-from engine import Simulator
-from estimator import EstimatorConfig, estimate
+from config import Config
+from runner import run_sim, summarize
+from workload import generate, export_csv
 
 FREEZE_DIR = os.path.join(os.path.dirname(__file__), "freeze")
 
 
-def build_and_run(name, *, trace, iotlb_assoc, pwc_assoc, coalesce,
-                  prefetcher, num_walkers=None, buffer_size=None):
-    sim = Simulator(
-        workload=trace,
-        iotlb=SetAssocCache(num_sets=1, assoc=iotlb_assoc, policy=LRU()),
-        pwc=SetAssocCache(num_sets=1, assoc=pwc_assoc, policy=LRU()),
-        prefetcher=prefetcher,
-        memory=MemoryModel(latency_ns=100.0),
-        cost_model=SingleStageCost(coalesce=coalesce),
-        num_walkers=num_walkers, buffer_size=buffer_size,
-    )
-    m = sim.run()
-    n = m.completed
-    span = (m.last_complete - m.first_arrival) or 1
-    print(f"\n=== {name} ===")
-    print(f"  completed         : {n}")
-    print(f"  total mem accesses: {sim.memory.accesses}  ({sim.memory.accesses/n:.3f} /page)")
-    print(f"  IOTLB hit         : {m.iotlb_hit}  / coalesced(MSHR): {m.mshr_coalesced}  / true miss(walk): {m.walks_started}")
-    print(f"  required N (peak walks): {m.peak_walks}")
-    print(f"  required buffer (peak) : {m.peak_buffer}")
-    print(f"  avg latency       : {m.avg_lat:.1f} ns  (p99 {m.p99_lat:.1f} ns)")
-    print(f"  achieved throughput: {n/span*1e9/1e6:.2f} M/s  (target {1e9/wire_inter_arrival_ns()/1e6:.2f} M/s)")
+def _slug(name):
+    return re.sub(r"[^A-Za-z0-9]+", "_", name).strip("_").lower()[:48]
 
-    # ---- first-order area & power estimate (non-invasive: reads config + metrics) ----
-    # Resolve provisioned sizes: explicit limits if given, else the measured peaks.
-    walkers = num_walkers if num_walkers is not None else m.peak_walks
-    depth = buffer_size if buffer_size is not None else m.peak_buffer
-    # IOTLB/PWC entries: assoc is entries-per-(single-)set here. 0 (disabled) -> 0 entries.
-    cfg = EstimatorConfig(
-        name=name,
-        iotlb_entries=iotlb_assoc or 0, iotlb_fully_assoc=True,
-        pwc_entries=pwc_assoc or 0,     pwc_fully_assoc=True,
-        buffer_depth=depth, num_walkers=walkers,
-    )
-    est = estimate(cfg, m, components={"iotlb": sim.iotlb, "pwc": sim.pwc, "memory": sim.memory})
-    print(est.table())
+
+def print_report(cfg, sim, m, s):
+    cyc = cfg.cycle_ns
+    print(f"\n=== {cfg.name}  (mode={cfg.mode}, superpage={cfg.superpage}, "
+          f"lookup={cfg.caches.lookup_mode}, prefetch={cfg.prefetch.algo}) ===")
+    print(f"  clock {cfg.timing.clock_mhz:.0f} MHz, 1 cycle = {cyc:.3g} ns, "
+          f"mem = {cfg.memory.latency_cycles} cyc, inter-arrival = {cfg.inter_arrival_cycles:.2f} cyc")
+    print("\n-- throughput / wire rate --")
+    print(f"  completed              : {m.completed}")
+    print(f"  throughput             : {s['throughput_mps']:.3f} M/s   (target {s['target_mps']:.3f} M/s)")
+    print(f"  wire_rate_met          : {s['wire_rate_met']}")
+    print("\n-- required hardware (3c / 3d) --")
+    print(f"  peak_walks (3c, N)     : {m.peak_walks}"
+          + ("   [num_walkers fixed]" if cfg.walkers.num_walkers is not None else "   [measured @ unlimited]"))
+    print(f"  peak_buffer (3d)       : {m.peak_buffer}"
+          + ("   [iommu_req_buffer fixed]" if cfg.buffers.iommu_req_buffer is not None else "   [measured @ unlimited]"))
+    print("\n-- memory / I/O-bridge performance requirements --")
+    print(f"  mem_outstanding_peak   : {s['mem_outstanding_peak']}")
+    print(f"  mem_bandwidth          : {s['mem_bandwidth_gbs']:.2f} GB/s")
+    print(f"  mem_accesses           : {s['mem_accesses']}  ({s['accesses_per_translation']:.4f} /translation)")
+    print(f"  io_bridge_buffer_peak  : {m.io_bridge_peak}   (4 kB payload holders)")
+    print("\n-- cache hit/miss --")
+    print(f"  {'cache':<11}{'hits':>10}{'misses':>10}{'hit_rate':>10}")
+    for name, (h, mi, hr) in s["hit"].items():
+        if h + mi > 0:
+            print(f"  {name:<11}{h:>10d}{mi:>10d}{hr:>10.3f}")
+    print(f"  iotlb_hit={m.iotlb_hit}  mshr_coalesced={m.mshr_coalesced}  walks={m.walks_started}")
+    print("\n-- latency --")
+    print(f"  avg : {m.avg_lat:8.2f} cyc  ({m.avg_lat*cyc:8.2f} ns)")
+    print(f"  p99 : {m.p99_lat:8.2f} cyc  ({m.p99_lat*cyc:8.2f} ns)")
+    print(f"  max : {m.max_lat:8.2f} cyc  ({m.max_lat*cyc:8.2f} ns)")
+    print("\n-- miss-penalty distribution by type (cycles) --")
+    print(f"  {'type':<16}{'count':>8}{'avg_cyc':>10}{'avg_ns':>10}{'max_cyc':>10}")
+    for t, cnt, avg, avgns, mx in m.miss_penalty_table(cyc):
+        print(f"  {t:<16}{cnt:>8d}{avg:>10.2f}{avgns:>10.2f}{mx:>10.2f}")
+    print(f"  (characteristic full-cold walk depth for mode {cfg.mode}: {sim.cold_depth()} x {cfg.memory.latency_cycles} cyc)")
+    if m.faults or m.context_switches or m.invalidations:
+        print(f"\n  events: faults={m.faults}  context_switches={m.context_switches}  invalidations={m.invalidations}")
+    print("\n-- normalized area & power (per module) --")
+    print(s["_result"].table())
+    print(f"\n  FoM (area_GE x energy/translation): {s['fom_area_x_energy']:.2f}")
+
+
+def main():
+    ap = argparse.ArgumentParser(description="IOMMU exploration simulator -- single run")
+    ap.add_argument("--config", required=True)
+    ap.add_argument("--measure", choices=["peaks"], default=None,
+                    help="peaks: force unlimited resources + cold-start warmup -> clean 3c/3d")
+    ap.add_argument("--warmup", type=float, default=0.0, help="warmup fraction for peak measurement")
+    ap.add_argument("--emit-trace", default=None, help="write the trace CSV (RTL testbench stimulus)")
+    ap.add_argument("--freeze", default=None, help="path for the frozen-prediction JSON")
+    args = ap.parse_args()
+
+    cfg = Config.load(args.config)
+    warmup = args.warmup
+    if args.measure == "peaks":
+        cfg.walkers.num_walkers = None
+        cfg.buffers.iommu_req_buffer = None
+        cfg.buffers.io_bridge_buffer = None
+        cfg.memory.max_outstanding = None
+        warmup = max(warmup, 0.05)
+
+    sim, m = run_sim(cfg, warmup_frac=warmup)
+    s = summarize(cfg, sim, m)
+    print_report(cfg, sim, m, s)
+
+    if args.measure == "peaks":
+        print(f"\n  >>> 3c required parallel walkers N = {m.peak_walks}")
+        print(f"  >>> 3d required IOMMU request buffer = {m.peak_buffer}")
 
     os.makedirs(FREEZE_DIR, exist_ok=True)
-    slug = re.sub(r"[^A-Za-z0-9]+", "_", name).strip("_").lower()[:40]
-    rec = est.freeze(os.path.join(FREEZE_DIR, f"{slug}.json"))
-    print(f"  frozen prediction -> freeze/{slug}.json  (config_hash {rec['config_hash'][:12]}...)")
+    fpath = args.freeze or os.path.join(FREEZE_DIR, f"{_slug(cfg.name)}.json")
+    rec = s["_result"].freeze(fpath)
+    print(f"\n  frozen prediction -> {os.path.relpath(fpath)}  (config_hash {rec['config_hash'][:12]}...)")
 
-    return {"name": name, "completed": n, "mem_per_page": sim.memory.accesses / n,
-            "peak_walks": m.peak_walks, "avg_lat": m.avg_lat,
-            "area_mm2": est.area_mm2, "total_mW": est.total_mW,
-            "epp_pj": est.energy_per_translation_pj}
+    if args.emit_trace:
+        requests, events = generate(cfg)
+        os.makedirs(os.path.dirname(os.path.abspath(args.emit_trace)), exist_ok=True)
+        export_csv(requests, events, args.emit_trace, cfg.cycle_ns)
+        print(f"  trace CSV -> {args.emit_trace}  ({len(requests)} requests, {len(events)} events)")
 
 
-N = 8000
-rows = []
-
-# A: no cache (IOTLB/PWC disabled, no coalescing) -> reproduces required N ~= 8
-rows.append(build_and_run("A: no cache (full 3-level, unlimited resources)",
-              trace=sequential(N), iotlb_assoc=0, pwc_assoc=0, coalesce=1,
-              prefetcher=NoPrefetch()))
-
-# B: PWC + 64B coalescing -> residual drops sharply
-rows.append(build_and_run("B: PWC + coalescing",
-              trace=sequential(N), iotlb_assoc=256, pwc_assoc=16, coalesce=8,
-              prefetcher=NoPrefetch()))
-
-# C: B + prefetch
-rows.append(build_and_run("C: B + prefetch",
-              trace=sequential(N), iotlb_assoc=256, pwc_assoc=16, coalesce=8,
-              prefetcher=NextLinePrefetch(distance=16, coalesce=8)))
-
-# D: random IOVA (sensitivity) -> best-case optimization collapses
-rows.append(build_and_run("D: random IOVA (same PWC+coalesce config)",
-              trace=random_trace(N), iotlb_assoc=256, pwc_assoc=16, coalesce=8,
-              prefetcher=NoPrefetch()))
-
-# E: finite resources to observe stall (walker=4, buffer=4)
-rows.append(build_and_run("E: no-cache + finite (walker=4, buffer=4)",
-              trace=sequential(N), iotlb_assoc=0, pwc_assoc=0, coalesce=1,
-              prefetcher=NoPrefetch(), num_walkers=4, buffer_size=4))
-
-# ---- combined perf + area/power sweep summary ----
-print("\n\n=== sweep summary (perf + area/power) ===")
-hdr = f"{'scenario':<10}{'mem/pg':>9}{'peakN':>7}{'avg_ns':>9}{'area_mm2':>11}{'power_mW':>11}{'pJ/xlate':>11}"
-print(hdr); print("-" * len(hdr))
-for r in rows:
-    tag = r["name"].split(":")[0]
-    print(f"{tag:<10}{r['mem_per_page']:>9.3f}{r['peak_walks']:>7d}{r['avg_lat']:>9.1f}"
-          f"{r['area_mm2']:>11.6f}{r['total_mW']:>11.4f}{r['epp_pj']:>11.3f}")
+if __name__ == "__main__":
+    main()

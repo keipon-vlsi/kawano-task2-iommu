@@ -1,0 +1,37 @@
+# Baseline IOMMU configuration (design_doc §4 / usage_manual §3).
+# Nested 2-stage, contiguous IOVA + contiguous guest data GPA, single context,
+# pinned (no invalidation/fault), sufficient memory. Resources unlimited (null)
+# so peak_walks (3c) and peak_buffer (3d) are measured directly.
+name: baseline
+mode: nested            # bare / s1_only / s2_only / nested
+superpage: off          # off / 2M / 1G
+
+caches:
+  iotlb:     {entries: 64, assoc: 4}
+  s1_pwc:    {l2: {entries: 4, assoc: full}, l1: {entries: 8, assoc: full}}
+  s2_pwc:    {entries: 8, assoc: full}
+  table_gpa: {entries: 16, assoc: full}
+  data_gpa:  {enabled: false, entries: 64, assoc: 4}   # set true under invalidation
+  ddtc:      {entries: 16, assoc: full}
+  pdtc:      {enabled: false}                          # PASID unused -> disabled
+  msi:       {entries: 16}
+  lookup_mode: hybrid     # parallel / sequential / hybrid
+  walk_trigger: demand    # demand / predictive
+  coalesce_factor: 8      # 64 B line / 8 B PTE
+
+walkers:  {num_walkers: null, pipeline_depth: 2}        # null = unlimited (measure N)
+buffers:  {iommu_req_buffer: null, io_bridge_buffer: null}  # null = unlimited (measure peak)
+prefetch: {algo: off, distance: 16, confidence: 2}      # off/next_line/stride/rpt/dcpt/sms
+memory:   {latency_cycles: 40, max_outstanding: null, bank_parallel: true, coalescing_effective: true}
+timing:   {clock_mhz: 400, lookup_cycles: 2, arbitration_cycles: 1, hit_latency_cycles: 1}
+workload:
+  iova_pattern: sequential   # sequential / stride / random
+  stride: 1
+  data_gpa: sequential       # sequential / random
+  n_requests: 8000
+  invalidation: {rate: 0, target: s1, granularity: context}
+  fault_rate: 0
+  context_switch_rate: 0
+  n_devices: 1
+  n_pasids: 1
+pa: {scale_factor: null}     # null = normalized; set a number to absolutize
