@@ -1,0 +1,277 @@
+{
+  "completed": 8000,
+  "config": {
+    "buffers": {
+      "io_bridge_buffer": null,
+      "iommu_req_buffer": null
+    },
+    "caches": {
+      "coalesce_factor": 8,
+      "data_gpa": {
+        "assoc": 4,
+        "enabled": false,
+        "entries": 64
+      },
+      "ddtc": {
+        "assoc": "full",
+        "enabled": true,
+        "entries": 16
+      },
+      "iotlb": {
+        "assoc": 4,
+        "enabled": true,
+        "entries": 64
+      },
+      "lookup_mode": "hybrid",
+      "msi": {
+        "assoc": "full",
+        "enabled": true,
+        "entries": 16
+      },
+      "pdtc": {
+        "assoc": "full",
+        "enabled": false,
+        "entries": 16
+      },
+      "s1_pwc": {
+        "l1": {
+          "assoc": "full",
+          "entries": 8
+        },
+        "l2": {
+          "assoc": "full",
+          "entries": 4
+        }
+      },
+      "s2_pwc": {
+        "assoc": "full",
+        "enabled": true,
+        "entries": 8
+      },
+      "table_gpa": {
+        "assoc": "full",
+        "enabled": true,
+        "entries": 16
+      },
+      "walk_trigger": "demand"
+    },
+    "memory": {
+      "bank_parallel": true,
+      "coalescing_effective": true,
+      "latency_cycles": 40,
+      "max_outstanding": null
+    },
+    "mode": "nested",
+    "name": "baseline",
+    "pa": {
+      "scale_factor": null
+    },
+    "prefetch": {
+      "algo": "off",
+      "confidence": 2,
+      "distance": 16
+    },
+    "superpage": "off",
+    "timing": {
+      "arbitration_cycles": 1,
+      "clock_mhz": 400.0,
+      "hit_latency_cycles": 1,
+      "lookup_cycles": 2
+    },
+    "walkers": {
+      "num_walkers": null,
+      "pipeline_depth": 2
+    },
+    "workload": {
+      "context_switch_rate": 0.0,
+      "data_gpa": "sequential",
+      "fault_rate": 0.0,
+      "invalidation": {
+        "granularity": "context",
+        "rate": 0.0,
+        "target": "s1"
+      },
+      "iova_pattern": "sequential",
+      "n_devices": 1,
+      "n_pasids": 1,
+      "n_requests": 8000,
+      "page_bytes": 4096,
+      "seed": 0,
+      "span_pages": 1000000,
+      "stride": 1,
+      "wire_gbs": 100.0
+    }
+  },
+  "config_hash": "6e7800538dcb3bf15d07f97250b546428be9744354e4c6b894c6985b804004fc",
+  "modules": [
+    {
+      "accesses": 9000.0,
+      "area_ge": 1661.4400000000003,
+      "cam_bits": 0,
+      "dyn": 0.1318494008818161,
+      "ff_bits": 0,
+      "gates": 64,
+      "name": "iotlb",
+      "sram_bits": 6144,
+      "stat": 0.06272000000000001,
+      "total_power": 0.19456940088181612
+    },
+    {
+      "accesses": 2017.0,
+      "area_ge": 1219.44,
+      "cam_bits": 636,
+      "dyn": 0.49802235054885663,
+      "ff_bits": 0,
+      "gates": 636,
+      "name": "s1_pwc",
+      "sram_bits": 336,
+      "stat": 0.02244,
+      "total_power": 0.5204623505488566
+    },
+    {
+      "accesses": 1064.0,
+      "area_ge": 941.12,
+      "cam_bits": 496,
+      "dyn": 0.20588528113252774,
+      "ff_bits": 0,
+      "gates": 496,
+      "name": "s2_pwc",
+      "sram_bits": 224,
+      "stat": 0.01712,
+      "total_power": 0.22300528113252774
+    },
+    {
+      "accesses": 1058.0,
+      "area_ge": 1882.24,
+      "cam_bits": 992,
+      "dyn": 0.40492782252484644,
+      "ff_bits": 0,
+      "gates": 992,
+      "name": "table_gpa",
+      "sram_bits": 448,
+      "stat": 0.03424,
+      "total_power": 0.43916782252484643
+    },
+    {
+      "accesses": 0.0,
+      "area_ge": 0.0,
+      "cam_bits": 0,
+      "dyn": 0.0,
+      "ff_bits": 0,
+      "gates": 0,
+      "name": "data_gpa",
+      "sram_bits": 0,
+      "stat": 0.0,
+      "total_power": 0.0
+    },
+    {
+      "accesses": 1001.0,
+      "area_ge": 667.2,
+      "cam_bits": 272,
+      "dyn": 0.11059539954244596,
+      "ff_bits": 0,
+      "gates": 272,
+      "name": "ddtc",
+      "sram_bits": 704,
+      "stat": 0.015200000000000002,
+      "total_power": 0.12579539954244595
+    },
+    {
+      "accesses": 0.0,
+      "area_ge": 0.0,
+      "cam_bits": 0,
+      "dyn": 0.0,
+      "ff_bits": 0,
+      "gates": 0,
+      "name": "pdtc",
+      "sram_bits": 0,
+      "stat": 0.0,
+      "total_power": 0.0
+    },
+    {
+      "accesses": 0.0,
+      "area_ge": 747.84,
+      "cam_bits": 336,
+      "dyn": 0.0,
+      "ff_bits": 0,
+      "gates": 336,
+      "name": "msi",
+      "sram_bits": 576,
+      "stat": 0.01584,
+      "total_power": 0.01584
+    },
+    {
+      "accesses": 1000,
+      "area_ge": 5360.0,
+      "cam_bits": 0,
+      "dyn": 0.7475861029998975,
+      "ff_bits": 560,
+      "gates": 2000,
+      "name": "walkers",
+      "sram_bits": 0,
+      "stat": 0.0456,
+      "total_power": 0.7931861029998974
+    },
+    {
+      "accesses": 8000,
+      "area_ge": 19008.0,
+      "cam_bits": 0,
+      "dyn": 31.797199467450504,
+      "ff_bits": 3168,
+      "gates": 0,
+      "name": "buffer",
+      "sram_bits": 0,
+      "stat": 0.03168,
+      "total_power": 31.828879467450506
+    },
+    {
+      "accesses": 8000,
+      "area_ge": 800,
+      "cam_bits": 0,
+      "dyn": 0.04883311143770967,
+      "ff_bits": 0,
+      "gates": 800,
+      "name": "arbiter",
+      "sram_bits": 0,
+      "stat": 0.016,
+      "total_power": 0.06483311143770967
+    },
+    {
+      "accesses": 8000,
+      "area_ge": 2000,
+      "cam_bits": 0,
+      "dyn": 0.06104138929713709,
+      "ff_bits": 0,
+      "gates": 2000,
+      "name": "control",
+      "sram_bits": 0,
+      "stat": 0.04,
+      "total_power": 0.10104138929713709
+    }
+  ],
+  "note": "Process-independent GE/normalized-energy estimate; relative comparison + calibration, NOT sign-off.",
+  "scale_factor": null,
+  "schema": "iommu-ppa-prediction/v2-normalized",
+  "sim_cycles": 131058.61600000001,
+  "totals": {
+    "area_ge": 34287.28,
+    "dram_accesses": 2136,
+    "dram_energy": 42720.0,
+    "dyn_power": 34.00594032581574,
+    "energy_per_translation": 562.0248936146801,
+    "stat_power": 0.30084,
+    "total_power": 34.306780325815744
+  },
+  "weights": {
+    "cam_bit_ge": 0.6,
+    "e_cam_bit": 0.05,
+    "e_dram_access": 20.0,
+    "e_ff_clk_bit": 0.01,
+    "e_sram_bit": 0.02,
+    "ff_bit_ge": 6.0,
+    "leak_bit": 1e-05,
+    "leak_gate": 2e-05,
+    "periphery": 1.3,
+    "sram_bit_ge": 0.2
+  }
+}
