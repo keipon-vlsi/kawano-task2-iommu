@@ -1,3 +1,7 @@
 __pycache__/
 .pytest_cache/
 *.pyc
+
+# generated per-config breakdown pies (regenerate with: sweep.py --emit-breakdown)
+plot/*.png
+!plot/cfg104_pa.png

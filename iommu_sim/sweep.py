@@ -144,7 +144,7 @@ def pareto_front(rows):
     return sorted(front, key=lambda r: r["area_ge"])
 
 
-def run_pareto(cfg_path, emit_candidates=False, plot=True):
+def run_pareto(cfg_path, emit_candidates=False, plot=True, emit_breakdown=False):
     with open(cfg_path) as f:
         import yaml
         spec = yaml.safe_load(f)
@@ -176,8 +176,8 @@ def run_pareto(cfg_path, emit_candidates=False, plot=True):
     # table pastes straight into a spreadsheet for architecture comparison.
     label_keys = list(rows[0]["labels"].keys()) if rows else []
     id_fields = ["name", "mode", "wire_rate_met", "on_pareto"]
-    metric_fields = ["area_ge", "energy_per_translation", "fom_area_x_energy",
-                     "accesses_per_translation", "peak_walks", "peak_buffer",
+    metric_fields = ["area_ge", "energy_per_translation", "dram_energy_per_translation",
+                     "fom_area_x_energy", "accesses_per_translation", "peak_walks", "peak_buffer",
                      "io_bridge_peak", "mem_outstanding_peak", "throughput_mps", "avg_lat_ns"]
     with open(out_csv, "w", newline="") as f:
         wtr = csv.writer(f)
@@ -186,6 +186,7 @@ def run_pareto(cfg_path, emit_candidates=False, plot=True):
             ids = [r["name"], r["mode"], r["wire_rate_met"], r["name"] in front_names]
             knobs = [r["labels"].get(k, "") for k in label_keys]
             metrics = [f"{r['area_ge']:.1f}", f"{r['energy_per_translation']:.3f}",
+                       f"{r['dram_energy_per_translation']:.3f}",
                        f"{r['fom_area_x_energy']:.1f}", f"{r['accesses_per_translation']:.4f}",
                        r["peak_walks"], r["peak_buffer"], r["io_bridge_peak"],
                        r["mem_outstanding_peak"], f"{r['throughput_mps']:.2f}", f"{r['avg_lat_ns']:.1f}"]
@@ -210,7 +211,52 @@ def run_pareto(cfg_path, emit_candidates=False, plot=True):
     if emit_candidates and front:
         emit_candidate_svhs(front)
 
+    if emit_breakdown and met:
+        emit_pa_breakdown(met)
+
     return rows, front
+
+
+def emit_pa_breakdown(met):
+    """One PNG per wire-rate-meeting config: area-by-module + power-by-module pie
+    charts. Written to iommu_sim/plot/ (can be many files)."""
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except Exception as e:
+        print(f"  (matplotlib unavailable: {e}; skipping per-config breakdown pies)")
+        return
+    outdir = os.path.join(os.path.dirname(__file__), "plot")
+    os.makedirs(outdir, exist_ok=True)
+    def _pie(ax, mods, value_of, title):
+        items = [(m.name, value_of(m)) for m in mods if value_of(m) > 0]
+        total = sum(v for _, v in items) or 1.0
+        labels = [n for n, _ in items]
+        vals = [v for _, v in items]
+        wedges, _ = ax.pie(vals, startangle=90, counterclock=False)
+        ax.legend(wedges, [f"{n}  {v/total:5.1%}" for n, v in items],
+                  loc="center left", bbox_to_anchor=(1.0, 0.5), fontsize=8, frameon=False)
+        ax.set_title(title, fontsize=10)
+
+    n = 0
+    for r in met:
+        res = r["_result"]
+        fig, (axa, axp) = plt.subplots(1, 2, figsize=(14, 6))
+        _pie(axa, res.modules, lambda m: m.area_ge, f"area breakdown (total {res.area_ge:,.0f} GE)")
+        _pie(axp, res.modules, lambda m: m.total_power,
+             f"power breakdown (total {res.total_power:.3f} norm units/cyc)")
+        nw = r["labels"].get("walkers.num_walkers", r["peak_walks"])
+        fig.suptitle(f"{r['name']}  |  {r['mode']}  |  "
+                     f"E/xlate {res.energy_per_translation:.1f} (IOMMU) + "
+                     f"{r['dram_energy_per_translation']:.1f} (DRAM)  |  "
+                     f"N={nw}  |  area {res.area_ge:,.0f} GE", fontsize=11)
+        fig.tight_layout(rect=[0, 0, 1, 0.95])
+        path = os.path.join(outdir, f"{r['name']}_pa.png")
+        fig.savefig(path, dpi=110)
+        plt.close(fig)
+        n += 1
+    print(f"\n  -- per-config area/power breakdown pies -> {os.path.relpath(outdir)}/  ({n} figures, wire-rate-meeting only)")
 
 
 def _try_plot(met, front, outdir):
@@ -314,12 +360,15 @@ def main():
     ap.add_argument("--measure", choices=["peaks"], default=None)
     ap.add_argument("--pareto", action="store_true")
     ap.add_argument("--emit-candidates", action="store_true")
+    ap.add_argument("--emit-breakdown", action="store_true",
+                    help="per-config area/power pie charts (wire-rate-meeting only) -> plot/")
     ap.add_argument("--emit-trace", default=None)
     ap.add_argument("--no-plot", action="store_true")
     args = ap.parse_args()
 
     if args.pareto:
-        run_pareto(args.config, emit_candidates=args.emit_candidates, plot=not args.no_plot)
+        run_pareto(args.config, emit_candidates=args.emit_candidates, plot=not args.no_plot,
+                   emit_breakdown=args.emit_breakdown)
         return
 
     cfg = Config.load(args.config)

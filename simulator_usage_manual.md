@@ -204,6 +204,7 @@ python3 sweep.py --config configs/space.yaml --pareto --emit-candidates
 | `--search min_hw` | `num_walkers`/`iommu_req_buffer`/`io_bridge_buffer`/`mem_max_outstanding` を各々昇順に振り、**定常 stall ゼロ**で wire rate を満たす最小値を出す（他資源は寛容に固定）。 |
 | `--pareto` | `space.yaml` の grid を全実行→ wire-rate 達成群で 面積–エネルギー/変換 Pareto を計算、`results.csv` と `pareto.png` を出力。 |
 | `--emit-candidates` | Pareto 代表点（min_area / min_energy / knee）を `candidates/*.svh`（SVパラメータ）に出力。 |
+| `--emit-breakdown` | **wire rate 達成構成のみ**、面積/電力の per-module **内訳円グラフ**を `plot/<cfgNNN>_pa.png` に出力（枚数が多いので別 dir）。 |
 | `--emit-trace PATH` | トレース CSV 出力。 |
 | `--no-plot` | matplotlib を使わず CSV のみ。 |
 
@@ -274,8 +275,9 @@ RTL階層と1対1対応（design_doc §13）。各モジュールの役割・主
 | `mode` | 段構成 |
 | `wire_rate_met` | 定常 stall ゼロで wire rate 達成か |
 | `on_pareto` | 面積–エネルギー Pareto front 上か |
-| `area_ge` | 総面積（GE） |
-| `energy_per_translation` | 1変換あたり正規化エネルギー（IOMMU分。DRAM別枠） |
+| `area_ge` | 総面積（GE＝gate-equivalents, 1GE=2入力NAND1個分） |
+| `energy_per_translation` | 1変換あたり正規化エネルギー（**IOMMU 分**。DRAM別枠） |
+| `dram_energy_per_translation` | 1変換あたり DRAM アクセスエネルギー（**別枠**。メモリ往復＝`accesses/translation × e_dram_access`） |
 | `fom_area_x_energy` | 補助スカラー＝面積 × エネルギー/変換（小さいほど良） |
 | `accesses_per_translation` | 1変換あたりメモリアクセス数（アーキ効率） |
 | `peak_walks` / `peak_buffer` | 3c / 3d |
@@ -322,9 +324,15 @@ Pareto 代表点の**厳密 config を SystemVerilog `localparam`** 化（`IOTLB
 energy_per_translation / dram_*）, `config_hash`（config＋重みの SHA-256）。**同一 config＋同一重みなら
 ハッシュ一致**＝同じ予測の再現を保証。`CalibParams` 相当の per-module 係数を後段で fit して当て込む。
 
----
-
-## F. ログの読み方（`baseline.log` / `min_hw.log` / `pareto.log`）
+### E.6 `plot/<cfgNNN>_pa.png`（`--emit-breakdown`、matplotlib 必要）
+**wire rate を満たした構成だけ**、1構成1枚で **面積(GE) と 電力(正規化) の per-module 内訳円グラフ**を出力
+（左＝面積、右＝電力、各部品の%を凡例表示）。タイトルに `mode / E/xlate(IOMMU)+（DRAM）/ N / 総面積`。
+枚数が多くなる（達成構成ぶん）ので `plot/` に分離。どの部品が支配的かを構成ごとに確認する用途。
+例：バッファ FF クロック電力が支配的（過剰なバッファ深さが電力に効く）といった RTL 設計の示唆が読める。
+```bash
+../.venv/bin/python sweep.py --config configs/space.yaml --pareto --emit-breakdown
+# -> plot/cfg***_pa.png （wire-rate 達成構成ぶん）
+```（`baseline.log` / `min_hw.log` / `pareto.log`）
 
 代表3本のログを同梱（`iommu_sim/*.log`）。生成は `run.py`/`sweep.py` の標準出力をリダイレクトしたもの。
 

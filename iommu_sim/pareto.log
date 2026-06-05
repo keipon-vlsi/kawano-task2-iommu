@@ -15,3 +15,5 @@
     min_area   -> candidates/min_area_cfg104.svh
     min_energy -> candidates/min_energy_cfg104.svh
     knee       -> candidates/knee_cfg104.svh
+
+  -- per-config area/power breakdown pies -> plot/  (92 figures, wire-rate-meeting only)
