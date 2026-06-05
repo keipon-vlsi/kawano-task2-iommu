@@ -9,7 +9,7 @@
   (single-point front: throughput is a hard gate, so among wire-rate-meeting
    configs area & energy co-minimize -> PPA reduces to minimization, design_doc §11.
    See results.csv / pareto.png for the full scatter across architectural regimes.)
-  Pareto plot -> /space/kawano-task2-iommu/iommu_sim/pareto.png  (area-energy + per-knob parallel coordinates)
+  Pareto plot -> /space/kawano-task2-iommu/iommu_sim/pareto.png
 
   -- emitting SystemVerilog candidate params --
     min_area   -> candidates/min_area_cfg104.svh

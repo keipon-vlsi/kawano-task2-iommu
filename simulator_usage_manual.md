@@ -295,23 +295,12 @@ RTL テストベンチ刺激。1リクエスト/1イベント1行を時刻順：
 | `device_id` / `pasid` / `vmid` | 文脈タグ |
 | `info` | イベント補足（target/granularity 等） |
 
-### E.3 `pareto.png`（`--pareto`、matplotlib 必要）　**2パネル構成**
-1枚の図に「PPA の良し悪し」と「ノブ（walker数・各キャッシュ容量）の違い」を同居させている。
-
-- **左パネル：面積–エネルギー散布図**
-  - 横軸＝面積(GE)、縦軸＝エネルギー/変換（ともに小さいほど良＝**原点に近いほど良**）。
-  - **マーカー色＝`num_walkers`**（viridis、カラーバー付き）、**マーカーサイズ＝キャッシュ総エントリ数**（IOTLB+PWC）。
-  - 赤線＋点＝Pareto front、front 点に `cfgNNN` 注記。
-  - これで「同じ面積でもエネルギーが低い／walker を減らしてもエネルギーは下がるか」等を一目で比較できる。
-- **右パネル：並行座標（parallel coordinates）**
-  - 軸＝`coalesce / iotlb / s1_pwc / walkers / buffer / area / energy`、各軸下に実値の最小..最大を表示。
-  - 1本の折れ線＝1構成（**赤＝Pareto front、薄青＝wire rate 達成**）。各ノブの値の違いと、それが
-    area/energy にどう効くかを**全次元まとめて**読む。
-- **読み方の要点**：左で「最良＝最も原点寄り（＝knee/min area×energy）」を特定し、右でその構成の
-  ノブ構成（小coalesce か大coalesce か、walker は何本か、どのキャッシュを盛ったか）を辿る。
+### E.3 `pareto.png`（`--pareto`、matplotlib 必要）
+- 横軸＝面積(GE)、縦軸＝エネルギー/変換（ともに小さいほど良＝**原点に近いほど良**）。
+- 灰点＝wire rate 達成構成、赤線＋点＝Pareto front、各点に `cfgNNN` 注記。
 - スループットは固定目標（ゲート）なので、達成群では面積・電力が同時最小化に縮約され、front が
-  **単一点**に潰れることがある（design_doc §11 の通りで正常）。「バランス点」探索の結論はこの front／
-  knee に出る：例ではコアレッシングでウォークが希少化するため **walker=1＋小キャッシュ＋prefetch** が最小。
+  **単一点**に潰れることがある（design_doc §11 の通りで正常。全体散布は本図と `results.csv` で確認）。
+- 各構成の walker 数・キャッシュ容量など**ノブの違い**は `results.csv` の `labels` 列で確認する。
 
 ### E.4 `candidates/*.svh`（`--emit-candidates`）
 Pareto 代表点の**厳密 config を SystemVerilog `localparam`** 化（`IOTLB_ENTRIES`, `S1_PWC_*`,
@@ -394,3 +383,119 @@ workload:
 このとき `run.py` の cache hit/miss に `pdtc` 行が現れ、`pdtc misses`＝PDTW 回数。`n_pasids ≤ pdtc.entries`
 なら初回のみミス（容量内＝ほぼ常時ヒット＝定常ゼロコスト、design_premises §4）。`n_pasids > entries` で
 スラッシュ（容量超の崖）。DDTW も同様に `ddtc` と `n_devices`/`context_switch_rate` で観測できる。
+
+---
+
+## H. 感度解析のための config 編集ガイド（条件を振って崖/なだらかを地図化）
+
+design_premises §7（前提パイプライン6軸）/§8（感度マップ）に対応。**前提を1つ崩す → どこで wire rate が
+崩れるか**を測るのが感度解析。ここでは「どのフィールドをどう変えると、どの前提が崩れ、出力のどこに出るか」
+を軸ごとに示す。
+
+### H.0 やり方の原則（重要）
+1. **1軸ずつ振る**。複数同時に変えると原因が切り分けられない。基準は `configs/baseline.yaml`。
+2. **best↔worst をペアで**測る（連続=best ↔ ランダム/非単調=worst）。差分が感度。
+3. **崖 vs なだらか**を見る：`wire_rate_met` が True→False に**急変**＝崖、`mem/page`・`avg_lat` が
+   **徐々に**悪化＝なだらか。design_premises §8 の分類と突き合わせる。
+4. **読む出力**：`accesses_per_translation`（アーキ効率＝崩れの一次指標）、`peak_walks`/`peak_buffer`
+   （必要HWの増大）、`wire_rate_met`、各キャッシュ `hit_rate`、`miss_penalty` の種別シフト。
+5. **2通りの回し方**：
+   - **単発ペア**：`baseline.yaml` を2回コピーして1軸だけ変え、`run.py` を2回。
+   - **掃引**：`space.yaml` の `grid:` にその軸を入れて `sweep.py --pareto`（`results.csv` で一覧）。
+     資源を有限固定にしておくと「どこで `wire_rate_met=False` に落ちるか」が表で見える。
+6. 感度を測るときは**資源を実機相当に固定**（`num_walkers`/`buffers` を null=無限のままにすると
+   「崖」が peak の増大としてしか出ない。有限にすると throughput 崩れ＝崖として出る）。
+
+### H.1 軸2：IOVA パターン（連続 ↔ ランダム/ストライド）【崖】
+```yaml
+workload: { iova_pattern: sequential }   # best：leaf コアレッシング・PWC が効く
+# ↓ worst
+workload: { iova_pattern: random }       # IOTLB/PWC 崩壊、1ページ1ウォーク
+workload: { iova_pattern: stride, stride: 4 }  # 中間：ストライド prefetch で緩和可
+```
+効果：`accesses_per_translation` が ~0.13 → ~2〜3（no-cache 域）、`peak_walks` 1→8、`avg_lat` 急増。
+読む：random で `iotlb hit_rate≈0`・`mshr_coalesced≈0`。緩和は `prefetch.algo: stride`（自己無効化付き）。
+
+### H.2 軸3：ゲストデータ GPA 連続性（nested の S2 コアレッシング）【なだらか】
+```yaml
+mode: nested
+workload: { data_gpa: sequential }   # best：S2 データ leaf もコアレッシング
+# ↓ worst
+workload: { data_gpa: random }       # S2 データ leaf が散る（表GPAは温存）
+```
+効果：`accesses_per_translation` が ~0.27 → 上昇（ただし上位/表は残るので**なだらか**）。`mode: nested` のときのみ意味。
+
+### H.3 軸5：無効化（ピン留め崩れ）【崖】＋ data_gpa 温存効果
+```yaml
+workload:
+  invalidation: { rate: 0.0,  target: s1, granularity: context }   # best：ピン留め
+# ↓ worst（strict 寄り）
+  invalidation: { rate: 0.1,  target: s1, granularity: page }
+caches:
+  data_gpa: { enabled: true, entries: 64, assoc: 4 }   # S1無効化でも S2 結果を温存（ステージ分離）
+```
+効果：`invalidations` 増、`hit_rate` 低下、`mem/page` 上昇。`target: s1` で `data_gpa.enabled: true` にすると
+S2 側が温存され悪化が**緩む**（design_premises §15）。`granularity: context` はバッチ無効化＝緩、`page` は per-page＝崖寄り。
+`target: s2`/`both` で G-stage 側も無効化。
+
+### H.4 軸4：文脈多重度（device/PASID スイッチ）【容量超で崖】
+```yaml
+caches: { ddtc: {entries: 16}, pdtc: {enabled: true, entries: 4} }
+workload: { context_switch_rate: 0.05, n_devices: 4, n_pasids: 8 }   # worst：PASID数>容量でスラッシュ
+```
+効果：`ddtc/pdtc` のミス増（DDTW/PDTW 発生、付録 G）、`mem/page` 上昇。`n_pasids ≤ pdtc.entries` なら**崖なし**
+（容量内＝常時ヒット）、超えると崖。**文脈タグ**でフラッシュ不要なので、崖は容量超のみ。
+
+### H.5 軸5：フォルト（PRI 無し＝ピン留め前提）
+```yaml
+workload: { fault_rate: 0.001 }   # フォルト注入（イベント計上）。本来は fault≈0 が前提
+```
+効果：`faults` 計上。投機（prefetch/predictive walk）との相互作用を見る用途。
+
+### H.6 軸1：段構成・スーパーページ（配備選択 ~2x）
+```yaml
+mode: bare      # 単段（ベアメタル）  ↔  mode: nested（2段、~2x）
+superpage: off  # ↔ 2M / 1G（変換激減・段数減）
+```
+効果：bare↔nested で `mem/page` が約2倍（design_premises §4）。superpage で `mem/page` 激減・`avg_lat` 低下。
+
+### H.7 軸A：コアレッシング／キャッシュ容量・連想度（free-win と構造分離）
+```yaml
+caches:
+  coalesce_factor: 8        # ↔ 1（無効＝leaf 毎回 1 アクセス）
+  iotlb: { entries: 64, assoc: 4 }     # 容量/連想度を振る（4-way SRAM）
+  s1_pwc: { l1: {entries: 8, assoc: full} }   # full=CAM、容量を振る
+memory: { coalescing_effective: true }        # ↔ false（行内まとめ取りが効かない）
+```
+効果：`coalesce_factor: 1` で `mem/page` ~8倍・`peak_walks` 増。容量を削ると `hit_rate` 低下＝崖の手前。
+構造分離（レベル別キャッシュ）は streaming leaf が上位を汚さないための要（置換より効く、design_premises §10）。
+
+### H.8 軸6：メモリ outstanding 上限（N の天井）【崖】
+```yaml
+memory: { max_outstanding: 4 }    # 同時 outstanding を制限＝並列ウォーク数の天井
+walkers: { num_walkers: 8 }       # ウォーカーがあっても outstanding で律速
+```
+効果：`max_outstanding < 必要N` で throughput 崩れ＝`wire_rate_met: False`（崖）。`mem_outstanding_peak` が上限に張り付く。
+
+### H.9 軸B：レイテンシ隠蔽（prefetch / lookup / walk_trigger）
+```yaml
+caches: { lookup_mode: parallel }   # 低レイテンシだがPWCも毎回引く＝energy増（sequential/hybridと比較）
+caches: { walk_trigger: predictive }
+prefetch: { algo: stride, distance: 16, confidence: 2 }   # 連続で効き、ランダムで自己無効化
+```
+効果：prefetch で `avg_lat` が hit レイテンシ近くまで縮む（`peak_walks` は先行ウォーク分やや増）。
+`lookup_mode: parallel` は per-module の `dyn`（PWC アクセス）が増える＝レイテンシ↔エネルギーのトレードオフ。
+
+### H.10 掃引で「崖の地図」を作る例（`space.yaml`）
+1軸を `grid:` に入れ、資源を有限固定して `--pareto`。`results.csv` の `wire_rate_met` 列が False に変わる点が崖：
+```yaml
+base:
+  # … baseline 相当だが walkers/buffers を有限に（例 num_walkers:2, iommu_req_buffer:16）…
+  walkers: { num_walkers: 2 }
+  buffers: { iommu_req_buffer: 16, io_bridge_buffer: 16 }
+grid:
+  workload.iova_pattern: [sequential, stride, random]   # ← 振りたい感度軸
+  workload.data_gpa:     [sequential, random]
+```
+> 「どこで wire rate が崩れるか」を地図化するのが目的（usage_manual §7）。best(連続) と worst(ランダム) を
+> 必ずペアで含めること。skill `iommu-arch-sweep` はこの定型掃引＋解釈を自動化する。
