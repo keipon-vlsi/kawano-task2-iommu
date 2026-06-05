@@ -1,0 +1,17 @@
+
+=== Pareto sweep: 192 configurations ===
+  92/192 configurations meet wire rate
+  results table -> /space/kawano-task2-iommu/iommu_sim/results.csv
+
+  -- area-energy Pareto front (wire-rate-meeting) --
+  name       area_GE   E/xlate        area*E   N  buf  labels
+  cfg104     18970.1   290.105     5503322.9   1    1  caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=16
+  (single-point front: throughput is a hard gate, so among wire-rate-meeting
+   configs area & energy co-minimize -> PPA reduces to minimization, design_doc §11.
+   See results.csv / pareto.png for the full scatter across architectural regimes.)
+  Pareto plot -> /space/kawano-task2-iommu/iommu_sim/pareto.png  (area-energy + per-knob parallel coordinates)
+
+  -- emitting SystemVerilog candidate params --
+    min_area   -> candidates/min_area_cfg104.svh
+    min_energy -> candidates/min_energy_cfg104.svh
+    knee       -> candidates/knee_cfg104.svh

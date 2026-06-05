@@ -1,0 +1,10 @@
+
+=== min-HW search (sustain wire rate, steady-state, mode=nested) ===
+  peaks @ infinite resources: peak_walks=2 (3c), peak_buffer=13 (3d), io_bridge_peak=13, mem_outstanding_peak=5
+
+  minimum resource (each found with the others generous):
+    num_walkers           : 2
+    iommu_req_buffer      : 13
+    io_bridge_buffer      : 13
+    mem_max_outstanding   : 2
+  (provision +50-100% over these per design_premises §12.)

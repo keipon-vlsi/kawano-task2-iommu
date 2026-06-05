@@ -33,9 +33,15 @@ base:
     n_pasids: 1
   pa: {scale_factor: null}
 
+# Axes span the cost levers that trade off against each other so the sweep can find
+# a BALANCED point (moderate walkers + moderate caches) rather than only extremes:
+#   coalesce/iotlb/s1_pwc reduce how often a walk is needed (-> fewer walkers),
+#   num_walkers/buffer hide the residual latency. Any combination in this product
+#   that meets wire rate competes on (area, energy); the Pareto/knee is the balance.
 grid:
   caches.coalesce_factor: [1, 8]
-  caches.iotlb.entries: [32, 64]
-  prefetch.algo: [off, next_line, stride]
-  walkers.num_walkers: [2, 4, 8]
-  buffers.iommu_req_buffer: [8, 16]
+  caches.iotlb.entries: [32, 64, 128]
+  caches.s1_pwc.l1.entries: [4, 8]
+  prefetch.algo: [off, next_line]
+  walkers.num_walkers: [1, 2, 4, 8]
+  buffers.iommu_req_buffer: [16, 32]

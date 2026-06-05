@@ -144,6 +144,7 @@ python3 sweep.py --config configs/space.yaml --pareto --emit-candidates
 - 無効化時にS2温存 → `caches.data_gpa.enabled: true`。
 - メモリ並列上限 → `memory.max_outstanding`。
 - 感度（IOVA/GPA/invalidation/fault/switch）→ `workload.*`。
+- PDTW/DDTW を発生させる → `caches.pdtc.enabled:true` ＋ `workload.n_pasids`/`n_devices`/`context_switch_rate`（詳細は付録 G）。
 
 ---
 
@@ -294,18 +295,102 @@ RTL テストベンチ刺激。1リクエスト/1イベント1行を時刻順：
 | `device_id` / `pasid` / `vmid` | 文脈タグ |
 | `info` | イベント補足（target/granularity 等） |
 
-### E.3 `pareto.png`（`--pareto`、matplotlib 必要）
-- 横軸＝面積(GE)、縦軸＝エネルギー/変換（ともに小さいほど良）。
-- 灰点＝wire rate 達成構成、赤線＋点＝Pareto front、各点に `cfgNNN` 注記。
+### E.3 `pareto.png`（`--pareto`、matplotlib 必要）　**2パネル構成**
+1枚の図に「PPA の良し悪し」と「ノブ（walker数・各キャッシュ容量）の違い」を同居させている。
+
+- **左パネル：面積–エネルギー散布図**
+  - 横軸＝面積(GE)、縦軸＝エネルギー/変換（ともに小さいほど良＝**原点に近いほど良**）。
+  - **マーカー色＝`num_walkers`**（viridis、カラーバー付き）、**マーカーサイズ＝キャッシュ総エントリ数**（IOTLB+PWC）。
+  - 赤線＋点＝Pareto front、front 点に `cfgNNN` 注記。
+  - これで「同じ面積でもエネルギーが低い／walker を減らしてもエネルギーは下がるか」等を一目で比較できる。
+- **右パネル：並行座標（parallel coordinates）**
+  - 軸＝`coalesce / iotlb / s1_pwc / walkers / buffer / area / energy`、各軸下に実値の最小..最大を表示。
+  - 1本の折れ線＝1構成（**赤＝Pareto front、薄青＝wire rate 達成**）。各ノブの値の違いと、それが
+    area/energy にどう効くかを**全次元まとめて**読む。
+- **読み方の要点**：左で「最良＝最も原点寄り（＝knee/min area×energy）」を特定し、右でその構成の
+  ノブ構成（小coalesce か大coalesce か、walker は何本か、どのキャッシュを盛ったか）を辿る。
 - スループットは固定目標（ゲート）なので、達成群では面積・電力が同時最小化に縮約され、front が
-  **単一点**に潰れることがある（design_doc §11 の通りで正常。全体散布は本図と `results.csv` で確認）。
+  **単一点**に潰れることがある（design_doc §11 の通りで正常）。「バランス点」探索の結論はこの front／
+  knee に出る：例ではコアレッシングでウォークが希少化するため **walker=1＋小キャッシュ＋prefetch** が最小。
 
 ### E.4 `candidates/*.svh`（`--emit-candidates`）
 Pareto 代表点の**厳密 config を SystemVerilog `localparam`** 化（`IOTLB_ENTRIES`, `S1_PWC_*`,
 `NUM_WALKERS`, `IOMMU_REQ_BUFFER`, `COALESCE_FACTOR` …）。`ASSOC=0` は fully-assoc(CAM) を表す。
 次フェーズの RTL 実装で `include` して使う。
 
-### E.5 `freeze/*.json`（凍結予測）
-`config`（ハッシュ源）, `weights`, per-module 面積/電力, `totals`（area_ge / *_power /
-energy_per_translation / dram_*）, `config_hash`。**推定を凍結→合成→誤差分解→校正係数 fit** の
-基準（design_doc §12）。同一 config＋同一重みならハッシュ一致。
+### E.5 `freeze/*.json`（凍結予測 — frozen prediction）
+**「凍結予測」とは**：合成（OpenLane/sky130）に着手する**前に**、シミュレータの per-module 面積・電力
+予測を `config_hash` 付きで JSON に固めておく成果物。後で合成した実測値と突き合わせ、
+**予測→凍結→合成→誤差分解→校正係数 fit** の順で estimator を校正する（design_doc §12, design_premises §13）。
+予測を先に確定（凍結）しておくのが肝で、合成後に予測をいじって「当たったことにする」のを防ぎ、
+どの部品でどれだけズレたか（＝校正係数）を客観的に出すための基準点になる。
+
+中身：`config`（ハッシュ源）, `weights`, per-module 面積/電力, `totals`（area_ge / *_power /
+energy_per_translation / dram_*）, `config_hash`（config＋重みの SHA-256）。**同一 config＋同一重みなら
+ハッシュ一致**＝同じ予測の再現を保証。`CalibParams` 相当の per-module 係数を後段で fit して当て込む。
+
+---
+
+## F. ログの読み方（`baseline.log` / `min_hw.log` / `pareto.log`）
+
+代表3本のログを同梱（`iommu_sim/*.log`）。生成は `run.py`/`sweep.py` の標準出力をリダイレクトしたもの。
+
+### F.1 `baseline.log`（`run.py --config configs/baseline.yaml`）
+セクション順に読む：
+1. **ヘッダ** … `mode/superpage/lookup/prefetch` と クロック・mem・到着間隔（cycle）。
+2. **throughput / wire rate** … `throughput` が `target`(24.41 M/s) 以上＆`wire_rate_met: True` なら定常で
+   ワイヤレート維持。
+3. **required hardware (3c/3d)** … `peak_walks`(3c) と `peak_buffer`(3d)。`[measured @ unlimited]` は
+   資源無限で実測した必要数（＝この構成の下限）。`run.py` 既定は**cold-start 込みの真ピーク**なので
+   定常値よりやや大きい（クリーン値は `--measure peaks`）。
+4. **memory / I/O-bridge 要求** … `mem_outstanding_peak`(=同時 outstanding≈必要N)、`mem_bandwidth`(GB/s)、
+   `mem_accesses`(と `/translation`＝アーキ効率)、`io_bridge_buffer_peak`(4kB保持数)。
+5. **cache hit/miss** … 各キャッシュの hits/misses/hit_rate と `iotlb_hit / mshr_coalesced / walks`。
+   IOTLB の hit_rate が低くても、`mshr_coalesced` が多ければコアレッシングが効いている（同一ラインが相乗り）。
+6. **latency** … avg/p99/max を cycle と ns で。3b の答え。
+7. **miss-penalty by type** … `iotlb_hit / mshr_coalesced / pwc_full_hit / pwc_partial / full_cold` の
+   件数・平均・最大(cycle)。末尾に mode の**特性 cold 深さ**（nested=15×40cyc）。on-demand 時のばらつきを読む。
+8. **area & power (per module)** … 部品別 area(GE)/sram_b/cam_b/ff_b/gates/access/dyn/stat と TOTAL。
+   CAM 構造は `cam_b>0`、SRAM 構造は `sram_b>0`。`buffer` の dyn が大きいのは FF クロック電力（過剰な
+   バッファ深さはここに出る）。最後に `energy/translation`（IOMMU 分）と DRAM 別枠、`FoM`。
+
+### F.2 `min_hw.log`（`sweep.py --search min_hw`）
+- 1行目 `peaks @ infinite resources` … 探索の天井になる無限資源ピーク（3c/3d/io_bridge/mem_outstanding）。
+- `minimum resource` … 各資源を**他資源は寛容**にして昇順に振り、**定常 stall ゼロ**で wire rate を満たす
+  最小値。`num_walkers`(必要N)、`iommu_req_buffer`(3d)、`io_bridge_buffer`、`mem_max_outstanding`。
+- 末尾の注記どおり、実装では各値に **+50〜100% マージン**を載せる（design_premises §12）。
+
+### F.3 `pareto.log`（`sweep.py --config configs/space.yaml --pareto --emit-candidates`）
+- `=== Pareto sweep: N configurations ===` … grid 直積の構成数。
+- `M/N configurations meet wire rate` … 定常 stall ゼロで達成した数（残りは土俵外）。
+- `results table -> results.csv` … 全構成の表（E.1）。
+- `area-energy Pareto front` … 達成群の非劣解（面積・エネルギーとも最小側）。各行に `area_GE / E/xlate /
+  area*E(FoM) / N / buf / labels`。**面積もエネルギーも他に劣らない構成だけ**が残る。
+- 単一点になる場合の注記（design_doc §11）。
+- `emitting SystemVerilog candidate params` … `min_area / min_energy / knee` を `.svh` 出力。
+- 併せて `pareto.png`（E.3 の2パネル図）が出る。
+
+> ログ生成コマンド（再現）：
+> ```bash
+> ../.venv/bin/python run.py   --config configs/baseline.yaml            > baseline.log
+> ../.venv/bin/python sweep.py --config configs/baseline.yaml --search min_hw > min_hw.log
+> ../.venv/bin/python sweep.py --config configs/space.yaml --pareto --emit-candidates > pareto.log
+> ```
+
+---
+
+## G. 感度レシピ補足：PDTW（プロセス文脈ウォーク）を発生させる
+
+PDTW は **PDT$（`pdtc`）ミス時**に起こる。既定では `pdtc.enabled:false`（PASID 未使用）なので発生しない。
+発生させるには：
+```yaml
+caches:
+  pdtc: {enabled: true, entries: 4}     # PDT$ を有効化（小容量にするとミスしやすい）
+workload:
+  n_pasids: 8                           # 同時 PASID 数 > pdtc.entries にするとスラッシュ
+  n_devices: 4                          # DDTW も見たい場合
+  context_switch_rate: 0.05             # 文脈スイッチ頻度（>0 で PASID がローテーション）
+```
+このとき `run.py` の cache hit/miss に `pdtc` 行が現れ、`pdtc misses`＝PDTW 回数。`n_pasids ≤ pdtc.entries`
+なら初回のみミス（容量内＝ほぼ常時ヒット＝定常ゼロコスト、design_premises §4）。`n_pasids > entries` で
+スラッシュ（容量超の崖）。DDTW も同様に `ddtc` と `n_devices`/`context_switch_rate` で観測できる。

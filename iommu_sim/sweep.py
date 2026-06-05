@@ -209,6 +209,21 @@ def run_pareto(cfg_path, emit_candidates=False, plot=True):
     return rows, front
 
 
+def _knobs(r):
+    """Extract the visualised design knobs for one config row."""
+    c = r["_cfg"]
+    nw = c.walkers.num_walkers if c.walkers.num_walkers is not None else r["peak_walks"]
+    return {
+        "coalesce": c.caches.coalesce_factor,
+        "iotlb": c.caches.iotlb.entries,
+        "s1_pwc": c.caches.s1_pwc.l1.entries + c.caches.s1_pwc.l2.entries,
+        "walkers": nw,
+        "buffer": c.buffers.iommu_req_buffer if c.buffers.iommu_req_buffer is not None else r["peak_buffer"],
+        "area": r["area_ge"],
+        "energy": r["energy_per_translation"],
+    }
+
+
 def _try_plot(met, front, outdir):
     try:
         import matplotlib
@@ -217,22 +232,66 @@ def _try_plot(met, front, outdir):
     except Exception as e:
         print(f"  (matplotlib unavailable: {e}; skipping plot, CSV still written)")
         return
-    fig, ax = plt.subplots(figsize=(7, 5))
-    ax.scatter([r["area_ge"] for r in met], [r["energy_per_translation"] for r in met],
-               c="lightgray", label="meets wire rate")
+    if not met:
+        print("  (no wire-rate-meeting config; skipping plot)")
+        return
+    front_names = {r["name"] for r in front}
+    K = [(_knobs(r), r["name"] in front_names, r["name"]) for r in met]
+    cache_sz = [k["iotlb"] + k["s1_pwc"] for k, _, _ in K]
+    smin, smax = min(cache_sz), max(cache_sz)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+
+    # ---- panel 1: area vs energy; colour = #walkers, size = total cache entries ----
+    xs = [k["area"] for k, _, _ in K]
+    ys = [k["energy"] for k, _, _ in K]
+    cs = [k["walkers"] for k, _, _ in K]
+    sizes = [40 + 260 * (sz - smin) / (smax - smin + 1e-9) for sz in cache_sz]
+    sc = ax1.scatter(xs, ys, c=cs, s=sizes, cmap="viridis", alpha=0.8, edgecolors="k", linewidths=0.3)
     fx = [r["area_ge"] for r in front]
     fy = [r["energy_per_translation"] for r in front]
-    ax.plot(fx, fy, "-o", color="crimson", label="Pareto front")
+    ax1.plot(fx, fy, "-o", color="crimson", label="Pareto front", zorder=5)
     for r in front:
-        ax.annotate(r["name"], (r["area_ge"], r["energy_per_translation"]), fontsize=7)
-    ax.set_xlabel("area (GE)")
-    ax.set_ylabel("energy / translation (norm units)")
-    ax.set_title("IOMMU PPA Pareto (wire-rate-meeting configs)")
-    ax.legend()
-    fig.tight_layout()
+        ax1.annotate(r["name"], (r["area_ge"], r["energy_per_translation"]), fontsize=8, color="crimson")
+    cb = fig.colorbar(sc, ax=ax1)
+    cb.set_label("num_walkers (colour)")
+    ax1.set_xlabel("area (GE)")
+    ax1.set_ylabel("energy / translation (norm units)")
+    ax1.set_title("PPA Pareto — colour=walkers, size=cache entries (IOTLB+PWC)")
+    ax1.legend(loc="upper right")
+    ax1.text(0.02, 0.02, f"marker size: cache entries {smin}..{smax}\n(closer to origin = better)",
+             transform=ax1.transAxes, fontsize=8, va="bottom")
+
+    # ---- panel 2: parallel coordinates over all knobs ----
+    axes = ["coalesce", "iotlb", "s1_pwc", "walkers", "buffer", "area", "energy"]
+    cols = {a: [k[a] for k, _, _ in K] for a in axes}
+    lo = {a: min(cols[a]) for a in axes}
+    hi = {a: max(cols[a]) for a in axes}
+    xpos = list(range(len(axes)))
+
+    def norm(a, v):
+        return (v - lo[a]) / (hi[a] - lo[a] + 1e-9)
+    for k, on_front, name in K:
+        ys2 = [norm(a, k[a]) for a in axes]
+        ax2.plot(xpos, ys2, color=("crimson" if on_front else "lightsteelblue"),
+                 lw=(2.2 if on_front else 0.7), alpha=(0.95 if on_front else 0.5),
+                 zorder=(5 if on_front else 1))
+    for x in xpos:
+        ax2.axvline(x, color="gray", lw=0.6)
+    ax2.set_xticks(xpos)
+    ax2.set_xticklabels([f"{a}\n[{lo[a]:g}..{hi[a]:g}]" for a in axes], fontsize=8)
+    ax2.set_yticks([])
+    ax2.set_ylim(-0.05, 1.05)
+    ax2.set_title("Design knobs per config (red = Pareto front)")
+    ax2.plot([], [], color="crimson", lw=2.2, label="Pareto front")
+    ax2.plot([], [], color="lightsteelblue", lw=1, label="meets wire rate")
+    ax2.legend(loc="upper right", fontsize=8)
+
+    fig.suptitle("IOMMU design-space exploration (wire-rate-meeting configs)", fontsize=13)
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
     path = os.path.join(outdir, "pareto.png")
     fig.savefig(path, dpi=120)
-    print(f"  Pareto plot -> {path}")
+    print(f"  Pareto plot -> {path}  (area-energy + per-knob parallel coordinates)")
 
 
 # --------------------------------------------------------------------------
