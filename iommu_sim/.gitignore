@@ -4,4 +4,4 @@ __pycache__/
 
 # generated per-config breakdown pies (regenerate with: sweep.py --emit-breakdown)
 plot/*.png
-!plot/cfg104_pa.png
+!plot/cfg984_pa.png
