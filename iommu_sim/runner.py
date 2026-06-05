@@ -21,7 +21,7 @@ def wire_rate_met(cfg, sim, m, margin=0.0, strict=True):
     target = cfg.target_throughput_mps * (1.0 + margin)
     if m.throughput_mps(cfg.cycle_ns) < target * 0.995:
         return False
-    if strict and (m.arrival_stalls > 0 or m.walk_stalls > 0):
+    if strict and (m.arrival_stalls > 0 or m.walk_stalls > 0 or m.io_bridge_stalls > 0):
         return False
     return True
 

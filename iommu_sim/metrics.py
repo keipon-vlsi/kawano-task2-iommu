@@ -19,7 +19,8 @@ class Metrics:
     invalidations: int = 0
     walker_busy_cycles: float = 0.0     # sum(accesses*latency) over walks (estimator)
     arrival_stalls: int = 0             # demand back-pressured by a full request buffer (post-warmup)
-    walk_stalls: int = 0                # a line could not start a walk immediately (walker/mem/io-bridge)
+    walk_stalls: int = 0                # a line could not start a walk immediately (walker/mem)
+    io_bridge_stalls: int = 0           # a demand miss back-pressured by a full I/O-bridge buffer
 
     latencies: list = field(default_factory=list)          # cycles, per translation
     # miss-penalty distribution by type: type -> [count, sum_cycles, max_cycles]

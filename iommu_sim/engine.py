@@ -91,6 +91,7 @@ class Simulator:
         self.mshr = {}                 # line -> _MSHR
         self.walk_wait = []            # lines awaiting a walker / memory slot
         self.buf_wait = []             # arrivals awaiting a request-buffer slot
+        self.iob_wait = []             # demand misses awaiting an I/O-bridge slot
 
     # --- event queue ---
     def _push(self, t, kind, payload):
@@ -160,15 +161,28 @@ class Simulator:
         line = self.line_of(req.vpn)
         key = (line, req.ctx)
 
-        hit = self.caches.iotlb.lookup(key)
         if self.parallel_lookup:                      # parallel mode probes PWC too (energy)
             self.caches.s1_l1.lookup(("L1", req.vpn >> 9, req.ctx))
             self.caches.s1_l2.lookup(("L2", req.vpn >> 18, req.ctx))
-        if hit:
+
+        if self.caches.iotlb.peek(key):               # IOTLB hit -> immediate response (no bridge)
+            self.caches.iotlb.lookup(key)             # count the hit
             if not is_prefetch:
                 self.m.iotlb_hit += 1
                 self._push(td + self.hit_latency, "complete", (req, "iotlb_hit"))
             return
+
+        # IOTLB miss -> delayed response, will hold an I/O-bridge (4 kB) slot.
+        # Back-pressure NEW delayed responses when the bridge is full (NOT walk-start:
+        # gating walk-start would deadlock, since only walk completion drains the bridge).
+        if (not is_prefetch and self.io_bridge_size is not None
+                and self.io_bridge >= self.io_bridge_size):
+            self.iob_wait.append(req)
+            if self._rec(t):
+                self.m.io_bridge_stalls += 1
+            return
+
+        self.caches.iotlb.lookup(key)                 # count the miss
 
         ent = self.mshr.get(line)
         if ent is not None:                           # coalesce onto an in-flight/pending line
@@ -182,7 +196,7 @@ class Simulator:
         self.walk_wait.append(line)
         self._dispatch_waiting(td)
         if not is_prefetch and not ent.started and self._rec(t):
-            self.m.walk_stalls += 1            # walker/memory/io-bridge could not start it now
+            self.m.walk_stalls += 1            # walker/memory could not start it now
 
     def _add_waiter(self, t, ent, req, is_prefetch, coalesced):
         ent.waiters.append((req, is_prefetch))
@@ -199,10 +213,6 @@ class Simulator:
         if ent is None or ent.started:
             return False
         if self.num_walkers is not None and self.active_walks >= self.num_walkers:
-            return False
-        has_demand = any(not pf for _, pf in ent.waiters)
-        if (has_demand and self.io_bridge_size is not None
-                and self.io_bridge > self.io_bridge_size):
             return False
         if not self.memory.can_issue():
             return False
@@ -271,6 +281,9 @@ class Simulator:
         self.buffer -= 1
         if miss_type != "iotlb_hit":
             self.io_bridge -= 1
+            # an I/O-bridge slot freed -> retry a back-pressured demand miss
+            if self.iob_wait and (self.io_bridge_size is None or self.io_bridge < self.io_bridge_size):
+                self._translate(t, self.iob_wait.pop(0), is_prefetch=False)
         if self.buf_wait:
             self._admit(t, self.buf_wait.pop(0))
         self._dispatch_waiting(t)
