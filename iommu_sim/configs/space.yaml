@@ -11,8 +11,8 @@ base:
     s2_pwc:    {entries: 8, assoc: full}
     table_gpa: {entries: 16, assoc: full}
     data_gpa:  {enabled: false, entries: 64, assoc: 4}
-    ddtc:      {entries: 16, assoc: full}
-    pdtc:      {enabled: false}
+    ddtc:      {entries: 1, assoc: full}
+    pdtc:      {enabled: true, entries: 1, assoc: full}
     msi:       {entries: 16}
     lookup_mode: hybrid
     walk_trigger: demand
@@ -40,8 +40,8 @@ base:
 #   that meets wire rate competes on (area, energy); the Pareto/knee is the balance.
 grid:
   caches.coalesce_factor: [1, 8]
-  caches.iotlb.entries: [32, 64, 128]
-  caches.s1_pwc.l1.entries: [4, 8]
+  caches.iotlb.entries: [8, 16, 32]
+  caches.s1_pwc.l1.entries: [1, 2, 4]
   prefetch.algo: [off, next_line]
   walkers.num_walkers: [1, 2, 4, 8]
-  buffers.iommu_req_buffer: [16, 32]
+  buffers.iommu_req_buffer: [1, 2, 4, 8, 16]

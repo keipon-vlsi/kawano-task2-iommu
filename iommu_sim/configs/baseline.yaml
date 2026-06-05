@@ -12,8 +12,8 @@ caches:
   s2_pwc:    {entries: 8, assoc: full}
   table_gpa: {entries: 16, assoc: full}
   data_gpa:  {enabled: false, entries: 64, assoc: 4}   # set true under invalidation
-  ddtc:      {entries: 16, assoc: full}
-  pdtc:      {enabled: false}                          # PASID unused -> disabled
+  ddtc:      {entries: 1, assoc: full}
+  pdtc:      {enabled: true, entries: 1, assoc: full}                          # PASID unused -> disabled
   msi:       {entries: 16}
   lookup_mode: hybrid     # parallel / sequential / hybrid
   walk_trigger: demand    # demand / predictive
