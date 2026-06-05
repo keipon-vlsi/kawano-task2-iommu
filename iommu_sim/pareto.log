@@ -1,7 +1,7 @@
 
 === Pareto sweep: 192 configurations ===
   92/192 configurations meet wire rate
-  results table -> /space/kawano-task2-iommu/iommu_sim/results.csv
+  results table -> /space/kawano-task2-iommu/iommu_sim/results.csv  (6 swept-axis columns + metrics)
 
   -- area-energy Pareto front (wire-rate-meeting) --
   name       area_GE   E/xlate        area*E   N  buf  labels

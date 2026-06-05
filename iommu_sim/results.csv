@@ -1,193 +1,193 @@
-name,mode,wire_rate_met,on_pareto,area_ge,energy_per_translation,fom_area_x_energy,accesses_per_translation,peak_walks,peak_buffer,io_bridge_peak,mem_outstanding_peak,throughput_mps,avg_lat_ns,labels
-cfg104,nested,True,True,18970.1,290.105,5503322.9,0.2574,1,1,0,1,24.42,13.7,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg120,nested,True,False,19376.6,292.906,5675506.4,0.2574,1,1,0,1,24.42,13.7,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg136,nested,True,False,19800.8,290.619,5754492.0,0.2574,1,1,0,1,24.42,13.7,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg098,nested,True,False,20042.1,290.424,5820692.5,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg106,nested,True,False,20042.1,290.721,5826651.0,0.2641,2,1,0,2,24.42,10.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg152,nested,True,False,20207.3,293.420,5929210.6,0.2574,1,1,0,1,24.42,13.7,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg114,nested,True,False,20448.6,293.219,5995898.9,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg122,nested,True,False,20448.6,293.521,6002086.6,0.2641,2,1,0,2,24.42,10.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg130,nested,True,False,20872.8,290.937,6072676.5,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg138,nested,True,False,20872.8,291.235,6078882.0,0.2641,2,1,0,2,24.42,10.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg146,nested,True,False,21279.3,293.732,6250413.7,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg154,nested,True,False,21279.3,294.035,6256852.8,0.2641,2,1,0,2,24.42,10.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg168,nested,True,False,21462.2,291.647,6259390.7,0.2574,1,1,0,1,24.42,13.7,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg184,nested,True,False,21868.7,294.447,6439179.6,0.2574,1,1,0,1,24.42,13.7,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg100,nested,True,False,22186.1,290.722,6449990.1,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg108,nested,True,False,22186.1,291.165,6459800.8,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg162,nested,True,False,22534.2,291.965,6579205.4,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg170,nested,True,False,22534.2,292.262,6585904.8,0.2641,2,1,0,2,24.42,10.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg116,nested,True,False,22592.6,293.517,6631310.6,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg124,nested,True,False,22592.6,293.965,6641420.8,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg178,nested,True,False,22940.7,294.760,6762004.0,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg186,nested,True,False,22940.7,295.062,6768945.9,0.2641,2,1,0,2,24.42,10.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg132,nested,True,False,23016.8,291.236,6703323.9,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg140,nested,True,False,23016.8,291.678,6713501.9,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg148,nested,True,False,23423.3,294.031,6887175.1,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg156,nested,True,False,23423.3,294.479,6897657.1,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg164,nested,True,False,24678.2,292.264,7212552.1,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg172,nested,True,False,24678.2,292.706,7223464.9,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg180,nested,True,False,25084.7,295.059,7401464.9,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg188,nested,True,False,25084.7,295.506,7412690.3,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg102,nested,True,False,26474.1,291.320,7712429.3,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg110,nested,True,False,26474.1,291.762,7724136.2,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg118,nested,True,False,26880.6,294.115,7905978.0,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg126,nested,True,False,26880.6,294.563,7918007.1,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg046,nested,True,False,27304.8,495.878,13539862.3,2.0581,8,1,0,8,24.42,12.1,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg134,nested,True,False,27304.8,291.834,7968462.5,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg142,nested,True,False,27304.8,292.276,7980536.7,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg062,nested,True,False,27711.3,517.266,14334101.0,2.0581,8,1,0,8,24.42,12.1,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg150,nested,True,False,27711.3,294.629,8164541.9,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg158,nested,True,False,27711.3,295.076,8176942.7,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg105,nested,True,False,28186.1,541.990,15276562.0,0.2574,1,1,0,1,24.42,13.7,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg121,nested,True,False,28592.6,544.790,15576939.5,0.2574,1,1,0,1,24.42,13.7,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg078,nested,True,False,28966.2,496.906,14393497.4,2.0581,8,1,0,8,24.42,12.1,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg166,nested,True,False,28966.2,292.861,8483089.6,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg174,nested,True,False,28966.2,293.303,8495898.5,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg137,nested,True,False,29016.8,542.503,15741710.9,0.2574,1,1,0,1,24.42,13.7,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg099,nested,True,False,29258.1,542.308,15866883.5,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg107,nested,True,False,29258.1,542.605,15875581.9,0.2641,2,1,0,2,24.42,10.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg094,nested,True,False,29372.7,518.293,15223687.7,2.0581,8,1,0,8,24.42,12.1,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg182,nested,True,False,29372.7,295.656,8684230.5,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg190,nested,True,False,29372.7,296.104,8697374.8,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg153,nested,True,False,29423.3,545.304,16044623.6,0.2574,1,1,0,1,24.42,13.7,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg115,nested,True,False,29664.6,545.103,16170235.1,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg123,nested,True,False,29664.6,545.405,16179211.6,0.2641,2,1,0,2,24.42,10.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg131,nested,True,False,30088.8,542.821,16332847.5,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg139,nested,True,False,30088.8,543.119,16341792.9,0.2641,2,1,0,2,24.42,10.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg147,nested,True,False,30495.3,545.617,16638729.8,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg155,nested,True,False,30495.3,545.919,16647957.7,0.2641,2,1,0,2,24.42,10.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg169,nested,True,False,30678.2,543.531,16674569.6,0.2574,1,1,0,1,24.42,13.7,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg185,nested,True,False,31084.7,546.331,16982552.5,0.2574,1,1,0,1,24.42,13.7,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg101,nested,True,False,31402.1,542.607,17038974.6,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg109,nested,True,False,31402.1,543.049,17052860.6,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg163,nested,True,False,31750.2,543.849,17267336.2,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg171,nested,True,False,31750.2,544.146,17276775.5,0.2641,2,1,0,2,24.42,10.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg117,nested,True,False,31808.6,545.402,17348440.3,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg125,nested,True,False,31808.6,545.849,17362674.7,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg179,nested,True,False,32156.7,546.644,17578280.0,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg187,nested,True,False,32156.7,546.947,17588010.7,0.2641,2,1,0,2,24.42,10.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg133,nested,True,False,32232.8,543.120,17506288.4,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg141,nested,True,False,32232.8,543.563,17520541.7,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg149,nested,True,False,32639.3,545.915,17818284.8,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg157,nested,True,False,32639.3,546.363,17832890.9,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg165,nested,True,False,33894.2,544.148,18443476.5,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg173,nested,True,False,33894.2,544.590,18458464.5,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg181,nested,True,False,34300.7,546.943,18760534.4,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg189,nested,True,False,34300.7,547.390,18775884.0,0.2664,2,1,0,4,24.42,9.9,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg103,nested,True,False,35690.1,543.204,19387000.9,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg111,nested,True,False,35690.1,543.791,19407954.6,0.2686,2,1,0,6,24.42,10.5,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg119,nested,True,False,36096.6,545.999,19708694.8,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg127,nested,True,False,36096.6,546.592,19730078.4,0.2686,2,1,0,6,24.42,10.5,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg047,nested,True,False,36520.8,747.763,27308889.8,2.0581,8,1,0,8,24.42,12.1,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg135,nested,True,False,36520.8,543.718,19857014.1,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg143,nested,True,False,36520.8,544.305,19878455.4,0.2686,2,1,0,6,24.42,10.5,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg063,nested,True,False,36927.3,769.150,28402621.2,2.0581,8,1,0,8,24.42,12.1,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg151,nested,True,False,36927.3,546.513,20181238.7,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg159,nested,True,False,36927.3,547.105,20203114.4,0.2686,2,1,0,6,24.42,10.5,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg079,nested,True,False,38182.2,748.790,28590484.8,2.0581,8,1,0,8,24.42,12.1,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg167,nested,True,False,38182.2,544.745,20799601.0,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg175,nested,True,False,38182.2,545.333,20822017.8,0.2686,2,1,0,6,24.42,10.5,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg095,nested,True,False,38588.7,770.178,29720167.9,2.0581,8,1,0,8,24.42,12.1,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg183,nested,True,False,38588.7,547.541,21128887.1,0.2636,2,13,13,2,24.42,96.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg191,nested,True,False,38588.7,548.133,21151747.1,0.2686,2,1,0,6,24.42,10.5,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg000,nested,False,False,18970.1,1530.225,29028495.6,2.0069,1,16,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg008,nested,False,False,18970.1,1532.604,29073614.0,2.0109,1,16,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg096,nested,False,False,18970.1,289.808,5497683.1,0.2569,1,13,13,1,24.42,97.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg016,nested,False,False,19376.6,1552.071,30073791.4,2.0069,1,16,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg024,nested,False,False,19376.6,1554.492,30120698.2,2.0109,1,16,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg112,nested,False,False,19376.6,292.603,5669643.1,0.2569,1,13,13,1,24.42,97.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg032,nested,False,False,19800.8,1532.837,30351397.4,2.0069,1,16,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg040,nested,False,False,19800.8,1535.215,30398491.6,2.0109,1,16,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg128,nested,False,False,19800.8,290.322,5748605.2,0.2569,1,13,13,1,24.42,97.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg002,nested,False,False,20042.1,884.951,17736249.6,2.0136,2,16,16,2,9.57,254505.7,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg010,nested,False,False,20042.1,887.329,17783917.7,2.0176,2,16,16,2,9.57,254485.2,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg048,nested,False,False,20207.3,1554.682,31415902.3,2.0069,1,16,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg056,nested,False,False,20207.3,1557.103,31464820.1,2.0109,1,16,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg144,nested,False,False,20207.3,293.117,5923095.9,0.2569,1,13,13,1,24.42,97.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg018,nested,False,False,20448.6,906.486,18536324.9,2.0136,2,16,16,2,9.57,254505.7,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg026,nested,False,False,20448.6,908.906,18585826.8,2.0176,2,16,16,2,9.57,254485.2,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg034,nested,False,False,20872.8,886.261,18498743.9,2.0136,2,16,16,2,9.57,254505.7,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg042,nested,False,False,20872.8,888.639,18548387.7,2.0176,2,16,16,2,9.57,254485.2,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg050,nested,False,False,21279.3,907.796,19317241.3,2.0136,2,16,16,2,9.57,254505.7,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg058,nested,False,False,21279.3,910.217,19368754.2,2.0176,2,16,16,2,9.57,254485.2,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg064,nested,False,False,21462.2,1538.060,33010218.5,2.0069,1,16,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg072,nested,False,False,21462.2,1540.439,33061264.3,2.0109,1,16,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg160,nested,False,False,21462.2,291.349,6253010.0,0.2569,1,13,13,1,24.42,97.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg080,nested,False,False,21868.7,1559.906,34113141.5,2.0069,1,16,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg088,nested,False,False,21868.7,1562.327,34166081.3,2.0109,1,16,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg176,nested,False,False,21868.7,294.144,6432562.2,0.2569,1,13,13,1,24.42,97.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=16
-cfg004,nested,False,False,22186.1,563.016,12491120.1,2.0271,4,16,16,4,19.02,46996.7,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg012,nested,False,False,22186.1,565.394,12543887.5,2.0311,4,16,16,4,19.02,46935.2,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg066,nested,False,False,22534.2,888.881,20030263.0,2.0136,2,16,16,2,9.57,254505.7,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg074,nested,False,False,22534.2,891.260,20083858.4,2.0176,2,16,16,2,9.57,254485.2,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg020,nested,False,False,22592.6,584.396,13203000.0,2.0271,4,16,16,4,19.02,46996.7,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg028,nested,False,False,22592.6,586.817,13257692.1,2.0311,4,16,16,4,19.02,46935.2,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg082,nested,False,False,22940.7,910.416,20885604.8,2.0136,2,16,16,2,9.57,254505.7,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg090,nested,False,False,22940.7,912.837,20941139.7,2.0176,2,16,16,2,9.57,254485.2,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=16
-cfg036,nested,False,False,23016.8,563.676,12974008.7,2.0271,4,16,16,4,19.02,46996.7,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg044,nested,False,False,23016.8,566.054,13028751.8,2.0311,4,16,16,4,19.02,46935.2,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg052,nested,False,False,23423.3,585.055,13703917.3,2.0271,4,16,16,4,19.02,46996.7,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg060,nested,False,False,23423.3,587.476,13760620.4,2.0311,4,16,16,4,19.02,46935.2,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg068,nested,False,False,24678.2,564.995,13943072.9,2.0271,4,16,16,4,19.02,46996.7,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg076,nested,False,False,24678.2,567.373,14001767.6,2.0311,4,16,16,4,19.02,46935.2,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg084,nested,False,False,25084.7,586.374,14709039.0,2.0271,4,16,16,4,19.02,46996.7,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg092,nested,False,False,25084.7,588.795,14769764.1,2.0311,4,16,16,4,19.02,46935.2,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=16
-cfg006,nested,False,False,26474.1,493.147,13055601.3,2.0541,8,13,13,8,24.40,224.5,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg014,nested,False,False,26474.1,511.378,13538255.0,2.1976,8,4,3,8,24.40,26.4,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg022,nested,False,False,26880.6,514.492,13829824.8,2.0541,8,13,13,8,24.40,224.5,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg030,nested,False,False,26880.6,534.244,14360777.2,2.1976,8,4,3,8,24.40,26.4,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg038,nested,False,False,27304.8,493.661,13479304.6,2.0541,8,13,13,8,24.40,224.5,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg054,nested,False,False,27711.3,515.006,14271468.9,2.0541,8,13,13,8,24.40,224.5,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg001,nested,False,False,28186.1,2810.689,79222307.3,2.0069,1,32,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg009,nested,False,False,28186.1,2813.067,79289345.1,2.0109,1,32,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg097,nested,False,False,28186.1,541.692,15268182.2,0.2569,1,13,13,1,24.42,97.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg017,nested,False,False,28592.6,2832.535,80989413.9,2.0069,1,32,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg025,nested,False,False,28592.6,2834.955,81058630.8,2.0109,1,32,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg113,nested,False,False,28592.6,544.487,15568287.4,0.2569,1,13,13,1,24.42,97.3,caches.coalesce_factor=8; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg070,nested,False,False,28966.2,494.689,14329273.5,2.0541,8,13,13,8,24.40,224.5,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg033,nested,False,False,29016.8,2813.301,81632985.2,2.0069,1,32,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg041,nested,False,False,29016.8,2815.679,81701998.8,2.0109,1,32,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg129,nested,False,False,29016.8,542.206,15733084.2,0.2569,1,13,13,1,24.42,97.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg003,nested,False,False,29258.1,1527.337,44686946.1,2.0136,2,32,16,2,9.57,254505.7,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg011,nested,False,False,29258.1,1529.715,44756533.5,2.0176,2,32,16,2,9.57,254485.2,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg086,nested,False,False,29372.7,516.034,15157319.5,2.0541,8,13,13,8,24.40,224.5,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=16
-cfg049,nested,False,False,29423.3,2835.146,83419300.9,2.0069,1,32,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg057,nested,False,False,29423.3,2837.567,83490528.7,2.0109,1,32,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg145,nested,False,False,29423.3,545.001,16035720.1,0.2569,1,13,13,1,24.42,97.3,caches.coalesce_factor=8; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg019,nested,False,False,29664.6,1548.872,45946605.5,2.0136,2,32,16,2,9.57,254505.7,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg027,nested,False,False,29664.6,1551.293,46018417.5,2.0176,2,32,16,2,9.57,254485.2,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg035,nested,False,False,30088.8,1528.647,45995158.6,2.0136,2,32,16,2,9.57,254505.7,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg043,nested,False,False,30088.8,1531.026,46066721.8,2.0176,2,32,16,2,9.57,254485.2,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg051,nested,False,False,30495.3,1550.182,47273240.2,2.0136,2,32,16,2,9.57,254505.7,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg059,nested,False,False,30495.3,1552.603,47347063.2,2.0176,2,32,16,2,9.57,254485.2,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg065,nested,False,False,30678.2,2818.524,86467358.4,2.0069,1,32,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg073,nested,False,False,30678.2,2820.902,86540323.6,2.0109,1,32,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg161,nested,False,False,30678.2,543.234,16665448.9,0.2569,1,13,13,1,24.42,97.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg081,nested,False,False,31084.7,2840.370,88292092.2,2.0069,1,32,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg089,nested,False,False,31084.7,2842.790,88367342.1,2.0109,1,32,16,1,4.80,669585.2,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg177,nested,False,False,31084.7,546.029,16973146.3,0.2569,1,13,13,1,24.42,97.3,caches.coalesce_factor=8; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=1; buffers.iommu_req_buffer=32
-cfg005,nested,False,False,31402.1,886.364,27833665.7,2.0271,4,32,16,4,19.02,46996.7,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg013,nested,False,False,31402.1,888.742,27908352.4,2.0311,4,32,16,4,19.02,46935.2,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg067,nested,False,False,31750.2,1531.268,48618114.3,2.0136,2,32,16,2,9.57,254505.7,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg075,nested,False,False,31750.2,1533.646,48693629.0,2.0176,2,32,16,2,9.57,254485.2,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg021,nested,False,False,31808.6,907.744,28874016.5,2.0271,4,32,16,4,19.02,46996.7,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg029,nested,False,False,31808.6,910.164,28951018.7,2.0311,4,32,16,4,19.02,46935.2,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg083,nested,False,False,32156.7,1552.803,49933040.2,2.0136,2,32,16,2,9.57,254505.7,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg091,nested,False,False,32156.7,1555.223,50010885.2,2.0176,2,32,16,2,9.57,254485.2,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=2; buffers.iommu_req_buffer=32
-cfg037,nested,False,False,32232.8,887.023,28591243.6,2.0271,4,32,16,4,19.02,46996.7,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg045,nested,False,False,32232.8,889.402,28667906.1,2.0311,4,32,16,4,19.02,46935.2,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg053,nested,False,False,32639.3,908.403,29649623.1,2.0271,4,32,16,4,19.02,46996.7,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg061,nested,False,False,32639.3,910.824,29728636.3,2.0311,4,32,16,4,19.02,46935.2,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg069,nested,False,False,33894.2,888.342,30109686.7,2.0271,4,32,16,4,19.02,46996.7,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg077,nested,False,False,33894.2,890.721,30190300.7,2.0311,4,32,16,4,19.02,46935.2,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg085,nested,False,False,34300.7,909.722,31204123.6,2.0271,4,32,16,4,19.02,46996.7,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg093,nested,False,False,34300.7,912.143,31287158.8,2.0311,4,32,16,4,19.02,46935.2,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=4; buffers.iommu_req_buffer=32
-cfg007,nested,False,False,35690.1,745.188,26595830.9,2.0541,8,13,13,8,24.40,224.5,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg015,nested,False,False,35690.1,763.420,27246503.2,2.1976,8,4,3,8,24.40,26.4,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=4; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg023,nested,False,False,36096.6,766.533,27669221.3,2.0541,8,13,13,8,24.40,224.5,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg031,nested,False,False,36096.6,786.286,28382210.6,2.1976,8,4,3,8,24.40,26.4,caches.coalesce_factor=1; caches.iotlb.entries=32; caches.s1_pwc.l1.entries=8; prefetch.algo=next_line; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg039,nested,False,False,36520.8,745.702,27233648.1,2.0541,8,13,13,8,24.40,224.5,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg055,nested,False,False,36927.3,767.048,28324979.2,2.0541,8,13,13,8,24.40,224.5,caches.coalesce_factor=1; caches.iotlb.entries=64; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg071,nested,False,False,38182.2,746.731,28511844.6,2.0541,8,13,13,8,24.40,224.5,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=4; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=32
-cfg087,nested,False,False,38588.7,768.076,29639057.3,2.0541,8,13,13,8,24.40,224.5,caches.coalesce_factor=1; caches.iotlb.entries=128; caches.s1_pwc.l1.entries=8; prefetch.algo=False; walkers.num_walkers=8; buffers.iommu_req_buffer=32
+name,mode,wire_rate_met,on_pareto,caches.coalesce_factor,caches.iotlb.entries,caches.s1_pwc.l1.entries,prefetch.algo,walkers.num_walkers,buffers.iommu_req_buffer,area_ge,energy_per_translation,fom_area_x_energy,accesses_per_translation,peak_walks,peak_buffer,io_bridge_peak,mem_outstanding_peak,throughput_mps,avg_lat_ns
+cfg104,nested,True,True,8,32,4,next_line,1,16,18970.1,290.105,5503322.9,0.2574,1,1,0,1,24.42,13.7
+cfg120,nested,True,False,8,32,8,next_line,1,16,19376.6,292.906,5675506.4,0.2574,1,1,0,1,24.42,13.7
+cfg136,nested,True,False,8,64,4,next_line,1,16,19800.8,290.619,5754492.0,0.2574,1,1,0,1,24.42,13.7
+cfg098,nested,True,False,8,32,4,False,2,16,20042.1,290.424,5820692.5,0.2636,2,13,13,2,24.42,96.3
+cfg106,nested,True,False,8,32,4,next_line,2,16,20042.1,290.721,5826651.0,0.2641,2,1,0,2,24.42,10.3
+cfg152,nested,True,False,8,64,8,next_line,1,16,20207.3,293.420,5929210.6,0.2574,1,1,0,1,24.42,13.7
+cfg114,nested,True,False,8,32,8,False,2,16,20448.6,293.219,5995898.9,0.2636,2,13,13,2,24.42,96.3
+cfg122,nested,True,False,8,32,8,next_line,2,16,20448.6,293.521,6002086.6,0.2641,2,1,0,2,24.42,10.3
+cfg130,nested,True,False,8,64,4,False,2,16,20872.8,290.937,6072676.5,0.2636,2,13,13,2,24.42,96.3
+cfg138,nested,True,False,8,64,4,next_line,2,16,20872.8,291.235,6078882.0,0.2641,2,1,0,2,24.42,10.3
+cfg146,nested,True,False,8,64,8,False,2,16,21279.3,293.732,6250413.7,0.2636,2,13,13,2,24.42,96.3
+cfg154,nested,True,False,8,64,8,next_line,2,16,21279.3,294.035,6256852.8,0.2641,2,1,0,2,24.42,10.3
+cfg168,nested,True,False,8,128,4,next_line,1,16,21462.2,291.647,6259390.7,0.2574,1,1,0,1,24.42,13.7
+cfg184,nested,True,False,8,128,8,next_line,1,16,21868.7,294.447,6439179.6,0.2574,1,1,0,1,24.42,13.7
+cfg100,nested,True,False,8,32,4,False,4,16,22186.1,290.722,6449990.1,0.2636,2,13,13,2,24.42,96.3
+cfg108,nested,True,False,8,32,4,next_line,4,16,22186.1,291.165,6459800.8,0.2664,2,1,0,4,24.42,9.9
+cfg162,nested,True,False,8,128,4,False,2,16,22534.2,291.965,6579205.4,0.2636,2,13,13,2,24.42,96.3
+cfg170,nested,True,False,8,128,4,next_line,2,16,22534.2,292.262,6585904.8,0.2641,2,1,0,2,24.42,10.3
+cfg116,nested,True,False,8,32,8,False,4,16,22592.6,293.517,6631310.6,0.2636,2,13,13,2,24.42,96.3
+cfg124,nested,True,False,8,32,8,next_line,4,16,22592.6,293.965,6641420.8,0.2664,2,1,0,4,24.42,9.9
+cfg178,nested,True,False,8,128,8,False,2,16,22940.7,294.760,6762004.0,0.2636,2,13,13,2,24.42,96.3
+cfg186,nested,True,False,8,128,8,next_line,2,16,22940.7,295.062,6768945.9,0.2641,2,1,0,2,24.42,10.3
+cfg132,nested,True,False,8,64,4,False,4,16,23016.8,291.236,6703323.9,0.2636,2,13,13,2,24.42,96.3
+cfg140,nested,True,False,8,64,4,next_line,4,16,23016.8,291.678,6713501.9,0.2664,2,1,0,4,24.42,9.9
+cfg148,nested,True,False,8,64,8,False,4,16,23423.3,294.031,6887175.1,0.2636,2,13,13,2,24.42,96.3
+cfg156,nested,True,False,8,64,8,next_line,4,16,23423.3,294.479,6897657.1,0.2664,2,1,0,4,24.42,9.9
+cfg164,nested,True,False,8,128,4,False,4,16,24678.2,292.264,7212552.1,0.2636,2,13,13,2,24.42,96.3
+cfg172,nested,True,False,8,128,4,next_line,4,16,24678.2,292.706,7223464.9,0.2664,2,1,0,4,24.42,9.9
+cfg180,nested,True,False,8,128,8,False,4,16,25084.7,295.059,7401464.9,0.2636,2,13,13,2,24.42,96.3
+cfg188,nested,True,False,8,128,8,next_line,4,16,25084.7,295.506,7412690.3,0.2664,2,1,0,4,24.42,9.9
+cfg102,nested,True,False,8,32,4,False,8,16,26474.1,291.320,7712429.3,0.2636,2,13,13,2,24.42,96.3
+cfg110,nested,True,False,8,32,4,next_line,8,16,26474.1,291.762,7724136.2,0.2664,2,1,0,4,24.42,9.9
+cfg118,nested,True,False,8,32,8,False,8,16,26880.6,294.115,7905978.0,0.2636,2,13,13,2,24.42,96.3
+cfg126,nested,True,False,8,32,8,next_line,8,16,26880.6,294.563,7918007.1,0.2664,2,1,0,4,24.42,9.9
+cfg046,nested,True,False,1,64,4,next_line,8,16,27304.8,495.878,13539862.3,2.0581,8,1,0,8,24.42,12.1
+cfg134,nested,True,False,8,64,4,False,8,16,27304.8,291.834,7968462.5,0.2636,2,13,13,2,24.42,96.3
+cfg142,nested,True,False,8,64,4,next_line,8,16,27304.8,292.276,7980536.7,0.2664,2,1,0,4,24.42,9.9
+cfg062,nested,True,False,1,64,8,next_line,8,16,27711.3,517.266,14334101.0,2.0581,8,1,0,8,24.42,12.1
+cfg150,nested,True,False,8,64,8,False,8,16,27711.3,294.629,8164541.9,0.2636,2,13,13,2,24.42,96.3
+cfg158,nested,True,False,8,64,8,next_line,8,16,27711.3,295.076,8176942.7,0.2664,2,1,0,4,24.42,9.9
+cfg105,nested,True,False,8,32,4,next_line,1,32,28186.1,541.990,15276562.0,0.2574,1,1,0,1,24.42,13.7
+cfg121,nested,True,False,8,32,8,next_line,1,32,28592.6,544.790,15576939.5,0.2574,1,1,0,1,24.42,13.7
+cfg078,nested,True,False,1,128,4,next_line,8,16,28966.2,496.906,14393497.4,2.0581,8,1,0,8,24.42,12.1
+cfg166,nested,True,False,8,128,4,False,8,16,28966.2,292.861,8483089.6,0.2636,2,13,13,2,24.42,96.3
+cfg174,nested,True,False,8,128,4,next_line,8,16,28966.2,293.303,8495898.5,0.2664,2,1,0,4,24.42,9.9
+cfg137,nested,True,False,8,64,4,next_line,1,32,29016.8,542.503,15741710.9,0.2574,1,1,0,1,24.42,13.7
+cfg099,nested,True,False,8,32,4,False,2,32,29258.1,542.308,15866883.5,0.2636,2,13,13,2,24.42,96.3
+cfg107,nested,True,False,8,32,4,next_line,2,32,29258.1,542.605,15875581.9,0.2641,2,1,0,2,24.42,10.3
+cfg094,nested,True,False,1,128,8,next_line,8,16,29372.7,518.293,15223687.7,2.0581,8,1,0,8,24.42,12.1
+cfg182,nested,True,False,8,128,8,False,8,16,29372.7,295.656,8684230.5,0.2636,2,13,13,2,24.42,96.3
+cfg190,nested,True,False,8,128,8,next_line,8,16,29372.7,296.104,8697374.8,0.2664,2,1,0,4,24.42,9.9
+cfg153,nested,True,False,8,64,8,next_line,1,32,29423.3,545.304,16044623.6,0.2574,1,1,0,1,24.42,13.7
+cfg115,nested,True,False,8,32,8,False,2,32,29664.6,545.103,16170235.1,0.2636,2,13,13,2,24.42,96.3
+cfg123,nested,True,False,8,32,8,next_line,2,32,29664.6,545.405,16179211.6,0.2641,2,1,0,2,24.42,10.3
+cfg131,nested,True,False,8,64,4,False,2,32,30088.8,542.821,16332847.5,0.2636,2,13,13,2,24.42,96.3
+cfg139,nested,True,False,8,64,4,next_line,2,32,30088.8,543.119,16341792.9,0.2641,2,1,0,2,24.42,10.3
+cfg147,nested,True,False,8,64,8,False,2,32,30495.3,545.617,16638729.8,0.2636,2,13,13,2,24.42,96.3
+cfg155,nested,True,False,8,64,8,next_line,2,32,30495.3,545.919,16647957.7,0.2641,2,1,0,2,24.42,10.3
+cfg169,nested,True,False,8,128,4,next_line,1,32,30678.2,543.531,16674569.6,0.2574,1,1,0,1,24.42,13.7
+cfg185,nested,True,False,8,128,8,next_line,1,32,31084.7,546.331,16982552.5,0.2574,1,1,0,1,24.42,13.7
+cfg101,nested,True,False,8,32,4,False,4,32,31402.1,542.607,17038974.6,0.2636,2,13,13,2,24.42,96.3
+cfg109,nested,True,False,8,32,4,next_line,4,32,31402.1,543.049,17052860.6,0.2664,2,1,0,4,24.42,9.9
+cfg163,nested,True,False,8,128,4,False,2,32,31750.2,543.849,17267336.2,0.2636,2,13,13,2,24.42,96.3
+cfg171,nested,True,False,8,128,4,next_line,2,32,31750.2,544.146,17276775.5,0.2641,2,1,0,2,24.42,10.3
+cfg117,nested,True,False,8,32,8,False,4,32,31808.6,545.402,17348440.3,0.2636,2,13,13,2,24.42,96.3
+cfg125,nested,True,False,8,32,8,next_line,4,32,31808.6,545.849,17362674.7,0.2664,2,1,0,4,24.42,9.9
+cfg179,nested,True,False,8,128,8,False,2,32,32156.7,546.644,17578280.0,0.2636,2,13,13,2,24.42,96.3
+cfg187,nested,True,False,8,128,8,next_line,2,32,32156.7,546.947,17588010.7,0.2641,2,1,0,2,24.42,10.3
+cfg133,nested,True,False,8,64,4,False,4,32,32232.8,543.120,17506288.4,0.2636,2,13,13,2,24.42,96.3
+cfg141,nested,True,False,8,64,4,next_line,4,32,32232.8,543.563,17520541.7,0.2664,2,1,0,4,24.42,9.9
+cfg149,nested,True,False,8,64,8,False,4,32,32639.3,545.915,17818284.8,0.2636,2,13,13,2,24.42,96.3
+cfg157,nested,True,False,8,64,8,next_line,4,32,32639.3,546.363,17832890.9,0.2664,2,1,0,4,24.42,9.9
+cfg165,nested,True,False,8,128,4,False,4,32,33894.2,544.148,18443476.5,0.2636,2,13,13,2,24.42,96.3
+cfg173,nested,True,False,8,128,4,next_line,4,32,33894.2,544.590,18458464.5,0.2664,2,1,0,4,24.42,9.9
+cfg181,nested,True,False,8,128,8,False,4,32,34300.7,546.943,18760534.4,0.2636,2,13,13,2,24.42,96.3
+cfg189,nested,True,False,8,128,8,next_line,4,32,34300.7,547.390,18775884.0,0.2664,2,1,0,4,24.42,9.9
+cfg103,nested,True,False,8,32,4,False,8,32,35690.1,543.204,19387000.9,0.2636,2,13,13,2,24.42,96.3
+cfg111,nested,True,False,8,32,4,next_line,8,32,35690.1,543.791,19407954.6,0.2686,2,1,0,6,24.42,10.5
+cfg119,nested,True,False,8,32,8,False,8,32,36096.6,545.999,19708694.8,0.2636,2,13,13,2,24.42,96.3
+cfg127,nested,True,False,8,32,8,next_line,8,32,36096.6,546.592,19730078.4,0.2686,2,1,0,6,24.42,10.5
+cfg047,nested,True,False,1,64,4,next_line,8,32,36520.8,747.763,27308889.8,2.0581,8,1,0,8,24.42,12.1
+cfg135,nested,True,False,8,64,4,False,8,32,36520.8,543.718,19857014.1,0.2636,2,13,13,2,24.42,96.3
+cfg143,nested,True,False,8,64,4,next_line,8,32,36520.8,544.305,19878455.4,0.2686,2,1,0,6,24.42,10.5
+cfg063,nested,True,False,1,64,8,next_line,8,32,36927.3,769.150,28402621.2,2.0581,8,1,0,8,24.42,12.1
+cfg151,nested,True,False,8,64,8,False,8,32,36927.3,546.513,20181238.7,0.2636,2,13,13,2,24.42,96.3
+cfg159,nested,True,False,8,64,8,next_line,8,32,36927.3,547.105,20203114.4,0.2686,2,1,0,6,24.42,10.5
+cfg079,nested,True,False,1,128,4,next_line,8,32,38182.2,748.790,28590484.8,2.0581,8,1,0,8,24.42,12.1
+cfg167,nested,True,False,8,128,4,False,8,32,38182.2,544.745,20799601.0,0.2636,2,13,13,2,24.42,96.3
+cfg175,nested,True,False,8,128,4,next_line,8,32,38182.2,545.333,20822017.8,0.2686,2,1,0,6,24.42,10.5
+cfg095,nested,True,False,1,128,8,next_line,8,32,38588.7,770.178,29720167.9,2.0581,8,1,0,8,24.42,12.1
+cfg183,nested,True,False,8,128,8,False,8,32,38588.7,547.541,21128887.1,0.2636,2,13,13,2,24.42,96.3
+cfg191,nested,True,False,8,128,8,next_line,8,32,38588.7,548.133,21151747.1,0.2686,2,1,0,6,24.42,10.5
+cfg000,nested,False,False,1,32,4,False,1,16,18970.1,1530.225,29028495.6,2.0069,1,16,16,1,4.80,669585.2
+cfg008,nested,False,False,1,32,4,next_line,1,16,18970.1,1532.604,29073614.0,2.0109,1,16,16,1,4.80,669585.2
+cfg096,nested,False,False,8,32,4,False,1,16,18970.1,289.808,5497683.1,0.2569,1,13,13,1,24.42,97.3
+cfg016,nested,False,False,1,32,8,False,1,16,19376.6,1552.071,30073791.4,2.0069,1,16,16,1,4.80,669585.2
+cfg024,nested,False,False,1,32,8,next_line,1,16,19376.6,1554.492,30120698.2,2.0109,1,16,16,1,4.80,669585.2
+cfg112,nested,False,False,8,32,8,False,1,16,19376.6,292.603,5669643.1,0.2569,1,13,13,1,24.42,97.3
+cfg032,nested,False,False,1,64,4,False,1,16,19800.8,1532.837,30351397.4,2.0069,1,16,16,1,4.80,669585.2
+cfg040,nested,False,False,1,64,4,next_line,1,16,19800.8,1535.215,30398491.6,2.0109,1,16,16,1,4.80,669585.2
+cfg128,nested,False,False,8,64,4,False,1,16,19800.8,290.322,5748605.2,0.2569,1,13,13,1,24.42,97.3
+cfg002,nested,False,False,1,32,4,False,2,16,20042.1,884.951,17736249.6,2.0136,2,16,16,2,9.57,254505.7
+cfg010,nested,False,False,1,32,4,next_line,2,16,20042.1,887.329,17783917.7,2.0176,2,16,16,2,9.57,254485.2
+cfg048,nested,False,False,1,64,8,False,1,16,20207.3,1554.682,31415902.3,2.0069,1,16,16,1,4.80,669585.2
+cfg056,nested,False,False,1,64,8,next_line,1,16,20207.3,1557.103,31464820.1,2.0109,1,16,16,1,4.80,669585.2
+cfg144,nested,False,False,8,64,8,False,1,16,20207.3,293.117,5923095.9,0.2569,1,13,13,1,24.42,97.3
+cfg018,nested,False,False,1,32,8,False,2,16,20448.6,906.486,18536324.9,2.0136,2,16,16,2,9.57,254505.7
+cfg026,nested,False,False,1,32,8,next_line,2,16,20448.6,908.906,18585826.8,2.0176,2,16,16,2,9.57,254485.2
+cfg034,nested,False,False,1,64,4,False,2,16,20872.8,886.261,18498743.9,2.0136,2,16,16,2,9.57,254505.7
+cfg042,nested,False,False,1,64,4,next_line,2,16,20872.8,888.639,18548387.7,2.0176,2,16,16,2,9.57,254485.2
+cfg050,nested,False,False,1,64,8,False,2,16,21279.3,907.796,19317241.3,2.0136,2,16,16,2,9.57,254505.7
+cfg058,nested,False,False,1,64,8,next_line,2,16,21279.3,910.217,19368754.2,2.0176,2,16,16,2,9.57,254485.2
+cfg064,nested,False,False,1,128,4,False,1,16,21462.2,1538.060,33010218.5,2.0069,1,16,16,1,4.80,669585.2
+cfg072,nested,False,False,1,128,4,next_line,1,16,21462.2,1540.439,33061264.3,2.0109,1,16,16,1,4.80,669585.2
+cfg160,nested,False,False,8,128,4,False,1,16,21462.2,291.349,6253010.0,0.2569,1,13,13,1,24.42,97.3
+cfg080,nested,False,False,1,128,8,False,1,16,21868.7,1559.906,34113141.5,2.0069,1,16,16,1,4.80,669585.2
+cfg088,nested,False,False,1,128,8,next_line,1,16,21868.7,1562.327,34166081.3,2.0109,1,16,16,1,4.80,669585.2
+cfg176,nested,False,False,8,128,8,False,1,16,21868.7,294.144,6432562.2,0.2569,1,13,13,1,24.42,97.3
+cfg004,nested,False,False,1,32,4,False,4,16,22186.1,563.016,12491120.1,2.0271,4,16,16,4,19.02,46996.7
+cfg012,nested,False,False,1,32,4,next_line,4,16,22186.1,565.394,12543887.5,2.0311,4,16,16,4,19.02,46935.2
+cfg066,nested,False,False,1,128,4,False,2,16,22534.2,888.881,20030263.0,2.0136,2,16,16,2,9.57,254505.7
+cfg074,nested,False,False,1,128,4,next_line,2,16,22534.2,891.260,20083858.4,2.0176,2,16,16,2,9.57,254485.2
+cfg020,nested,False,False,1,32,8,False,4,16,22592.6,584.396,13203000.0,2.0271,4,16,16,4,19.02,46996.7
+cfg028,nested,False,False,1,32,8,next_line,4,16,22592.6,586.817,13257692.1,2.0311,4,16,16,4,19.02,46935.2
+cfg082,nested,False,False,1,128,8,False,2,16,22940.7,910.416,20885604.8,2.0136,2,16,16,2,9.57,254505.7
+cfg090,nested,False,False,1,128,8,next_line,2,16,22940.7,912.837,20941139.7,2.0176,2,16,16,2,9.57,254485.2
+cfg036,nested,False,False,1,64,4,False,4,16,23016.8,563.676,12974008.7,2.0271,4,16,16,4,19.02,46996.7
+cfg044,nested,False,False,1,64,4,next_line,4,16,23016.8,566.054,13028751.8,2.0311,4,16,16,4,19.02,46935.2
+cfg052,nested,False,False,1,64,8,False,4,16,23423.3,585.055,13703917.3,2.0271,4,16,16,4,19.02,46996.7
+cfg060,nested,False,False,1,64,8,next_line,4,16,23423.3,587.476,13760620.4,2.0311,4,16,16,4,19.02,46935.2
+cfg068,nested,False,False,1,128,4,False,4,16,24678.2,564.995,13943072.9,2.0271,4,16,16,4,19.02,46996.7
+cfg076,nested,False,False,1,128,4,next_line,4,16,24678.2,567.373,14001767.6,2.0311,4,16,16,4,19.02,46935.2
+cfg084,nested,False,False,1,128,8,False,4,16,25084.7,586.374,14709039.0,2.0271,4,16,16,4,19.02,46996.7
+cfg092,nested,False,False,1,128,8,next_line,4,16,25084.7,588.795,14769764.1,2.0311,4,16,16,4,19.02,46935.2
+cfg006,nested,False,False,1,32,4,False,8,16,26474.1,493.147,13055601.3,2.0541,8,13,13,8,24.40,224.5
+cfg014,nested,False,False,1,32,4,next_line,8,16,26474.1,511.378,13538255.0,2.1976,8,4,3,8,24.40,26.4
+cfg022,nested,False,False,1,32,8,False,8,16,26880.6,514.492,13829824.8,2.0541,8,13,13,8,24.40,224.5
+cfg030,nested,False,False,1,32,8,next_line,8,16,26880.6,534.244,14360777.2,2.1976,8,4,3,8,24.40,26.4
+cfg038,nested,False,False,1,64,4,False,8,16,27304.8,493.661,13479304.6,2.0541,8,13,13,8,24.40,224.5
+cfg054,nested,False,False,1,64,8,False,8,16,27711.3,515.006,14271468.9,2.0541,8,13,13,8,24.40,224.5
+cfg001,nested,False,False,1,32,4,False,1,32,28186.1,2810.689,79222307.3,2.0069,1,32,16,1,4.80,669585.2
+cfg009,nested,False,False,1,32,4,next_line,1,32,28186.1,2813.067,79289345.1,2.0109,1,32,16,1,4.80,669585.2
+cfg097,nested,False,False,8,32,4,False,1,32,28186.1,541.692,15268182.2,0.2569,1,13,13,1,24.42,97.3
+cfg017,nested,False,False,1,32,8,False,1,32,28592.6,2832.535,80989413.9,2.0069,1,32,16,1,4.80,669585.2
+cfg025,nested,False,False,1,32,8,next_line,1,32,28592.6,2834.955,81058630.8,2.0109,1,32,16,1,4.80,669585.2
+cfg113,nested,False,False,8,32,8,False,1,32,28592.6,544.487,15568287.4,0.2569,1,13,13,1,24.42,97.3
+cfg070,nested,False,False,1,128,4,False,8,16,28966.2,494.689,14329273.5,2.0541,8,13,13,8,24.40,224.5
+cfg033,nested,False,False,1,64,4,False,1,32,29016.8,2813.301,81632985.2,2.0069,1,32,16,1,4.80,669585.2
+cfg041,nested,False,False,1,64,4,next_line,1,32,29016.8,2815.679,81701998.8,2.0109,1,32,16,1,4.80,669585.2
+cfg129,nested,False,False,8,64,4,False,1,32,29016.8,542.206,15733084.2,0.2569,1,13,13,1,24.42,97.3
+cfg003,nested,False,False,1,32,4,False,2,32,29258.1,1527.337,44686946.1,2.0136,2,32,16,2,9.57,254505.7
+cfg011,nested,False,False,1,32,4,next_line,2,32,29258.1,1529.715,44756533.5,2.0176,2,32,16,2,9.57,254485.2
+cfg086,nested,False,False,1,128,8,False,8,16,29372.7,516.034,15157319.5,2.0541,8,13,13,8,24.40,224.5
+cfg049,nested,False,False,1,64,8,False,1,32,29423.3,2835.146,83419300.9,2.0069,1,32,16,1,4.80,669585.2
+cfg057,nested,False,False,1,64,8,next_line,1,32,29423.3,2837.567,83490528.7,2.0109,1,32,16,1,4.80,669585.2
+cfg145,nested,False,False,8,64,8,False,1,32,29423.3,545.001,16035720.1,0.2569,1,13,13,1,24.42,97.3
+cfg019,nested,False,False,1,32,8,False,2,32,29664.6,1548.872,45946605.5,2.0136,2,32,16,2,9.57,254505.7
+cfg027,nested,False,False,1,32,8,next_line,2,32,29664.6,1551.293,46018417.5,2.0176,2,32,16,2,9.57,254485.2
+cfg035,nested,False,False,1,64,4,False,2,32,30088.8,1528.647,45995158.6,2.0136,2,32,16,2,9.57,254505.7
+cfg043,nested,False,False,1,64,4,next_line,2,32,30088.8,1531.026,46066721.8,2.0176,2,32,16,2,9.57,254485.2
+cfg051,nested,False,False,1,64,8,False,2,32,30495.3,1550.182,47273240.2,2.0136,2,32,16,2,9.57,254505.7
+cfg059,nested,False,False,1,64,8,next_line,2,32,30495.3,1552.603,47347063.2,2.0176,2,32,16,2,9.57,254485.2
+cfg065,nested,False,False,1,128,4,False,1,32,30678.2,2818.524,86467358.4,2.0069,1,32,16,1,4.80,669585.2
+cfg073,nested,False,False,1,128,4,next_line,1,32,30678.2,2820.902,86540323.6,2.0109,1,32,16,1,4.80,669585.2
+cfg161,nested,False,False,8,128,4,False,1,32,30678.2,543.234,16665448.9,0.2569,1,13,13,1,24.42,97.3
+cfg081,nested,False,False,1,128,8,False,1,32,31084.7,2840.370,88292092.2,2.0069,1,32,16,1,4.80,669585.2
+cfg089,nested,False,False,1,128,8,next_line,1,32,31084.7,2842.790,88367342.1,2.0109,1,32,16,1,4.80,669585.2
+cfg177,nested,False,False,8,128,8,False,1,32,31084.7,546.029,16973146.3,0.2569,1,13,13,1,24.42,97.3
+cfg005,nested,False,False,1,32,4,False,4,32,31402.1,886.364,27833665.7,2.0271,4,32,16,4,19.02,46996.7
+cfg013,nested,False,False,1,32,4,next_line,4,32,31402.1,888.742,27908352.4,2.0311,4,32,16,4,19.02,46935.2
+cfg067,nested,False,False,1,128,4,False,2,32,31750.2,1531.268,48618114.3,2.0136,2,32,16,2,9.57,254505.7
+cfg075,nested,False,False,1,128,4,next_line,2,32,31750.2,1533.646,48693629.0,2.0176,2,32,16,2,9.57,254485.2
+cfg021,nested,False,False,1,32,8,False,4,32,31808.6,907.744,28874016.5,2.0271,4,32,16,4,19.02,46996.7
+cfg029,nested,False,False,1,32,8,next_line,4,32,31808.6,910.164,28951018.7,2.0311,4,32,16,4,19.02,46935.2
+cfg083,nested,False,False,1,128,8,False,2,32,32156.7,1552.803,49933040.2,2.0136,2,32,16,2,9.57,254505.7
+cfg091,nested,False,False,1,128,8,next_line,2,32,32156.7,1555.223,50010885.2,2.0176,2,32,16,2,9.57,254485.2
+cfg037,nested,False,False,1,64,4,False,4,32,32232.8,887.023,28591243.6,2.0271,4,32,16,4,19.02,46996.7
+cfg045,nested,False,False,1,64,4,next_line,4,32,32232.8,889.402,28667906.1,2.0311,4,32,16,4,19.02,46935.2
+cfg053,nested,False,False,1,64,8,False,4,32,32639.3,908.403,29649623.1,2.0271,4,32,16,4,19.02,46996.7
+cfg061,nested,False,False,1,64,8,next_line,4,32,32639.3,910.824,29728636.3,2.0311,4,32,16,4,19.02,46935.2
+cfg069,nested,False,False,1,128,4,False,4,32,33894.2,888.342,30109686.7,2.0271,4,32,16,4,19.02,46996.7
+cfg077,nested,False,False,1,128,4,next_line,4,32,33894.2,890.721,30190300.7,2.0311,4,32,16,4,19.02,46935.2
+cfg085,nested,False,False,1,128,8,False,4,32,34300.7,909.722,31204123.6,2.0271,4,32,16,4,19.02,46996.7
+cfg093,nested,False,False,1,128,8,next_line,4,32,34300.7,912.143,31287158.8,2.0311,4,32,16,4,19.02,46935.2
+cfg007,nested,False,False,1,32,4,False,8,32,35690.1,745.188,26595830.9,2.0541,8,13,13,8,24.40,224.5
+cfg015,nested,False,False,1,32,4,next_line,8,32,35690.1,763.420,27246503.2,2.1976,8,4,3,8,24.40,26.4
+cfg023,nested,False,False,1,32,8,False,8,32,36096.6,766.533,27669221.3,2.0541,8,13,13,8,24.40,224.5
+cfg031,nested,False,False,1,32,8,next_line,8,32,36096.6,786.286,28382210.6,2.1976,8,4,3,8,24.40,26.4
+cfg039,nested,False,False,1,64,4,False,8,32,36520.8,745.702,27233648.1,2.0541,8,13,13,8,24.40,224.5
+cfg055,nested,False,False,1,64,8,False,8,32,36927.3,767.048,28324979.2,2.0541,8,13,13,8,24.40,224.5
+cfg071,nested,False,False,1,128,4,False,8,32,38182.2,746.731,28511844.6,2.0541,8,13,13,8,24.40,224.5
+cfg087,nested,False,False,1,128,8,False,8,32,38588.7,768.076,29639057.3,2.0541,8,13,13,8,24.40,224.5

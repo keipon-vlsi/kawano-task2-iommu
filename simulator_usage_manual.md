@@ -281,7 +281,11 @@ RTL階層と1対1対応（design_doc §13）。各モジュールの役割・主
 | `peak_walks` / `peak_buffer` | 3c / 3d |
 | `io_bridge_peak` / `mem_outstanding_peak` | IOブリッジ／メモリ性能要求 |
 | `throughput_mps` / `avg_lat_ns` | スループット／平均レイテンシ |
-| `labels` | その構成で振った grid 軸の値 |
+
+列順は **`name,mode,wire_rate_met,on_pareto` → 振った grid 軸（各軸1列）→ メトリクス**。`space.yaml` の
+`grid:` に挙げた各軸が**それぞれ独立の列**になる（例：`caches.coalesce_factor`, `caches.iotlb.entries`,
+`caches.s1_pwc.l1.entries`, `prefetch.algo`, `walkers.num_walkers`, `buffers.iommu_req_buffer`）。
+スプレッドシートに貼ってそのまま列ごとにソート/フィルタしてアーキ比較できる（旧 `labels` まとめ列は廃止）。
 
 ### E.2 トレース CSV（`--emit-trace`）
 RTL テストベンチ刺激。1リクエスト/1イベント1行を時刻順：
@@ -300,7 +304,7 @@ RTL テストベンチ刺激。1リクエスト/1イベント1行を時刻順：
 - 灰点＝wire rate 達成構成、赤線＋点＝Pareto front、各点に `cfgNNN` 注記。
 - スループットは固定目標（ゲート）なので、達成群では面積・電力が同時最小化に縮約され、front が
   **単一点**に潰れることがある（design_doc §11 の通りで正常。全体散布は本図と `results.csv` で確認）。
-- 各構成の walker 数・キャッシュ容量など**ノブの違い**は `results.csv` の `labels` 列で確認する。
+- 各構成の walker 数・キャッシュ容量など**ノブの違い**は `results.csv` の**振った grid 軸ごとの列**で確認する（各軸1列）。
 
 ### E.4 `candidates/*.svh`（`--emit-candidates`）
 Pareto 代表点の**厳密 config を SystemVerilog `localparam`** 化（`IOTLB_ENTRIES`, `S1_PWC_*`,

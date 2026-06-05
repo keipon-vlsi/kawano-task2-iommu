@@ -172,21 +172,25 @@ def run_pareto(cfg_path, emit_candidates=False, plot=True):
     # ---- CSV table ----
     out_csv = os.path.join(os.path.dirname(os.path.abspath(cfg_path)), "..", "results.csv")
     out_csv = os.path.normpath(out_csv)
-    fields = ["name", "mode", "wire_rate_met", "on_pareto", "area_ge", "energy_per_translation",
-              "fom_area_x_energy", "accesses_per_translation", "peak_walks", "peak_buffer",
-              "io_bridge_peak", "mem_outstanding_peak", "throughput_mps", "avg_lat_ns"]
+    # one column per swept grid axis (split out of the old packed "labels"), so the
+    # table pastes straight into a spreadsheet for architecture comparison.
+    label_keys = list(rows[0]["labels"].keys()) if rows else []
+    id_fields = ["name", "mode", "wire_rate_met", "on_pareto"]
+    metric_fields = ["area_ge", "energy_per_translation", "fom_area_x_energy",
+                     "accesses_per_translation", "peak_walks", "peak_buffer",
+                     "io_bridge_peak", "mem_outstanding_peak", "throughput_mps", "avg_lat_ns"]
     with open(out_csv, "w", newline="") as f:
         wtr = csv.writer(f)
-        wtr.writerow(fields + ["labels"])
+        wtr.writerow(id_fields + label_keys + metric_fields)
         for r in sorted(rows, key=lambda x: (not x["wire_rate_met"], x["area_ge"])):
-            wtr.writerow([r["name"], r["mode"], r["wire_rate_met"], r["name"] in front_names,
-                          f"{r['area_ge']:.1f}", f"{r['energy_per_translation']:.3f}",
-                          f"{r['fom_area_x_energy']:.1f}", f"{r['accesses_per_translation']:.4f}",
-                          r["peak_walks"], r["peak_buffer"], r["io_bridge_peak"],
-                          r["mem_outstanding_peak"], f"{r['throughput_mps']:.2f}",
-                          f"{r['avg_lat_ns']:.1f}"]
-                         + ["; ".join(f"{k}={v}" for k, v in r["labels"].items())])
-    print(f"  results table -> {out_csv}")
+            ids = [r["name"], r["mode"], r["wire_rate_met"], r["name"] in front_names]
+            knobs = [r["labels"].get(k, "") for k in label_keys]
+            metrics = [f"{r['area_ge']:.1f}", f"{r['energy_per_translation']:.3f}",
+                       f"{r['fom_area_x_energy']:.1f}", f"{r['accesses_per_translation']:.4f}",
+                       r["peak_walks"], r["peak_buffer"], r["io_bridge_peak"],
+                       r["mem_outstanding_peak"], f"{r['throughput_mps']:.2f}", f"{r['avg_lat_ns']:.1f}"]
+            wtr.writerow(ids + knobs + metrics)
+    print(f"  results table -> {out_csv}  ({len(label_keys)} swept-axis columns + metrics)")
 
     # ---- print Pareto front ----
     print("\n  -- area-energy Pareto front (wire-rate-meeting) --")
