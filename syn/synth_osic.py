@@ -26,9 +26,16 @@ ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "syn" / "build"
 RESULTS = ROOT / "results"
 IMAGE = "hpretl/iic-osic-tools:latest"
-LIB = "/foss/pdks/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib"
-PERIOD_NS = 2.5          # 400 MHz target
+# cell library variant: hd=high-density (default), hs=high-speed, hdll=hd-low-leak,
+# ms/ls=medium/low speed. Override with STD_VARIANT=hs etc.
+VARIANT = os.environ.get("STD_VARIANT", "hd")
+CORNER = os.environ.get("STD_CORNER", "tt_025C_1v80")
+LIB = f"/foss/pdks/sky130A/libs.ref/sky130_fd_sc_{VARIANT}/lib/sky130_fd_sc_{VARIANT}__{CORNER}.lib"
+PERIOD_NS = float(os.environ.get("PERIOD_NS", "2.5"))   # 400 MHz target
 DROOT = "/foss/designs"  # mount point of the repo inside the container
+# NOTE: max-fanout limiting + buffer insertion + gate sizing happen in P&R
+# (OpenLane SYNTH_MAX_FANOUT / OpenROAD repair_design); this synth-only flow
+# reports the *unbuffered* worst case. Cell library variant = STD_VARIANT (hd/hs/...).
 
 
 def gen_scripts(name):

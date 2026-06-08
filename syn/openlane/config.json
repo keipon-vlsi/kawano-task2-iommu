@@ -1,14 +1,22 @@
 {
   "//": "OpenLane (or OpenLane2) config for a full sky130 P&R PPA run of the Full IOMMU config.",
-  "//run": "Run sv2v first (syn/synth.py emits syn/build/full.v), then point OpenLane here.",
+  "//run": "Run sv2v first (syn/synth.py or synth_osic.py emits syn/build/full.v), then point OpenLane here.",
   "DESIGN_NAME": "cfg_full",
   "VERILOG_FILES": ["dir::../build/full.v"],
   "CLOCK_PORT": "clk",
   "CLOCK_PERIOD": 2.5,
+  "PDK": "sky130A",
+  "STD_CELL_LIBRARY": "sky130_fd_sc_hd",
+
+  "//performance-knobs": "these drive buffering / sizing so high-fanout nets (e.g. the fanout-466 CAM reduction) get fixed",
+  "SYNTH_MAX_FANOUT": 16,
+  "MAX_FANOUT_CONSTRAINT": 16,
+  "MAX_TRANSITION_CONSTRAINT": 0.75,
+  "SYNTH_STRATEGY": "DELAY 0",
   "PL_TARGET_DENSITY": 0.45,
   "FP_PDN_VOFFSET": 7,
   "DESIGN_IS_CORE": true,
-  "PDK": "sky130A",
-  "STD_CELL_LIBRARY": "sky130_fd_sc_hd",
-  "//note": "Caches map to flip-flops here. For the SRAM-macro storage pattern, add the sky130 SRAM macros (EXTRA_LEFS/LIBS) and set the cache STORAGE=sram params + macro instantiation (later sub-experiment)."
+
+  "//note-library": "high-speed cells would be STD_CELL_LIBRARY=sky130_fd_sc_hs (needs a full open_pdks build; this volare build ships only sc_hd). High performance: tighter CLOCK_PERIOD + SYNTH_STRATEGY=DELAY + max-fanout/transition constraints + (optional) SYNTH_SIZING/resizer.",
+  "//note-sram": "for the SRAM-macro storage pattern, add the sky130 SRAM macros (EXTRA_LEFS/EXTRA_LIBS) and set the cache STORAGE=sram params + macro instantiation (later sub-experiment)."
 }
