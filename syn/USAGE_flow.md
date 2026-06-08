@@ -187,6 +187,11 @@ wirelength）を出力し、flow.py が `signoff/*.rpt` に分割。`--detailed`
   `ASSUMPTIONS.md` 参照。
 - **detailed_route が遅い/不安定**: 全 FF・数万セルの設計では時間がかかる。通常評価は
   global-route まで（`--detailed` 無し）で十分。
+- **途中で止めても report は出る**: 重い段（特に klayout のレイアウト描画は描画後に
+  ハングすることがある）には**タイムアウト**を入れてあり、コンテナを kill して継続する。
+  さらに集約レポート生成は `finally` で必ず実行されるので、**Ctrl-C や late-stage 失敗でも
+  `report.md` は完了済みの段だけで生成**される（ヘッダに「interrupted」注記が付く）。
+  完了済みの JSON 成果物は残っているので、再実行（冪等）すれば続きから埋まる。
 
 ---
 

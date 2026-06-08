@@ -1,0 +1,47 @@
+{
+  "config": "full",
+  "library": "hs",
+  "activity": "default (statistical toggle)",
+  "netlist": "post-synthesis (gate-level, no parasitics)",
+  "power": {
+    "by_category": {
+      "internal_W": 0.5194562,
+      "switching_W": 0.04367761,
+      "leakage_W": 1.912725e-05,
+      "total_W": 0.563153
+    },
+    "by_group": {
+      "sequential": {
+        "internal_W": 0.3155206,
+        "switching_W": 0.003526094,
+        "leakage_W": 1.745029e-05,
+        "total_W": 0.3190641
+      },
+      "combinational": {
+        "internal_W": 0.2039383,
+        "switching_W": 0.04015287,
+        "leakage_W": 1.676535e-06,
+        "total_W": 0.2440928
+      },
+      "clock": {
+        "internal_W": 0.0,
+        "switching_W": 0.0,
+        "leakage_W": 0.0,
+        "total_W": 0.0
+      },
+      "macro": {
+        "internal_W": 0.0,
+        "switching_W": 0.0,
+        "leakage_W": 0.0,
+        "total_W": 0.0
+      },
+      "pad": {
+        "internal_W": 0.0,
+        "switching_W": 0.0,
+        "leakage_W": 0.0,
+        "total_W": 0.0
+      }
+    },
+    "total_W": 0.563153
+  }
+}

@@ -1,0 +1,506 @@
+
+7. Printing statistics.
+
+=== $paramod$ea9ecafd1f9e706329f39b7fe15fb67aad3745de\iommu_core ===
+
+        +----------Local Count, excluding submodules.
+        |        +-Local Area, excluding submodules.
+        |        | 
+       55        - wires
+     2347        - wire bits
+       55        - public wires
+     2347        - public wire bits
+       31        - ports
+     1002        - port bits
+        3        - submodules
+        1        -   $paramod$37a148f94d9404ddf100f6257eb628f843fe7414\mem_if
+        1        -   $paramod$809284a308b3e749796f74586a9521f99c4362b7\walk_engine
+        1        -   $paramod$fe7b677254ce9ced0633d5bebda6c928797ec9e6\txn_buffer
+
+   Chip area for module '$paramod$ea9ecafd1f9e706329f39b7fe15fb67aad3745de\iommu_core': 0.000000
+     of which used for sequential elements: 0.000000 (-nan%)
+
+=== cfg_full ===
+
+        +----------Local Count, excluding submodules.
+        |        +-Local Area, excluding submodules.
+        |        | 
+       31        - wires
+     1002        - wire bits
+       31        - public wires
+     1002        - public wire bits
+       31        - ports
+     1002        - port bits
+        1        - submodules
+        1        -   $paramod$ea9ecafd1f9e706329f39b7fe15fb67aad3745de\iommu_core
+
+   Chip area for module '\cfg_full': 0.000000
+     of which used for sequential elements: 0.000000 (-nan%)
+
+=== $paramod$809284a308b3e749796f74586a9521f99c4362b7\walk_engine ===
+
+        +----------Local Count, excluding submodules.
+        |        +-Local Area, excluding submodules.
+        |        | 
+     1426        - wires
+     5503        - wire bits
+       69        - public wires
+     4146        - public wire bits
+       25        - ports
+     1300        - port bits
+     2047 1.88E+04 cells
+        1     9.59   sky130_fd_sc_hs__a211oi_1
+        1   11.189   sky130_fd_sc_hs__a21o_1
+       41   589.81   sky130_fd_sc_hs__a221o_1
+      641  9221.17   sky130_fd_sc_hs__a222oi_1
+       41  458.741   sky130_fd_sc_hs__a22o_1
+        9   71.928   sky130_fd_sc_hs__and2_1
+        1     9.59   sky130_fd_sc_hs__and3_1
+        2   25.574   sky130_fd_sc_hs__and3b_1
+        1   11.189   sky130_fd_sc_hs__and4_1
+        1    4.795   sky130_fd_sc_hs__clkinv_1
+        1   12.787   sky130_fd_sc_hs__maj3_1
+      643 3.08E+03   sky130_fd_sc_hs__nand2_1
+        2   15.984   sky130_fd_sc_hs__nand2b_1
+        4   19.181   sky130_fd_sc_hs__nor2_1
+        3   23.976   sky130_fd_sc_hs__nor2b_1
+        2   12.787   sky130_fd_sc_hs__nor3_1
+        3   28.771   sky130_fd_sc_hs__nor3b_1
+        1     9.59   sky130_fd_sc_hs__nor4_1
+        3   33.566   sky130_fd_sc_hs__nor4b_1
+      642 5.13E+03   sky130_fd_sc_hs__o21ai_1
+        1     9.59   sky130_fd_sc_hs__o21bai_1
+        1   11.189   sky130_fd_sc_hs__or4_1
+        1   11.189   sky130_fd_sc_hs__xnor2_1
+        1   27.173   sky130_fd_sc_hs__xnor3_1
+        4        - submodules
+        4        -   $paramod$5a082d6190c9732d9a9555542ab89f62eb4f5ac9\walker
+
+   Chip area for module '$paramod$809284a308b3e749796f74586a9521f99c4362b7\walk_engine': 18843.537600
+     of which used for sequential elements: 0.000000 (0.00%)
+
+=== $paramod$5a082d6190c9732d9a9555542ab89f62eb4f5ac9\walker ===
+
+        +----------Local Count, excluding submodules.
+        |        +-Local Area, excluding submodules.
+        |        | 
+     1312        - wires
+     3434        - wire bits
+       42        - public wires
+     2164        - public wire bits
+       25        - ports
+     1269        - port bits
+     1944 3.69E+04 cells
+       28  268.531   sky130_fd_sc_hs__a211oi_1
+      200  1278.72   sky130_fd_sc_hs__a21oi_1
+        1   12.787   sky130_fd_sc_hs__a221oi_1
+        7   67.133   sky130_fd_sc_hs__a22oi_1
+        1   11.189   sky130_fd_sc_hs__a2bb2oi_1
+        4   31.968   sky130_fd_sc_hs__and2_1
+        2   19.181   sky130_fd_sc_hs__and3_1
+        1   12.787   sky130_fd_sc_hs__and3b_1
+       62  297.302   sky130_fd_sc_hs__clkinv_1
+      661 2.43E+04   sky130_fd_sc_hs__dfrtp_1
+      488 7.02E+03   sky130_fd_sc_hs__mux2_1
+       21  100.699   sky130_fd_sc_hs__nand2_1
+        2   15.984   sky130_fd_sc_hs__nand2b_1
+        2   19.181   sky130_fd_sc_hs__nand3b_1
+      229  1.1E+03   sky130_fd_sc_hs__nor2_1
+        5    39.96   sky130_fd_sc_hs__nor2b_1
+        1    6.394   sky130_fd_sc_hs__nor3_1
+       56  626.573   sky130_fd_sc_hs__o2111ai_1
+        1   12.787   sky130_fd_sc_hs__o211a_2
+       56  537.062   sky130_fd_sc_hs__o211ai_1
+       56  447.552   sky130_fd_sc_hs__o21ai_1
+       28  313.286   sky130_fd_sc_hs__o2bb2ai_1
+        2   19.181   sky130_fd_sc_hs__o31ai_1
+       28  313.286   sky130_fd_sc_hs__o32ai_1
+        1   11.189   sky130_fd_sc_hs__xnor2_1
+        1   12.787   sky130_fd_sc_hs__xor2_1
+
+   Chip area for module '$paramod$5a082d6190c9732d9a9555542ab89f62eb4f5ac9\walker': 36894.268800
+     of which used for sequential elements: 24300.475200 (65.87%)
+
+=== $paramod$37a148f94d9404ddf100f6257eb628f843fe7414\mem_if ===
+
+        +----------Local Count, excluding submodules.
+        |        +-Local Area, excluding submodules.
+        |        | 
+       39        - wires
+     1210        - wire bits
+       21        - public wires
+     1192        - public wire bits
+       18        - ports
+     1155        - port bits
+       24   329.27 cells
+        1     9.59   sky130_fd_sc_hs__a211oi_1
+        1   11.189   sky130_fd_sc_hs__a21o_1
+        1   11.189   sky130_fd_sc_hs__a31o_1
+        1     9.59   sky130_fd_sc_hs__a31oi_1
+        1    7.992   sky130_fd_sc_hs__and2_1
+        1     9.59   sky130_fd_sc_hs__and3_1
+        1    4.795   sky130_fd_sc_hs__clkinv_1
+        4  147.053   sky130_fd_sc_hs__dfrtp_1
+        1   12.787   sky130_fd_sc_hs__mux2i_1
+        1     9.59   sky130_fd_sc_hs__nand3b_1
+        2     9.59   sky130_fd_sc_hs__nor2_1
+        3   23.976   sky130_fd_sc_hs__nor2b_1
+        1     9.59   sky130_fd_sc_hs__nor3b_1
+        1    7.992   sky130_fd_sc_hs__o21ai_1
+        4   44.755   sky130_fd_sc_hs__xnor2_1
+
+   Chip area for module '$paramod$37a148f94d9404ddf100f6257eb628f843fe7414\mem_if': 329.270400
+     of which used for sequential elements: 147.052800 (44.66%)
+
+=== $paramod$a560f96f7516124efa77455eef65d6df836811e0\cache_store ===
+
+        +----------Local Count, excluding submodules.
+        |        +-Local Area, excluding submodules.
+        |        | 
+     9060        - wires
+    16847        - wire bits
+      225        - public wires
+     8012        - public wire bits
+       10        - ports
+      240        - port bits
+    16500  4.2E+05 cells
+       13  187.013   sky130_fd_sc_hs__a2111o_1
+       81  906.293   sky130_fd_sc_hs__a2111oi_1
+      134 1.29E+03   sky130_fd_sc_hs__a211oi_1
+        2   25.574   sky130_fd_sc_hs__a21bo_1
+        2   22.378   sky130_fd_sc_hs__a21boi_1
+        2   22.378   sky130_fd_sc_hs__a21o_1
+      117  748.051   sky130_fd_sc_hs__a21oi_1
+        9   129.47   sky130_fd_sc_hs__a221o_1
+      117  1.5E+03   sky130_fd_sc_hs__a221oi_1
+      495  7912.08   sky130_fd_sc_hs__a222o_1
+     1615 2.32E+04   sky130_fd_sc_hs__a222oi_1
+      108  1208.39   sky130_fd_sc_hs__a22o_1
+     2667 2.56E+04   sky130_fd_sc_hs__a22oi_1
+       22  246.154   sky130_fd_sc_hs__a2bb2oi_1
+        2   22.378   sky130_fd_sc_hs__a311oi_1
+       17   190.21   sky130_fd_sc_hs__a31o_1
+       12  115.085   sky130_fd_sc_hs__a31oi_1
+        1   12.787   sky130_fd_sc_hs__a32o_1
+        4   44.755   sky130_fd_sc_hs__a41oi_1
+        4   31.968   sky130_fd_sc_hs__and2_1
+       31  297.302   sky130_fd_sc_hs__and3_1
+      107  1.2E+03   sky130_fd_sc_hs__and4_1
+       11  158.242   sky130_fd_sc_hs__and4b_1
+       16  255.744   sky130_fd_sc_hs__and4bb_1
+      138  661.738   sky130_fd_sc_hs__clkinv_1
+      137 5.04E+03   sky130_fd_sc_hs__dfrtp_1
+     7488 3.23E+05   sky130_fd_sc_hs__edfxtp_1
+       32  460.339   sky130_fd_sc_hs__mux2_1
+      721 3.46E+03   sky130_fd_sc_hs__nand2_1
+        2   15.984   sky130_fd_sc_hs__nand2b_1
+      236 1.89E+03   sky130_fd_sc_hs__nand3_1
+        1     9.59   sky130_fd_sc_hs__nand3b_1
+      796 7.63E+03   sky130_fd_sc_hs__nand4_1
+       15  167.832   sky130_fd_sc_hs__nand4b_1
+      161  772.027   sky130_fd_sc_hs__nor2_1
+        1    7.992   sky130_fd_sc_hs__nor2b_1
+      330 2.11E+03   sky130_fd_sc_hs__nor3_1
+        2   19.181   sky130_fd_sc_hs__nor3b_1
+      134 1.29E+03   sky130_fd_sc_hs__nor4_1
+       24  268.531   sky130_fd_sc_hs__nor4b_1
+        7    89.51   sky130_fd_sc_hs__o2111a_1
+       17   190.21   sky130_fd_sc_hs__o2111ai_1
+        9   86.314   sky130_fd_sc_hs__o211ai_1
+       44  421.978   sky130_fd_sc_hs__o21a_1
+       74  591.408   sky130_fd_sc_hs__o21ai_1
+        1   12.787   sky130_fd_sc_hs__o21ba_1
+       13  124.675   sky130_fd_sc_hs__o21bai_1
+       29  417.182   sky130_fd_sc_hs__o221a_1
+       26  332.467   sky130_fd_sc_hs__o221ai_1
+        1   12.787   sky130_fd_sc_hs__o22a_1
+       87  834.365   sky130_fd_sc_hs__o22ai_1
+       40  447.552   sky130_fd_sc_hs__o2bb2ai_1
+        1   11.189   sky130_fd_sc_hs__o311ai_1
+        9  100.699   sky130_fd_sc_hs__o31a_1
+       34  326.074   sky130_fd_sc_hs__o31ai_1
+        3   38.362   sky130_fd_sc_hs__o32a_1
+       69  772.027   sky130_fd_sc_hs__o32ai_1
+        9  100.699   sky130_fd_sc_hs__o41ai_1
+        2   15.984   sky130_fd_sc_hs__or2_1
+       35  335.664   sky130_fd_sc_hs__or3_1
+       22  246.154   sky130_fd_sc_hs__or4_1
+      153 1.71E+03   sky130_fd_sc_hs__xnor2_1
+        8  102.298   sky130_fd_sc_hs__xor2_1
+
+   Chip area for module '$paramod$a560f96f7516124efa77455eef65d6df836811e0\cache_store': 419597.582400
+     of which used for sequential elements: 328194.676800 (78.22%)
+
+=== $paramod$62969bf2fae3d069919dd4964750fff34416153a\cache_store ===
+
+        +----------Local Count, excluding submodules.
+        |        +-Local Area, excluding submodules.
+        |        | 
+     5048        - wires
+     7102        - wire bits
+       66        - public wires
+     2120        - public wire bits
+       10        - ports
+      216        - port bits
+     6739 1.19E+05 cells
+        4   57.542   sky130_fd_sc_hs__a2111o_1
+      241  2.7E+03   sky130_fd_sc_hs__a2111oi_1
+        1   12.787   sky130_fd_sc_hs__a211o_1
+       74   709.69   sky130_fd_sc_hs__a211oi_1
+      154  984.614   sky130_fd_sc_hs__a21oi_1
+       56  805.594   sky130_fd_sc_hs__a221o_1
+      150  1918.08   sky130_fd_sc_hs__a221oi_1
+        1   15.984   sky130_fd_sc_hs__a222o_1
+        8  115.085   sky130_fd_sc_hs__a222oi_1
+       51  570.629   sky130_fd_sc_hs__a22o_1
+      279 2.68E+03   sky130_fd_sc_hs__a22oi_1
+      154 1.72E+03   sky130_fd_sc_hs__a2bb2oi_1
+        2   22.378   sky130_fd_sc_hs__a311oi_1
+        2   19.181   sky130_fd_sc_hs__a31oi_1
+        2   22.378   sky130_fd_sc_hs__a41oi_1
+       11   87.912   sky130_fd_sc_hs__and2_1
+        2   19.181   sky130_fd_sc_hs__and3_1
+       19  212.587   sky130_fd_sc_hs__and4_1
+        3   43.157   sky130_fd_sc_hs__and4b_1
+        1   15.984   sky130_fd_sc_hs__and4bb_1
+      449 2.15E+03   sky130_fd_sc_hs__clkinv_1
+       49  1.8E+03   sky130_fd_sc_hs__dfrtp_1
+     1680 7.25E+04   sky130_fd_sc_hs__edfxtp_1
+        1   12.787   sky130_fd_sc_hs__mux2i_1
+      272  1.3E+03   sky130_fd_sc_hs__nand2_1
+      342 2.73E+03   sky130_fd_sc_hs__nand2b_1
+       25    199.8   sky130_fd_sc_hs__nand3_1
+        9   86.314   sky130_fd_sc_hs__nand3b_1
+      159 1.52E+03   sky130_fd_sc_hs__nand4_1
+       17   190.21   sky130_fd_sc_hs__nand4b_1
+        5   71.928   sky130_fd_sc_hs__nand4bb_1
+      225  1078.92   sky130_fd_sc_hs__nor2_1
+      606 4.84E+03   sky130_fd_sc_hs__nor2b_1
+       94  600.998   sky130_fd_sc_hs__nor3_1
+        1     9.59   sky130_fd_sc_hs__nor3b_1
+      146  1.4E+03   sky130_fd_sc_hs__nor4_1
+       10  111.888   sky130_fd_sc_hs__nor4b_1
+        8  102.298   sky130_fd_sc_hs__o2111a_1
+      239 2.67E+03   sky130_fd_sc_hs__o2111ai_1
+        2   25.574   sky130_fd_sc_hs__o211a_2
+      126  1208.39   sky130_fd_sc_hs__o211ai_1
+        3   28.771   sky130_fd_sc_hs__o21a_1
+        9   71.928   sky130_fd_sc_hs__o21ai_1
+        2   25.574   sky130_fd_sc_hs__o21ba_1
+        3   28.771   sky130_fd_sc_hs__o21bai_1
+        4   57.542   sky130_fd_sc_hs__o221a_1
+      149 1.91E+03   sky130_fd_sc_hs__o221ai_1
+        6   76.723   sky130_fd_sc_hs__o22a_1
+      408 3.91E+03   sky130_fd_sc_hs__o22ai_1
+      156 1.75E+03   sky130_fd_sc_hs__o2bb2ai_1
+        1   11.189   sky130_fd_sc_hs__o311ai_1
+        3   28.771   sky130_fd_sc_hs__o31ai_1
+        8    89.51   sky130_fd_sc_hs__o32ai_1
+        2   28.771   sky130_fd_sc_hs__o41a_1
+        3   33.566   sky130_fd_sc_hs__o41ai_1
+        6   47.952   sky130_fd_sc_hs__or2_1
+        3   28.771   sky130_fd_sc_hs__or3_1
+        1   12.787   sky130_fd_sc_hs__or3b_1
+       37  413.986   sky130_fd_sc_hs__or4_1
+        5   71.928   sky130_fd_sc_hs__or4b_1
+      244 2.73E+03   sky130_fd_sc_hs__xnor2_1
+        6   76.723   sky130_fd_sc_hs__xor2_1
+
+   Chip area for module '$paramod$62969bf2fae3d069919dd4964750fff34416153a\cache_store': 118791.489600
+     of which used for sequential elements: 74304.820800 (62.55%)
+
+=== $paramod$fe7b677254ce9ced0633d5bebda6c928797ec9e6\txn_buffer ===
+
+        +----------Local Count, excluding submodules.
+        |        +-Local Area, excluding submodules.
+        |        | 
+     9647        - wires
+    15166        - wire bits
+      172        - public wires
+     5051        - public wire bits
+       32        - ports
+     1083        - port bits
+    12625 1.84E+05 cells
+       10  143.856   sky130_fd_sc_hs__a2111o_1
+      430 4.81E+03   sky130_fd_sc_hs__a2111oi_1
+        4   51.149   sky130_fd_sc_hs__a211o_1
+      150  1438.56   sky130_fd_sc_hs__a211oi_1
+       10  127.872   sky130_fd_sc_hs__a21bo_1
+        2   22.378   sky130_fd_sc_hs__a21boi_1
+       18  201.398   sky130_fd_sc_hs__a21o_1
+     1384 8.85E+03   sky130_fd_sc_hs__a21oi_1
+       63  906.293   sky130_fd_sc_hs__a221o_1
+       90 1.15E+03   sky130_fd_sc_hs__a221oi_1
+      357 5.71E+03   sky130_fd_sc_hs__a222o_1
+      374 5.38E+03   sky130_fd_sc_hs__a222oi_1
+       41  458.741   sky130_fd_sc_hs__a22o_1
+     1243 1.19E+04   sky130_fd_sc_hs__a22oi_1
+       96 1.07E+03   sky130_fd_sc_hs__a2bb2oi_1
+        1   12.787   sky130_fd_sc_hs__a311o_1
+        4   44.755   sky130_fd_sc_hs__a31o_1
+       29  278.122   sky130_fd_sc_hs__a31oi_1
+        1   12.787   sky130_fd_sc_hs__a32o_1
+       35  391.608   sky130_fd_sc_hs__a32oi_1
+      134 1.07E+03   sky130_fd_sc_hs__and2_1
+      404 3.87E+03   sky130_fd_sc_hs__and3_1
+      238 2.66E+03   sky130_fd_sc_hs__and4_1
+        4   57.542   sky130_fd_sc_hs__and4b_1
+        6   95.904   sky130_fd_sc_hs__and4bb_1
+      157  752.846   sky130_fd_sc_hs__clkinv_1
+      224 8.23E+03   sky130_fd_sc_hs__dfrtp_1
+        1   36.763   sky130_fd_sc_hs__dfstp_1
+     1872 8.08E+04   sky130_fd_sc_hs__edfxtp_1
+       34  434.765   sky130_fd_sc_hs__maj3_1
+       39  561.038   sky130_fd_sc_hs__mux2_1
+      991 4.75E+03   sky130_fd_sc_hs__nand2_1
+      157 1.25E+03   sky130_fd_sc_hs__nand2b_1
+      302 2.41E+03   sky130_fd_sc_hs__nand3_1
+       37  354.845   sky130_fd_sc_hs__nand3b_1
+      276  2646.95   sky130_fd_sc_hs__nand4_1
+       15  167.832   sky130_fd_sc_hs__nand4b_1
+        3   43.157   sky130_fd_sc_hs__nand4bb_1
+      631 3.03E+03   sky130_fd_sc_hs__nor2_1
+       36  287.712   sky130_fd_sc_hs__nor2b_1
+      245 1.57E+03   sky130_fd_sc_hs__nor3_1
+       16  153.446   sky130_fd_sc_hs__nor3b_1
+      181 1.74E+03   sky130_fd_sc_hs__nor4_1
+        8    89.51   sky130_fd_sc_hs__nor4b_1
+       49  626.573   sky130_fd_sc_hs__o2111a_1
+      111 1.24E+03   sky130_fd_sc_hs__o2111ai_1
+       74   709.69   sky130_fd_sc_hs__o211ai_1
+       51   489.11   sky130_fd_sc_hs__o21a_1
+      246 1.97E+03   sky130_fd_sc_hs__o21ai_1
+       23  220.579   sky130_fd_sc_hs__o21bai_1
+       93 1.34E+03   sky130_fd_sc_hs__o221a_1
+       66  843.955   sky130_fd_sc_hs__o221ai_1
+        3   38.362   sky130_fd_sc_hs__o22a_1
+      403 3.86E+03   sky130_fd_sc_hs__o22ai_1
+      183  2047.55   sky130_fd_sc_hs__o2bb2ai_1
+        1   11.189   sky130_fd_sc_hs__o31a_1
+       19  182.218   sky130_fd_sc_hs__o31ai_1
+        1   12.787   sky130_fd_sc_hs__o32a_1
+       28  223.776   sky130_fd_sc_hs__or2_1
+       12  115.085   sky130_fd_sc_hs__or3_1
+        1   12.787   sky130_fd_sc_hs__or3b_1
+       16  179.021   sky130_fd_sc_hs__or4_1
+        3   43.157   sky130_fd_sc_hs__or4b_1
+      804    9E+03   sky130_fd_sc_hs__xnor2_1
+        2   54.346   sky130_fd_sc_hs__xnor3_1
+       82  1048.55   sky130_fd_sc_hs__xor2_1
+        1    30.37   sky130_fd_sc_hs__xor3_1
+        3        - submodules
+        2        -   $paramod$62969bf2fae3d069919dd4964750fff34416153a\cache_store
+        1        -   $paramod$a560f96f7516124efa77455eef65d6df836811e0\cache_store
+
+   Chip area for module '$paramod$fe7b677254ce9ced0633d5bebda6c928797ec9e6\txn_buffer': 184341.873600
+     of which used for sequential elements: 89061.249600 (48.31%)
+
+=== design hierarchy ===
+
+        +----------Count including submodules.
+        |        +-Area including submodules.
+        |        | 
+    52450 1.01E+06 cfg_full
+       24   329.27   $paramod$37a148f94d9404ddf100f6257eb628f843fe7414\mem_if
+     2047 1.88E+04   $paramod$809284a308b3e749796f74586a9521f99c4362b7\walk_engine
+     1944 3.69E+04     $paramod$5a082d6190c9732d9a9555542ab89f62eb4f5ac9\walker
+    12625 1.84E+05   $paramod$fe7b677254ce9ced0633d5bebda6c928797ec9e6\txn_buffer
+     6739 1.19E+05     $paramod$62969bf2fae3d069919dd4964750fff34416153a\cache_store
+    16500  4.2E+05     $paramod$a560f96f7516124efa77455eef65d6df836811e0\cache_store
+
+        +----------Count including submodules.
+        |        +-Area including submodules.
+        |        | 
+    35602        - wires
+    70015        - wire bits
+      873        - public wires
+    34646        - public wire bits
+      267        - ports
+    11290        - port bits
+        -        - memories
+        -        - memory bits
+        -        - processes
+    52450 1.01E+06 cells
+       31  445.954   sky130_fd_sc_hs__a2111o_1
+      993 1.11E+04   sky130_fd_sc_hs__a2111oi_1
+        6   76.723   sky130_fd_sc_hs__a211o_1
+      546 5.24E+03   sky130_fd_sc_hs__a211oi_1
+       12  153.446   sky130_fd_sc_hs__a21bo_1
+        4   44.755   sky130_fd_sc_hs__a21boi_1
+       22  246.154   sky130_fd_sc_hs__a21o_1
+     2609 1.67E+04   sky130_fd_sc_hs__a21oi_1
+      225  3236.76   sky130_fd_sc_hs__a221o_1
+      511 6.53E+03   sky130_fd_sc_hs__a221oi_1
+      854 1.37E+04   sky130_fd_sc_hs__a222o_1
+     2646 3.81E+04   sky130_fd_sc_hs__a222oi_1
+      292  3267.13   sky130_fd_sc_hs__a22o_1
+     4496 4.31E+04   sky130_fd_sc_hs__a22oi_1
+      430 4.81E+03   sky130_fd_sc_hs__a2bb2oi_1
+        1   12.787   sky130_fd_sc_hs__a311o_1
+        6   67.133   sky130_fd_sc_hs__a311oi_1
+       22  246.154   sky130_fd_sc_hs__a31o_1
+       46  441.158   sky130_fd_sc_hs__a31oi_1
+        2   25.574   sky130_fd_sc_hs__a32o_1
+       35  391.608   sky130_fd_sc_hs__a32oi_1
+        8    89.51   sky130_fd_sc_hs__a41oi_1
+      186 1.49E+03   sky130_fd_sc_hs__and2_1
+      449  4306.09   sky130_fd_sc_hs__and3_1
+        6   76.723   sky130_fd_sc_hs__and3b_1
+      384  4.3E+03   sky130_fd_sc_hs__and4_1
+       21  302.098   sky130_fd_sc_hs__and4b_1
+       24  383.616   sky130_fd_sc_hs__and4bb_1
+     1443 6.92E+03   sky130_fd_sc_hs__clkinv_1
+     3107 1.14E+05   sky130_fd_sc_hs__dfrtp_1
+        1   36.763   sky130_fd_sc_hs__dfstp_1
+    12720 5.49E+05   sky130_fd_sc_hs__edfxtp_1
+       35  447.552   sky130_fd_sc_hs__maj3_1
+     2023 2.91E+04   sky130_fd_sc_hs__mux2_1
+        3   38.362   sky130_fd_sc_hs__mux2i_1
+     2983 1.43E+04   sky130_fd_sc_hs__nand2_1
+      853 6.82E+03   sky130_fd_sc_hs__nand2b_1
+      588  4.7E+03   sky130_fd_sc_hs__nand3_1
+       65  623.376   sky130_fd_sc_hs__nand3b_1
+     1390 1.33E+04   sky130_fd_sc_hs__nand4_1
+       64  716.083   sky130_fd_sc_hs__nand4b_1
+       13  187.013   sky130_fd_sc_hs__nand4bb_1
+     2164 1.04E+04   sky130_fd_sc_hs__nor2_1
+     1275  10189.8   sky130_fd_sc_hs__nor2b_1
+      769 4.92E+03   sky130_fd_sc_hs__nor3_1
+       24   230.17   sky130_fd_sc_hs__nor3b_1
+      608 5.83E+03   sky130_fd_sc_hs__nor4_1
+       55  615.384   sky130_fd_sc_hs__nor4b_1
+       72  920.678   sky130_fd_sc_hs__o2111a_1
+      830 9.29E+03   sky130_fd_sc_hs__o2111ai_1
+        8  102.298   sky130_fd_sc_hs__o211a_2
+      559 5.36E+03   sky130_fd_sc_hs__o211ai_1
+      101   968.63   sky130_fd_sc_hs__o21a_1
+     1205  9630.36   sky130_fd_sc_hs__o21ai_1
+        5   63.936   sky130_fd_sc_hs__o21ba_1
+       43  412.387   sky130_fd_sc_hs__o21bai_1
+      130 1.87E+03   sky130_fd_sc_hs__o221a_1
+      390 4.99E+03   sky130_fd_sc_hs__o221ai_1
+       16  204.595   sky130_fd_sc_hs__o22a_1
+     1306 1.25E+04   sky130_fd_sc_hs__o22ai_1
+      647 7.24E+03   sky130_fd_sc_hs__o2bb2ai_1
+        3   33.566   sky130_fd_sc_hs__o311ai_1
+       10  111.888   sky130_fd_sc_hs__o31a_1
+       67  642.557   sky130_fd_sc_hs__o31ai_1
+        4   51.149   sky130_fd_sc_hs__o32a_1
+      197  2.2E+03   sky130_fd_sc_hs__o32ai_1
+        4   57.542   sky130_fd_sc_hs__o41a_1
+       15  167.832   sky130_fd_sc_hs__o41ai_1
+       42  335.664   sky130_fd_sc_hs__or2_1
+       53  508.291   sky130_fd_sc_hs__or3_1
+        3   38.362   sky130_fd_sc_hs__or3b_1
+      113 1.26E+03   sky130_fd_sc_hs__or4_1
+       13  187.013   sky130_fd_sc_hs__or4b_1
+     1454 1.63E+04   sky130_fd_sc_hs__xnor2_1
+        3   81.518   sky130_fd_sc_hs__xnor3_1
+      106 1.36E+03   sky130_fd_sc_hs__xor2_1
+        1    30.37   sky130_fd_sc_hs__xor3_1
+        1 1.01E+06 submodules
+        1 1.01E+06   $paramod$ea9ecafd1f9e706329f39b7fe15fb67aad3745de\iommu_core
+
+   Chip area for top module '\cfg_full': 1008272.318400
+     of which used for sequential elements: 663214.521600 (65.78%)
+

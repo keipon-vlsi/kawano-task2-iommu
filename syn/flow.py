@@ -57,14 +57,31 @@ def sh(cmd, env=None, log=None, cwd=None):
     return r.returncode, out
 
 
-def docker_run(envs, bash_cmd):
-    """Run a bash command inside the IIC-OSIC-TOOLS container with the repo mounted."""
+_DN = [0]
+
+
+def docker_run(envs, bash_cmd, timeout=None):
+    """Run a bash command in the IIC-OSIC-TOOLS container with the repo mounted.
+    If timeout is set, the container is named and `docker kill`ed on timeout so a
+    hung tool (e.g. klayout not exiting after render) cannot block the flow."""
     ev = []
     for k, v in envs.items():
         ev += ["-e", f"{k}={v}"]
-    cmd = ["docker", "run", "--rm", "-v", f"{ROOT}:/foss/designs", *ev,
-           IMAGE, "--skip", "bash", "-lc", bash_cmd]
-    return subprocess.run(cmd, capture_output=True, text=True)
+    run = ["docker", "run", "--rm"]
+    name = None
+    if timeout:
+        _DN[0] += 1
+        name = f"iommu_flow_{os.getpid()}_{_DN[0]}"
+        run += ["--name", name]
+    cmd = run + ["-v", f"{ROOT}:/foss/designs", *ev, IMAGE, "--skip", "bash", "-lc", bash_cmd]
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired as e:
+        if name:
+            subprocess.run(["docker", "kill", name], capture_output=True, text=True)
+        out = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+        err = (e.stderr.decode() if isinstance(e.stderr, bytes) else (e.stderr or ""))
+        return subprocess.CompletedProcess(cmd, 124, out, err + f"\n##TIMEOUT {timeout}s")
 
 
 def copy(src, dst):
@@ -226,7 +243,8 @@ def stage_power(cfg, lib, period, pdk_ref, corner, vcd, rundir):
     vcd_in = f"{DROOT}/tb_coco/sim_build/{cfg}.vcd" if vcd else "/nonexistent.vcd"
     envs = {"LIB": lib_path, "NETLIST": netlist, "TOP": f"cfg_{cfg}",
             "PERIOD_NS": period, "VCD": vcd_in, "VCDSCOPE": "iommu_core"}
-    r = docker_run(envs, f"sta -no_init -exit {DROOT}/syn/openlane/power_vcd.tcl")
+    r = docker_run(envs, f"sta -no_init -exit {DROOT}/syn/openlane/power_vcd.tcl",
+                   timeout=600)
     log = r.stdout + r.stderr
     (rundir / "power_vcd.txt").write_text(log)
 
@@ -260,7 +278,7 @@ def provenance(cfg, lib, period, corner, pdk_ref, rundir):
                           "echo '##OPENROAD'; openroad -version 2>&1 | head -1; "
                           "echo '##OPENSTA'; sta -version 2>&1 | head -1; "
                           "echo '##MAGIC'; magic --version 2>&1 | head -1; "
-                          "echo '##KLAYOUT'; klayout -v 2>&1 | head -1")
+                          "echo '##KLAYOUT'; klayout -v 2>&1 | head -1", timeout=120)
     vt = vers.stdout + vers.stderr
 
     def v(tag):
@@ -284,15 +302,23 @@ def gen_layout_png(cfg, lib, pdk_ref, rundir):
     if not (rundir / f"{cfg}_{lib}.gds").exists():
         return False
     # KLayout's LayoutView needs a Qt platform even in batch (-z): use offscreen.
+    # Best-effort + bounded: klayout sometimes hangs on exit after rendering, so a
+    # timeout (container killed) must not block report generation.
     r = docker_run({"QT_QPA_PLATFORM": "offscreen"},
                    f"klayout -z -rd in_gds={gds} -rd out_png={png} "
-                   f"-rm {DROOT}/syn/openlane/render_layout.py 2>&1 || true")
+                   f"-rm {DROOT}/syn/openlane/render_layout.py 2>&1 || true",
+                   timeout=300)
     (rundir / "layout_render.txt").write_text(r.stdout + r.stderr)
-    return (rundir / "layout.png").exists()
+    return (rundir / "layout.png").exists()   # PNG may exist even if klayout hung on exit
 
 
 def collect_ppa_stages(cfg, lib, rundir):
-    """Reuse ppa_compare.py for the cross-stage table + the shared history row."""
+    """Reuse ppa_compare.py for the cross-stage table + the shared history row.
+    ppa_compare.py reads the shared scratch results/<cfg>.json / <cfg>_pnr.json, which
+    other (cfg,lib) runs overwrite -- sync them from THIS run's per-run dir first so the
+    appended history row pairs the same library's synth + route (no cross-lib mixups)."""
+    copy(rundir / "synth.json", RESULTS / f"{cfg}.json")
+    copy(rundir / "pnr.json", RESULTS / f"{cfg}_pnr.json")
     rc, out = sh([sys.executable, str(SYN / "ppa_compare.py"), cfg],
                  log=rundir / "ppa_compare_stdout.txt")
     copy(RESULTS / f"{cfg}_ppa.md", rundir / "ppa_stages.md")
@@ -301,17 +327,24 @@ def collect_ppa_stages(cfg, lib, rundir):
 
 
 def write_report(cfg, lib, period, syn, pnr, prov, pdefault, pannot, pannot_ok,
-                 png_ok, rundir, stage_ok):
-    """Addition 4: aggregate report.md + report.html (single page, embeds layout.png)."""
-    stages = pnr.get("stages", {})
+                 png_ok, rundir, stage_ok, note=""):
+    """Addition 4: aggregate report.md + report.html (single page, embeds layout.png).
+    Defensive: tolerates missing provenance / partial data so it can always be written
+    (e.g. after an interrupt) -- the report is the primary deliverable."""
+    pv = prov or {}
+    tools = pv.get("tools", {})
+    stages = (pnr or {}).get("stages", {})
     last = next((k for k in ["DROUTE", "GROUTE", "CTS", "PLACE"] if k in stages), None)
     L = []
     L.append(f"# IOMMU flow report — `{cfg}` on `sky130_fd_sc_{lib}`\n")
-    L.append(f"- clock target: **{prov['clock_target_mhz']} MHz** ({period} ns)  ·  "
-             f"corner `{prov['corner']}`  ·  git `{prov['git_commit'][:10]}`")
-    L.append(f"- tools: yosys `{prov['tools']['yosys']}` · openroad "
-             f"`{prov['tools']['openroad']}` · magic `{prov['tools']['magic']}` · "
-             f"klayout `{prov['tools']['klayout']}`\n")
+    if note:
+        L.append(f"> ⚠️ **{note}** — this report reflects the stages that completed.\n")
+    L.append(f"- clock target: **{pv.get('clock_target_mhz', round(1000.0 / float(period), 2))} "
+             f"MHz** ({period} ns)  ·  corner `{pv.get('corner', '?')}`  ·  "
+             f"git `{str(pv.get('git_commit', '?'))[:10]}`")
+    L.append(f"- tools: yosys `{tools.get('yosys', '?')}` · openroad "
+             f"`{tools.get('openroad', '?')}` · magic `{tools.get('magic', '?')}` · "
+             f"klayout `{tools.get('klayout', '?')}`\n")
 
     L.append("## Stage pass/fail")
     L.append("| stage | status |\n|---|---|")
@@ -412,59 +445,81 @@ def main():
     print(f"=== flow: config={cfg} lib=sky130_fd_sc_{lib} period={period}ns "
           f"--until {args.until} -> {rundir.relative_to(ROOT)} ===")
     stage_ok = {}
+    syn, prov = {}, {}
     pnr, pdefault, pannot, pannot_ok, png_ok = {}, {}, {}, False, False
+    note = ""
 
-    # 1) synthesis (always) -- this is the Fmax / critical-path signal
-    print("[synth] yosys + OpenSTA ...")
-    ok, syn, _ = stage_synth(cfg, lib, period, args.pdk_ref, args.corner, rundir)
-    stage_ok["synth"] = ok
-    print(f"        {'ok' if ok else 'FAILED'}  "
-          f"Fmax={(syn.get('fmax_mhz') or 0):.1f}MHz area={syn.get('area_um2_total')}um^2 "
-          f"WNS={syn.get('wns_ns')}ns")
-    if ok and lvl == ORDER["synth"]:
-        print(f"        critical path: {syn.get('critical_startpoint')} -> "
-              f"{syn.get('critical_endpoint')}")
+    # All heavy stages run inside try; the report + summary ALWAYS run (finally) so an
+    # interrupt or a hung/failed late stage never throws away completed work.
+    try:
+        # 1) synthesis (always) -- this is the Fmax / critical-path signal
+        print("[synth] yosys + OpenSTA ...")
+        ok, syn, _ = stage_synth(cfg, lib, period, args.pdk_ref, args.corner, rundir)
+        stage_ok["synth"] = ok
+        print(f"        {'ok' if ok else 'FAILED'}  "
+              f"Fmax={(syn.get('fmax_mhz') or 0):.1f}MHz area={syn.get('area_um2_total')}um^2 "
+              f"WNS={syn.get('wns_ns')}ns")
+        if ok and lvl == ORDER["synth"]:
+            print(f"        critical path: {syn.get('critical_startpoint')} -> "
+                  f"{syn.get('critical_endpoint')}")
 
-    # 2) P&R bounded by --until (place/cts/route); GDS only at --until gds
-    if ok and lvl >= ORDER["place"]:
-        print(f"[pnr]   OpenROAD staged (stop after {stop_after})"
-              f"{' + GDS (magic)' if full else ''} ...")
-        g_ok, pnr, _ = stage_pnr(cfg, lib, period, args.pdk_ref, args.maxfo,
-                                 args.detailed, stop_after, full, rundir)
-        stage_ok["pnr"] = bool(pnr.get("stages"))
-        if full:
-            stage_ok["gds"] = g_ok
-        pnr = enrich_pnr(rundir, pnr)              # addition 1
-        split_signoff(cfg, rundir, args.detailed)  # addition 3
-        last = next((k for k in ["DROUTE", "GROUTE", "CTS", "PLACE"]
-                     if k in pnr.get("stages", {})), None)
-        print(f"        P&R {'ok' if stage_ok['pnr'] else 'FAILED'} (last={last})"
-              f"{'  GDS ' + ('ok' if g_ok else 'FAILED') if full else ''}")
-    elif ok:
-        print("[pnr]   skipped (--until synth)")
+        # 2) P&R bounded by --until (place/cts/route); GDS only at --until gds
+        if ok and lvl >= ORDER["place"]:
+            print(f"[pnr]   OpenROAD staged (stop after {stop_after})"
+                  f"{' + GDS (magic)' if full else ''} ...")
+            g_ok, pnr, _ = stage_pnr(cfg, lib, period, args.pdk_ref, args.maxfo,
+                                     args.detailed, stop_after, full, rundir)
+            stage_ok["pnr"] = bool(pnr.get("stages"))
+            if full:
+                stage_ok["gds"] = g_ok
+            pnr = enrich_pnr(rundir, pnr)              # addition 1
+            split_signoff(cfg, rundir, args.detailed)  # addition 3
+            last = next((k for k in ["DROUTE", "GROUTE", "CTS", "PLACE"]
+                         if k in pnr.get("stages", {})), None)
+            print(f"        P&R {'ok' if stage_ok['pnr'] else 'FAILED'} (last={last})"
+                  f"{'  GDS ' + ('ok' if g_ok else 'FAILED') if full else ''}")
+        elif ok:
+            print("[pnr]   skipped (--until synth)")
 
-    # 3) VCD-annotated power + 4) layout: full (--until gds) only
-    if ok and full:
-        vcd = None
-        if not args.no_vcd:
-            print("[power] VCD (cocotb/Verilator --trace) ...")
-            vcd = gen_vcd(cfg, rundir)
-            print(f"        VCD {'ok: ' + vcd.name if vcd else 'unavailable (annotated=default)'}")
-        print("[power] default vs VCD-annotated (OpenSTA) ...")
-        pdefault, pannot, pannot_ok = stage_power(cfg, lib, period, args.pdk_ref,
-                                                  args.corner, vcd, rundir)
-        stage_ok["power"] = bool(pdefault)
+        # 3) VCD-annotated power + 4) layout: full (--until gds) only
+        if ok and full:
+            vcd = None
+            if not args.no_vcd:
+                print("[power] VCD (cocotb/Verilator --trace) ...")
+                vcd = gen_vcd(cfg, rundir)
+                print(f"        VCD {'ok: ' + vcd.name if vcd else 'unavailable (annotated=default)'}")
+            print("[power] default vs VCD-annotated (OpenSTA) ...")
+            pdefault, pannot, pannot_ok = stage_power(cfg, lib, period, args.pdk_ref,
+                                                      args.corner, vcd, rundir)
+            stage_ok["power"] = bool(pdefault)
 
-    # 5) provenance + cross-stage PPA + report (always); layout only when GDS exists
-    print("[rpt]   provenance + cross-stage PPA + report ...")
-    prov = provenance(cfg, lib, period, args.corner, args.pdk_ref, rundir)
-    stage_ok["ppa_stages"] = collect_ppa_stages(cfg, lib, rundir)
-    if full and stage_ok.get("gds"):
-        print("[rpt]   layout.png (klayout) ...")
-        png_ok = gen_layout_png(cfg, lib, args.pdk_ref, rundir)
-        stage_ok["layout"] = png_ok
-    write_report(cfg, lib, period, syn, pnr, prov, pdefault, pannot, pannot_ok,
-                 png_ok, rundir, stage_ok)
+        # 5) provenance + cross-stage PPA; layout only when GDS exists
+        print("[rpt]   provenance + cross-stage PPA ...")
+        prov = provenance(cfg, lib, period, args.corner, args.pdk_ref, rundir)
+        stage_ok["ppa_stages"] = collect_ppa_stages(cfg, lib, rundir)
+        if full and stage_ok.get("gds"):
+            print("[rpt]   layout.png (klayout, bounded) ...")
+            png_ok = gen_layout_png(cfg, lib, args.pdk_ref, rundir)
+            stage_ok["layout"] = png_ok
+    except KeyboardInterrupt:
+        note = "interrupted (Ctrl-C) before completion"
+        print("\n[!] interrupted -- writing report with the stages completed so far")
+    except Exception as e:                          # noqa: BLE001 (report-then-reraise-info)
+        note = f"stage error: {e}"
+        print(f"\n[!] stage error: {e} -- writing report with results so far")
+    finally:
+        # the aggregate report is the primary deliverable: always emit it
+        if not prov:
+            try:
+                prov = provenance(cfg, lib, period, args.corner, args.pdk_ref, rundir)
+            except Exception:
+                prov = {}
+        try:
+            write_report(cfg, lib, period, syn, pnr, prov, pdefault, pannot, pannot_ok,
+                         png_ok, rundir, stage_ok, note=note)
+            print(f"[rpt]   report.md written ({(rundir / 'report.md').relative_to(ROOT)})")
+        except Exception as e:
+            print(f"[!] report generation failed: {e}")
 
     # summary -- pass criteria scale with --until
     print("\n=== summary ===")
@@ -474,7 +529,7 @@ def main():
     print(f"  artifacts in {rundir.relative_to(ROOT)}/: {len(files)} files")
     need = ["synth"] + (["pnr"] if lvl >= ORDER["place"] else []) \
                      + (["gds"] if full else [])
-    all_pass = all(stage_ok.get(k) for k in need)
+    all_pass = (not note) and all(stage_ok.get(k) for k in need)
     print(f"  RESULT: {'PASS' if all_pass else 'PARTIAL'} (--until {args.until}; "
           f"report: {(rundir / 'report.md').relative_to(ROOT)})")
     return 0 if all_pass else 1
