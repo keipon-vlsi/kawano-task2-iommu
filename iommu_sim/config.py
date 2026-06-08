@@ -59,13 +59,15 @@ class CacheCfg:
 class PWCLevelCfg:
     entries: int = 8
     assoc: object = "full"
+    enabled: bool = True
 
     @classmethod
     def from_dict(cls, d):
         if d is None:
             return cls()
         d = dict(d)
-        return cls(entries=int(d.get("entries", 8)), assoc=_assoc(d.get("assoc", "full")))
+        return cls(entries=int(d.get("entries", 8)), assoc=_assoc(d.get("assoc", "full")),
+                   enabled=bool(d.get("enabled", True)))
 
 
 @dataclass

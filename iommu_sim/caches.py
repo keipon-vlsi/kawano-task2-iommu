@@ -216,6 +216,14 @@ def make_cache(cfg, name):
     return SetAssocCache(cfg.entries, cfg.assoc, policy=pol, name=name)
 
 
+def make_level_cache(lvl, name):
+    """Build a per-level PWC cache (PWCLevelCfg). enabled=False -> disabled,
+    consistent with make_cache (so `enabled: false` works on s1_pwc levels too)."""
+    if lvl is None or not getattr(lvl, "enabled", True):
+        return SetAssocCache(0, name=name)
+    return SetAssocCache(lvl.entries, lvl.assoc, name=name)
+
+
 # ---- Named IOMMU cache set ------------------------------------------------
 class CacheSet:
     """All translation/context caches for one IOMMU configuration. The walk cost
@@ -225,9 +233,10 @@ class CacheSet:
     def __init__(self, cfg):
         c = cfg.caches
         self.iotlb = make_cache(c.iotlb, "iotlb")
-        # S1 PWC has per-level structures (L2 upper, L1 deeper-and-hotter)
-        self.s1_l2 = SetAssocCache(c.s1_pwc.l2.entries, c.s1_pwc.l2.assoc, name="s1_pwc")
-        self.s1_l1 = SetAssocCache(c.s1_pwc.l1.entries, c.s1_pwc.l1.assoc, name="s1_pwc")
+        # S1 PWC has per-level structures (L2 upper, L1 deeper-and-hotter).
+        # enabled=False (or entries<=0) -> disabled (always miss), honoured per level.
+        self.s1_l2 = make_level_cache(c.s1_pwc.l2, "s1_pwc")
+        self.s1_l1 = make_level_cache(c.s1_pwc.l1, "s1_pwc")
         self.s2_pwc = make_cache(c.s2_pwc, "s2_pwc")
         self.s2_root = AlwaysHit("s2_root")          # G-stage root register (filled once)
         self._s2_root_loaded = False

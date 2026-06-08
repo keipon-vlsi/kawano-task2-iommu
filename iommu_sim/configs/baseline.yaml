@@ -7,14 +7,14 @@ mode: nested            # bare / s1_only / s2_only / nested
 superpage: off          # off / 2M / 1G
 
 caches:
-  iotlb:     {entries: 64, assoc: 4}
-  s1_pwc:    {l2: {entries: 4, assoc: full}, l1: {entries: 8, assoc: full}}
-  s2_pwc:    {entries: 8, assoc: full}
-  table_gpa: {entries: 16, assoc: full}
+  iotlb:     {enabled: false, entries: 64, assoc: 4}
+  s1_pwc:    {l2: {enabled: false, entries: 4, assoc: full}, l1: {enabled: false, entries: 8, assoc: full}}
+  s2_pwc:    {enabled: false, entries: 8, assoc: full}
+  table_gpa: {enabled: false, entries: 16, assoc: full}
   data_gpa:  {enabled: false, entries: 64, assoc: 4}   # set true under invalidation
-  ddtc:      {entries: 1, assoc: full}
-  pdtc:      {enabled: true, entries: 1, assoc: full}                          # PASID unused -> disabled
-  msi:       {entries: 16}
+  ddtc:      {enabled: true, entries: 1, assoc: full}
+  pdtc:      {enabled: true, entries: 1, assoc: full}   # enabled:false (or entries:0) to disable
+  msi:       {enabled: false}
   lookup_mode: hybrid     # parallel / sequential / hybrid
   walk_trigger: demand    # demand / predictive
   coalesce_factor: 8      # 64 B line / 8 B PTE
