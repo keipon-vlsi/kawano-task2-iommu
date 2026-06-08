@@ -237,9 +237,10 @@ class CacheSet:
         # enabled=False (or entries<=0) -> disabled (always miss), honoured per level.
         self.s1_l2 = make_level_cache(c.s1_pwc.l2, "s1_pwc")
         self.s1_l1 = make_level_cache(c.s1_pwc.l1, "s1_pwc")
+        # G-stage upper PWC holds the S2 root + S2 L1 PTE results (register-like
+        # once warm). Disabling it makes every G-stage walk pay the full 3 host
+        # accesses -> a DDT$/PDT$-only config costs the full 15-access 2D walk.
         self.s2_pwc = make_cache(c.s2_pwc, "s2_pwc")
-        self.s2_root = AlwaysHit("s2_root")          # G-stage root register (filled once)
-        self._s2_root_loaded = False
         self.table_gpa = make_cache(c.table_gpa, "table_gpa")
         self.data_gpa = make_cache(c.data_gpa, "data_gpa")     # disabled unless enabled=True
         self.ddtc = make_cache(c.ddtc, "ddtc")

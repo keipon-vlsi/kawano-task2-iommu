@@ -92,10 +92,13 @@ class SingleStageCost(WalkCostModel):
 # --------------------------------------------------------------------------
 class NestedCost(WalkCostModel):
     """Sv39 (VS-stage) + Sv39x4 (G-stage). Every guest PTE pointer is a GPA that
-    the G-stage must translate before the guest PTE can be read. Cold = full 2D
-    walk; steady state collapses to (guest leaf line) + (data-GPA S2 leaf line)
-    = ~2 accesses per coalesced line. The G-stage root is a register (loaded
-    once)."""
+    the G-stage must translate before the guest PTE can be read. A G-stage walk
+    (Sv39x4) reads 3 host PTEs -- S2 root, S2 L1, S2 leaf -- cached by s2_pwc
+    (root + L1) and table_gpa/data_gpa (leaf). With NO translation caches (only
+    DDT$/PDT$), each of the 4 G-stage walks pays the full 3 accesses, so the PTW
+    after a PDT$ hit costs (3+1)(3+1)-1 = 15 (starting from the G-stage
+    translation of the root-table GPA). With s2_pwc warm, the root/L1 PTEs hit
+    (register-like) and the walk collapses to ~2 accesses per coalesced line."""
 
     # distinct GPA-table-page id namespaces (root / L1-table / leaf-table)
     ROOT_TBL = 1 << 40
@@ -105,36 +108,33 @@ class NestedCost(WalkCostModel):
     def cold_depth(self):
         return 15
 
-    # --- G-stage walk for a guest *table* page GPA (table_gpa cache result) ---
-    def _s2_table(self, table_id, ctx, cs, fills):
-        tkey = ("tbl", table_id, ctx)
-        if cs.table_gpa.lookup(tkey):
+    # --- one G-stage (Sv39x4) walk: S2 root PTE + S2 L1 PTE (s2_pwc) + S2 leaf ---
+    def _gstage(self, region_id, ctx, cs, fills, leaf_cache, leaf_key, leaf_attr):
+        """Accesses for translating one GPA. Each level counted only on a miss, so
+        a disabled s2_pwc / leaf cache -> 3 accesses every time (full uncached
+        G-stage walk). A leaf-cache hit means the whole GPA->SPA is cached -> 0."""
+        if not leaf_cache.disabled and leaf_cache.lookup(leaf_key):
             return 0
         n = 0
-        s2u = ("s2u", table_id >> 9, ctx)          # G-stage upper (root is a register)
-        if not cs.s2_pwc.lookup(s2u):
+        if not cs.s2_pwc.lookup(("s2root", ctx)):          # S2 root PTE (register-like once warm)
             n += 1
-            fills.setdefault("s2_pwc", []).append(s2u)
-        n += 1                                     # S2 leaf for the table page
-        fills.setdefault("table_gpa", []).append(tkey)
+            fills.setdefault("s2_pwc", []).append(("s2root", ctx))
+        if not cs.s2_pwc.lookup(("s2L1", region_id >> 9, ctx)):   # S2 L1 PTE
+            n += 1
+            fills.setdefault("s2_pwc", []).append(("s2L1", region_id >> 9, ctx))
+        n += 1                                             # S2 leaf PTE read
+        if not leaf_cache.disabled:
+            fills.setdefault(leaf_attr, []).append(leaf_key)
         return n
 
-    # --- G-stage walk for the final *data* GPA (folded into IOTLB; coalesced) ---
+    def _s2_table(self, table_id, ctx, cs, fills):
+        return self._gstage(table_id, ctx, cs, fills,
+                            cs.table_gpa, ("tbl", table_id, ctx), "table_gpa")
+
     def _s2_data(self, data_page, ctx, cs, fills, c):
         dline = (data_page // c) * c
-        if not cs.data_gpa.disabled:
-            dkey = ("dat", dline, ctx)
-            if cs.data_gpa.lookup(dkey):
-                return 0
-        n = 0
-        s2u = ("s2du", data_page >> 9, ctx)
-        if not cs.s2_pwc.lookup(s2u):
-            n += 1
-            fills.setdefault("s2_pwc", []).append(s2u)
-        n += 1                                     # S2 data-leaf line (coalesced)
-        if not cs.data_gpa.disabled:
-            fills.setdefault("data_gpa", []).append(("dat", dline, ctx))
-        return n
+        return self._gstage(data_page, ctx, cs, fills,
+                            cs.data_gpa, ("dat", dline, ctx), "data_gpa")
 
     def cost(self, vpn, data_page, ctx, sim):
         cs = sim.caches
@@ -142,11 +142,6 @@ class NestedCost(WalkCostModel):
         acc = 0
         miss_levels = 0
         fills = {"iotlb": [], "s1_l2": [], "s1_l1": []}
-
-        # one-time G-stage root register load (part of the very first cold 2D walk)
-        if not cs._s2_root_loaded:
-            acc += 1
-            cs._s2_root_loaded = True
 
         # guest L2 (root table is invariant within a context)
         l2key = ("L2", vpn >> 18, ctx)

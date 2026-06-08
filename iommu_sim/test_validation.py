@@ -105,6 +105,22 @@ def test_E_finite_resources_stall():
 # --------------------------------------------------------------------------
 # nested ~= 2x single, Little's law
 # --------------------------------------------------------------------------
+def test_nested_ddtc_pdtc_only_is_15_accesses():
+    # With only DDT$/PDT$ (all PTW/S2 caches disabled), after a PDT$ hit the PTW
+    # is a full 2D walk starting from the root-GPA G-stage translation =
+    # (3+1)(3+1)-1 = 15 memory accesses per translation.
+    caches = {"iotlb": {"enabled": False}, "s1_pwc": {"l2": {"enabled": False}, "l1": {"enabled": False}},
+              "s2_pwc": {"enabled": False}, "table_gpa": {"enabled": False}, "data_gpa": {"enabled": False},
+              "ddtc": {"enabled": True, "entries": 1}, "pdtc": {"enabled": True, "entries": 1},
+              "msi": {"enabled": False}, "coalesce_factor": 1}
+    cfg = Config.from_dict({"mode": "nested", "caches": caches,
+                            "workload": {"n_requests": 2000, "iova_pattern": "sequential"}})
+    sim, m = metrics(cfg)
+    assert sim.caches.pdtc.hits > 0                       # PDT$ hits (context cached)
+    # steady-state per-translation accesses == 15 (single context: 1 cold ctx miss aside)
+    assert sim.memory.accesses / m.completed == pytest.approx(15.0, abs=0.05)
+
+
 def test_nested_about_2x_single():
     sims, ms = metrics(mk(mode="bare"))
     simn, mn = metrics(mk(mode="nested"))
@@ -181,11 +197,30 @@ def test_estimator_units_ge_and_normalized():
 # config loading / normalization
 # --------------------------------------------------------------------------
 def test_config_load_baseline():
+    # baseline.yaml is user-editable (a scratch config), so only assert robust
+    # invariants: it loads and the fields have valid types/enums.
     cfg = Config.load(os.path.join(HERE, "configs", "baseline.yaml"))
-    assert cfg.mode == "nested"
-    assert cfg.superpage == "off"            # YAML 'off' bool normalized back to string
+    assert cfg.mode in ("bare", "s1_only", "s2_only", "nested")
+    assert cfg.superpage in ("off", "2M", "1G")
+    assert isinstance(cfg.caches.coalesce_factor, int) and cfg.caches.coalesce_factor >= 1
+
+
+def test_config_normalization():
+    # YAML 'off'/'on' coerce to bool; ensure we normalize back to enum strings,
+    # null -> None, and assoc 'full' is preserved. Fixed input (not baseline.yaml).
+    import yaml
+    d = yaml.safe_load(
+        "mode: nested\n"
+        "superpage: off\n"
+        "prefetch: {algo: off}\n"
+        "walkers: {num_walkers: null}\n"
+        "caches: {coalesce_factor: 8, s1_pwc: {l2: {entries: 4, assoc: full}}}\n"
+    )
+    cfg = Config.from_dict(d)
+    assert cfg.superpage == "off"               # bool False -> "off"
     assert cfg.prefetch.algo == "off"
     assert cfg.walkers.num_walkers is None
+    assert cfg.caches.s1_pwc.l2.assoc == "full"
     assert cfg.caches.coalesce_factor == 8
 
 
