@@ -44,11 +44,12 @@ estimate_parasitics -placement
 stage_report CTS
 
 # ---------- routing ----------
+set_routing_layers -signal met1-met5 -clock met1-met5
 global_route -allow_congestion
 estimate_parasitics -global_routing
 stage_report GROUTE
 if {$::env(DETAILED) == 1} {
-  detailed_route -output_drc [file rootname $::env(OUTDEF)].drc.rpt
+  detailed_route -output_drc [file rootname $::env(OUTDEF)].drc.rpt -verbose 0
   estimate_parasitics -global_routing
   stage_report DROUTE
 }

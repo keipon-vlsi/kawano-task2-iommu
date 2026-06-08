@@ -70,6 +70,7 @@ synth -top {top} -flatten
 dfflibmap -liberty {LIB}
 abc -liberty {LIB} -D {period_ps}
 setundef -zero
+hilomap -hicell sky130_fd_sc_{VARIANT}__conb_1 HI -locell sky130_fd_sc_{VARIANT}__conb_1 LO
 opt_clean -purge
 tee -o {DROOT}/results/{name}_area_flat.txt stat -liberty {LIB}
 write_verilog -noattr {netlist}

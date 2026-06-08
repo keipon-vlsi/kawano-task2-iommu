@@ -269,11 +269,27 @@ ls -la results/full.gds                         # 例: 16 MB, die 1202.8 x 1202.
 - 末尾 `slack (VIOLATED/MET)`：負なら未達。`Fmax = 1000/(period − slack)`。
   さらに `report_check_types -max_fanout -max_slew -violators` で fanout/slew 違反箇所一覧。
 
-### 5.1d 高速セルライブラリ（hs 等）
-`STD_VARIANT` で切替可能（`STD_VARIANT=hs bash syn/run_pnr.sh ...`、合成側も同 env）。
-ただし**この sky130A PDK ビルドには `sky130_fd_sc_hd` と `hvl` しか入っていない**
-（hs/hdll/ms/ls は未収録。hvl は高電圧 I/O 系で高速コア用ではない）。hs を使うには
-全ライブラリ入りの open_pdks ビルドを `volare`/`open_pdks` で入れ直す必要がある。
+### 5.1d 高速セルライブラリ（hs 等）— 全ライブラリ導入済み
+イメージ同梱 PDK は `hd`+`hvl` のみだったので、**open_pdks を `skywater-pdk` からビルドして
+全 sc ライブラリ（hd/hdll/hs/lp/ls/ms/hvl）を `open_pdks/sky130/sky130A/libs.ref/` に展開**した。
+`PDK_REF`＋`STD_VARIANT` で選ぶ：
+```bash
+export PDK_REF=/foss/designs/open_pdks/sky130     # コンテナ内パス（mount 先）
+STD_VARIANT=hs .venv/bin/python syn/synth_osic.py full   # 合成（hs）
+STD_VARIANT=hs bash syn/run_pnr.sh full 2.5 16           # P&R（hs）
+```
+（再ビルドするには：コンテナ内で `git clone open_pdks && ./configure --enable-sky130-pdk
+--prefix=... && make`。IO ライブラリ段は `PDK_ROOT` 未設定で失敗するが、sc ライブラリは
+staging 済みでそのまま使える。）
+
+実測 hd vs hs（合成のみ, tt, 同一アーキ）：
+
+| lib | synth Fmax | synth 面積 | synth 電力 |
+|---|---|---|---|
+| sky130_fd_sc_hd | 19.5 MHz | 497,944 µm² | 0.292 W |
+| sky130_fd_sc_hs | **48.0 MHz** | 705,033 µm² | 0.517 W |
+
+hs は速いが大面積・高電力（高速ライブラリの定石）。詳細は `results/ppa_compare.md`（追記履歴）。
 
 ### 5.1e RTL→合成→配置配線の PPA 比較
 ```bash
