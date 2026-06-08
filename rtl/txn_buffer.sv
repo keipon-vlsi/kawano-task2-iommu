@@ -167,9 +167,11 @@ module txn_buffer #(
 
   // accept a new request into a free slot
   assign req_ready = any_free;
-  // response from a ST_DONE entry
+  // response from a ST_DONE entry. e_spa holds the coalesced LINE base SPA; add the
+  // page's offset-within-line so each of the COALESCE_FACTOR pages gets a distinct SPA.
   assign rsp_valid = any_done_e;
-  assign rsp_spa   = e_spa[done_e_id];
+  assign rsp_spa   = e_spa[done_e_id]
+                     + (SPA_W'(e_vpn[done_e_id] & VPN_W'(COALESCE_FACTOR-1)) << OFFSET_W);
   assign rsp_tag   = done_e_id;
 
   // dispatch outputs (registered in FSM)
