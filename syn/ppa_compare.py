@@ -100,6 +100,55 @@ def main(name="full"):
          "pnr_stages": stages},            # results/<name>_pnr.json stages
         indent=2))
     print("\n".join(md))
+    append_history(name, syn, pnr, stages)
+
+
+MODE_NAME = {0: "bare", 1: "s1_only", 2: "s2_only", 3: "nested"}
+
+
+def arch_summary(params):
+    p = params or {}
+    sto = {0: "ff", 1: "sram"}
+    return (f"{MODE_NAME.get(p.get('MODE'), '?')} coal={p.get('COALESCE_FACTOR','?')} "
+            f"N={p.get('NUM_WALKERS','?')} buf={p.get('BUFFER_DEPTH','?')} "
+            f"pf={p.get('PREFETCH_EN','?')} "
+            f"IOTLB={p.get('IOTLB_ENTRIES','?')}/{p.get('IOTLB_ASSOC','?')}/{sto.get(p.get('IOTLB_STORAGE'),'?')} "
+            f"PWC={p.get('S1PWC_ENTRIES','?')}/{sto.get(p.get('S1PWC_STORAGE'),'?')}")
+
+
+def append_history(name, syn, pnr, stages):
+    """Append one row to results/ppa_compare.md -- an accumulating log of how PPA
+    moves with architecture + library changes (kept across runs)."""
+    hist = RESULTS / "ppa_compare.md"
+    header = (
+        "# IOMMU PPA history (append-only)\n\n"
+        "Each P&R run appends a row. Columns: synth = yosys+OpenSTA (cell area); "
+        "route = last P&R stage (die area, Fmax @2.5ns target, power incl. wire RC).\n\n"
+        "| # | config | library | architecture | synth Fmax | synth area(um^2) | synth P(W) "
+        "| route stage | route Fmax | die(um^2) | route P(W) | GDS |\n"
+        "|---|---|---|---|---|---|---|---|---|---|---|---|\n"
+    )
+    if not hist.exists():
+        hist.write_text(header)
+    n = sum(1 for ln in hist.read_text().splitlines() if ln.startswith("| ") and ln[2:3].isdigit())
+    variant = pnr.get("variant", "hd")
+    arch = arch_summary(syn.get("params"))
+    sfmax = f"{(syn.get('fmax_mhz') or 0):.1f}" if syn else "-"
+    sarea = f"{syn.get('area_um2_total',0):.0f}" if syn else "-"
+    spow = f"{syn.get('power_W',{}).get('total_W',0):.3f}" if syn else "-"
+    last = next((k for k in ["DROUTE", "GROUTE", "CTS", "PLACE"] if k in stages), None)
+    if last:
+        st = stages[last]
+        rfmax = f"{(st.get('fmax_mhz') or 0):.1f}"; rdie = f"{st.get('die_area_um2','-')}"
+        rpow = f"{(st.get('power_W_total') or 0):.3f}"
+    else:
+        last = rfmax = rdie = rpow = "-"
+    gds = pnr.get("gds") or "-"
+    row = (f"| {n+1} | {name} | sky130_fd_sc_{variant} | {arch} | {sfmax} | {sarea} | {spow} "
+           f"| {last} | {rfmax} | {rdie} | {rpow} | {gds} |\n")
+    with open(hist, "a") as f:
+        f.write(row)
+    print(f"  appended to results/ppa_compare.md (row {n+1}: {name}/{variant})")
 
 
 if __name__ == "__main__":

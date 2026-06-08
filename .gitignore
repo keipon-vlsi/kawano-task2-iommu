@@ -13,3 +13,5 @@ results/*.def
 results/*.odb
 results/*_pnr.txt
 results/*_sta.txt
+open_pdks/
+pdk_full/
