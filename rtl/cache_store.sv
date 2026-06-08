@@ -43,8 +43,8 @@ module cache_store #(
   localparam int SET_W    = (NUM_SETS <= 1)    ? 1       : $clog2(NUM_SETS);
   localparam int WAY_W    = (WAYS <= 1)        ? 1       : $clog2(WAYS);
 
-  // storage arrays (ram_style attribute selects flops vs RAM at synthesis)
-  (* ram_style = (STORAGE == iommu_pkg::ST_SRAM) ? "block" : "distributed" *)
+  // storage arrays. STORAGE (ff/sram) is recorded; the synth flow applies the
+  // memory-mapping policy (flops vs RAM) per cache (see syn/, ASSUMPTIONS.md).
   logic [DATA_W-1:0] data_arr [ENTRIES];
   logic [KEY_W-1:0]  key_arr  [ENTRIES];
   logic              valid_arr[ENTRIES];

@@ -1,0 +1,35 @@
+{
+  "config": "full",
+  "params": {
+    "MODE": 1,
+    "COALESCE_FACTOR": 8,
+    "PREFETCH_EN": 0,
+    "NUM_WALKERS": 4,
+    "BUFFER_DEPTH": 16,
+    "MEM_MAX_OUTSTANDING": 8,
+    "IOTLB_ENTRIES": 64,
+    "IOTLB_ASSOC": 4,
+    "IOTLB_STORAGE": 1,
+    "S1PWC_ENTRIES": 16,
+    "S1PWC_ASSOC": 16,
+    "S1PWC_STORAGE": 0
+  },
+  "area_um2_per_module": {
+    "txn_buffer": 133779.5552,
+    "walker": 2692.5824,
+    "mem_if": 231.472,
+    "cache_store": 294846.5312,
+    "cache_store'": 84522.3136,
+    "walk_engine": 1906.8288
+  },
+  "total_area_um2": 526057.0304,
+  "critical_path_depth_generic_levels": 713,
+  "critical_path_modules": [
+    "u_front",
+    "u_walk",
+    "u_mem"
+  ],
+  "fmax_mhz": null,
+  "target_mhz": 400.0,
+  "note": "area from sky130 sc_hd tt; Fmax pending OpenSTA; critical path is the single-cycle CAM lookup + arbiter + FSM -> pipeline the lookup next."
+}

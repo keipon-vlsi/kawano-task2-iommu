@@ -2,3 +2,8 @@
 __pycache__/
 .pytest_cache/
 *.pyc
+pdk/
+syn/build/
+results/*_area.txt
+results/*_timing.txt
+results/*_ltp.txt

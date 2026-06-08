@@ -120,3 +120,78 @@ estimator-only ASSUMPTIONS.)
   enough to show "+prefetch collapses latency" and "self-disables on random".
 - The cycle costs (lookup/arbitration/pipeline) are seeds to be refreshed from early
   trial synthesis on sky130 (design_doc §6/§12).
+
+---
+
+# ASSUMPTIONS — RTL phase (`rtl/`, `tb_coco/`, `syn/`)
+
+Phase-1 = a clean, reviewable, synthesizable first version of the 5 core blocks +
+top, a working cocotb happy-path testbench, and the Full config synthesized on
+sky130. The 4-config sweep, sub-experiments and estimate↔synth calibration are
+later iterations.
+
+## Toolchain (no system pip; built in the project `.venv`)
+- **Verilator 5.046** (cocotb sim), **cocotb 2.0.1** (force-installed:
+  `COCOTB_IGNORE_PYTHON_REQUIRES=1`, since Python is 3.14 > cocotb's 3.13 cap;
+  the happy-path TB works), **sv2v v0.0.13** (`/tmp/sv2v`; SV→Verilog so yosys
+  parses), **yowasp-yosys 0.66** (WASM yosys), **sky130 PDK** via `volare`
+  (`$PDK_ROOT`, `sky130_fd_sc_hd` tt corner). No OpenSTA/OpenROAD available
+  offline → timing from ABC/`ltp` (see Synthesis).
+
+## RTL scope / simplifications (steady-state happy path)
+- Only the 5 blocks are synthesized: walk engine (PTW), txn buffer + MSHR,
+  caches, arbiter, memory IF. Workload driver, memory model and the I/O-bridge
+  4 kB data path are **testbench stubs**, not DUT.
+- **No faults/permissions/PRI**; every PTE is valid, every access permitted.
+- **Context/root pre-loaded**: the modeled walk starts at the (non-leaf) PTE
+  fetch; DDT$/PDT$/root resolution is not walked (the TB pre-loads caches/regs).
+- **No 4 kB data movement**: the buffer holds control/descriptor state only; a
+  request completes abstractly when its SPA is produced.
+- **MSHR = the buffer**: same-line in-flight entries coalesce onto the one
+  dispatched walk (no separate MSHR table) — matches the sim's line-keyed MSHR.
+- **Walk model**: a walker executes a fetch *plan* = `nreads` chained tagged PTE
+  reads (the residual after PWC/IOTLB short-circuit), then composes the SPA. The
+  front-end computes `nreads` from MODE + PWC hit (steady single=1, nested=2,
+  cold larger) — faithful to the sim's accesses/translation, not a full per-level
+  2D-walk address generator. The leaf read returns the coalesced **line base**
+  PPN; the front-end adds the page offset-within-line so each of COALESCE_FACTOR
+  pages gets a distinct, correct SPA.
+- **Cache lookup is registered (1-cycle)** for both ff and sram storage, so the
+  pipeline is uniform. `STORAGE=ff|sram` is a recorded parameter; the ff/sram/
+  mixed *synthesis* mapping (RAM macro vs flops) is applied in the synth flow and
+  is a later sub-experiment. A conditional `ram_style` RTL attribute was removed
+  (non-constant after elaboration); yosys currently maps all cache arrays to flops
+  (→ caches dominate area, the expected all-DFF result).
+- `LOOKUP_MODE`, `PIPELINE_DEPTH`, `PREFETCH_EN`, `CLOCK_GATING_EN` are real
+  parameters/hooks; Phase-1 behaviour is the hybrid/1-cycle/no-prefetch point.
+  Per-entry write-enables are already coded (clock-gating friendly).
+- DDT$/PDT$ are sized by parameter but, being pre-loaded constant context, do not
+  add residual reads on the happy path; S2 PWC is instantiated (area) and
+  exercised via preload. Full per-level S2 PWC + DDT$/PDT$ traffic is a later
+  iteration.
+
+## Testbench
+- cocotb + Verilator. Stub AXI memory returns a PTE after `MEM_LATENCY` cycles;
+  the S1 PWC is pre-loaded for steady state; a sequential trace is driven at
+  ~wire-rate pacing. Checks every translation completes with the correct per-page
+  SPA and **cross-checks the RTL walk count against the Python reference sim**
+  (imported in-process): 32 walks = 256/8 lines, matches.
+
+## Synthesis (sky130, yosys)
+- `syn/synth.py`: per config → SV wrapper (fixes the parameter set) → sv2v →
+  yosys generic synth → `dfflibmap` + `abc -liberty` (sky130 sc_hd tt) → `stat`
+  (per-module area) and a flattened ABC pass for the critical path.
+- **Area** is from yosys + the sky130 liberty (authoritative total; per-module
+  from the per-module `Chip area` lines — they sum approximately, cross-module
+  opt shifts a few %).
+- **Timing**: no OpenSTA/OpenROAD offline, so Fmax is **estimated** from the ABC
+  critical-path / `ltp` logic-depth × a typical sky130-HD per-stage delay; it is
+  a pre-P&R estimate (synth-only, no wire load), to be replaced by an OpenLane/
+  OpenSTA number in the calibration phase. The *location* of the critical path
+  (the fully-associative CAM compare in the IOTLB/PWC lookup) is the actionable
+  Phase-1 finding for lookup-mode/pipelining work.
+- **Power**: dynamic power needs activity annotation (VCD) + OpenSTA, deferred to
+  the estimate↔synth calibration phase; Phase-1 reports area + timing. This ties
+  directly into the simulator's per-module normalized PPA (the calibration target).
+- An OpenLane `config.json` is provided in `syn/openlane/` for a full P&R PPA run
+  where docker + OpenLane are available (out of scope for this offline run).

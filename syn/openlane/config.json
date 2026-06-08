@@ -1,0 +1,14 @@
+{
+  "//": "OpenLane (or OpenLane2) config for a full sky130 P&R PPA run of the Full IOMMU config.",
+  "//run": "Run sv2v first (syn/synth.py emits syn/build/full.v), then point OpenLane here.",
+  "DESIGN_NAME": "cfg_full",
+  "VERILOG_FILES": ["dir::../build/full.v"],
+  "CLOCK_PORT": "clk",
+  "CLOCK_PERIOD": 2.5,
+  "PL_TARGET_DENSITY": 0.45,
+  "FP_PDN_VOFFSET": 7,
+  "DESIGN_IS_CORE": true,
+  "PDK": "sky130A",
+  "STD_CELL_LIBRARY": "sky130_fd_sc_hd",
+  "//note": "Caches map to flip-flops here. For the SRAM-macro storage pattern, add the sky130 SRAM macros (EXTRA_LEFS/LIBS) and set the cache STORAGE=sram params + macro instantiation (later sub-experiment)."
+}
