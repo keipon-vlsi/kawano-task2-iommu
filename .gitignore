@@ -7,3 +7,4 @@ syn/build/
 results/*_area.txt
 results/*_timing.txt
 results/*_ltp.txt
+results/ppa.json
