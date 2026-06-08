@@ -1,0 +1,97 @@
+
+9. Printing statistics.
+
+=== cfg_full ===
+
+        +----------Local Count, excluding submodules.
+        |        +-Local Area, excluding submodules.
+        |        | 
+    31803        - wires
+    46912        - wire bits
+      477        - public wires
+    15586        - public wire bits
+       31        - ports
+     1002        - port bits
+    45601 6.17E+05 cells
+       18  202.694   sky130_fd_sc_hd__a2111o_1
+      482 4.22E+03   sky130_fd_sc_hd__a2111oi_0
+       56   490.47   sky130_fd_sc_hd__a211o_1
+      403 3.03E+03   sky130_fd_sc_hd__a211oi_1
+        3   30.029   sky130_fd_sc_hd__a21bo_1
+      184 1.38E+03   sky130_fd_sc_hd__a21boi_0
+      210 1.58E+03   sky130_fd_sc_hd__a21o_1
+     2220 1.11E+04   sky130_fd_sc_hd__a21oi_1
+      362 3.62E+03   sky130_fd_sc_hd__a221o_1
+     1155 1.01E+04   sky130_fd_sc_hd__a221oi_1
+     3507 3.51E+04   sky130_fd_sc_hd__a222oi_1
+      399 3.49E+03   sky130_fd_sc_hd__a22o_1
+     2690 2.02E+04   sky130_fd_sc_hd__a22oi_1
+       53  464.195   sky130_fd_sc_hd__a2bb2oi_1
+        1    10.01   sky130_fd_sc_hd__a311o_1
+        3   26.275   sky130_fd_sc_hd__a311oi_1
+        6    52.55   sky130_fd_sc_hd__a31o_1
+      140   875.84   sky130_fd_sc_hd__a31oi_1
+        1    10.01   sky130_fd_sc_hd__a32o_1
+        4   35.034   sky130_fd_sc_hd__a32oi_1
+       26   260.25   sky130_fd_sc_hd__a41o_1
+       14  122.618   sky130_fd_sc_hd__a41oi_1
+      239  1.5E+03   sky130_fd_sc_hd__and2_0
+      514 3.22E+03   sky130_fd_sc_hd__and3_1
+       15  131.376   sky130_fd_sc_hd__and3b_1
+      426 3.73E+03   sky130_fd_sc_hd__and4_1
+       13  130.125   sky130_fd_sc_hd__and4b_1
+      342 1.28E+03   sky130_fd_sc_hd__clkinv_1
+       89   334.07   sky130_fd_sc_hd__conb_1
+     1059 2.65E+04   sky130_fd_sc_hd__dfrtp_1
+        1   26.275   sky130_fd_sc_hd__dfstp_2
+    12720 3.82E+05   sky130_fd_sc_hd__edfxtp_1
+      100    625.6   sky130_fd_sc_hd__lpflow_inputiso1p_1
+      155   969.68   sky130_fd_sc_hd__lpflow_isobufsrc_1
+       22  220.211   sky130_fd_sc_hd__maj3_1
+      290 3.27E+03   sky130_fd_sc_hd__mux2_1
+      104 1.04E+03   sky130_fd_sc_hd__mux2i_1
+     4042 1.52E+04   sky130_fd_sc_hd__nand2_1
+       64  400.384   sky130_fd_sc_hd__nand2b_1
+     1168 5.85E+03   sky130_fd_sc_hd__nand3_1
+       17  127.622   sky130_fd_sc_hd__nand3b_1
+     1260  7882.56   sky130_fd_sc_hd__nand4_1
+       26  227.718   sky130_fd_sc_hd__nand4b_1
+        3   33.782   sky130_fd_sc_hd__nand4bb_1
+     2965 1.11E+04   sky130_fd_sc_hd__nor2_1
+       12   75.072   sky130_fd_sc_hd__nor2b_1
+      438 2.19E+03   sky130_fd_sc_hd__nor3_1
+       46  345.331   sky130_fd_sc_hd__nor3b_1
+      810  5067.36   sky130_fd_sc_hd__nor4_1
+       40  350.336   sky130_fd_sc_hd__nor4b_1
+       11  110.106   sky130_fd_sc_hd__nor4bb_1
+       38   427.91   sky130_fd_sc_hd__o2111a_1
+      558 4.89E+03   sky130_fd_sc_hd__o2111ai_1
+        3   30.029   sky130_fd_sc_hd__o211a_1
+      152 1.14E+03   sky130_fd_sc_hd__o211ai_1
+       58  435.418   sky130_fd_sc_hd__o21a_1
+     2278 1.14E+04   sky130_fd_sc_hd__o21ai_0
+        3   30.029   sky130_fd_sc_hd__o21ba_1
+       16  120.115   sky130_fd_sc_hd__o21bai_1
+        9  101.347   sky130_fd_sc_hd__o221a_1
+      374 3.28E+03   sky130_fd_sc_hd__o221ai_1
+       44   385.37   sky130_fd_sc_hd__o22a_1
+     1224 7.66E+03   sky130_fd_sc_hd__o22ai_1
+       66  578.054   sky130_fd_sc_hd__o2bb2ai_1
+        2   17.517   sky130_fd_sc_hd__o31a_1
+       68   510.49   sky130_fd_sc_hd__o31ai_1
+        1    10.01   sky130_fd_sc_hd__o32a_1
+        2   17.517   sky130_fd_sc_hd__o32ai_1
+        2   22.522   sky130_fd_sc_hd__o41a_1
+       10   87.584   sky130_fd_sc_hd__o41ai_1
+       55   344.08   sky130_fd_sc_hd__or3_1
+        5   43.792   sky130_fd_sc_hd__or3b_1
+       84  630.605   sky130_fd_sc_hd__or4_1
+        6   60.058   sky130_fd_sc_hd__or4b_1
+     1082 9.48E+03   sky130_fd_sc_hd__xnor2_1
+        1   22.522   sky130_fd_sc_hd__xnor3_1
+      531  4650.71   sky130_fd_sc_hd__xor2_1
+        1   23.773   sky130_fd_sc_hd__xor3_1
+
+   Chip area for module '\cfg_full': 616711.475200
+     of which used for sequential elements: 408493.027200 (66.24%)
+

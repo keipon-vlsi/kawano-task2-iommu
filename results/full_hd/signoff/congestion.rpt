@@ -1,0 +1,9 @@
+[INFO IFP-0107] Defining die area using utilization: 35.00% and aspect ratio: 1.
+[INFO IFP-0104] Effective utilization:                0.351
+[INFO GPL-0019] Utilization:                    37.615 %
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+[INFO DPL-0006] Core area: 1757929.74 um^2, Instances area: 659444.96 um^2, Utilization: 37.5%
+Design area 659445 um^2 38% utilization.
+[INFO DPL-0006] Core area: 1757929.74 um^2, Instances area: 696027.55 um^2, Utilization: 39.6%
+Design area 696028 um^2 40% utilization.
+Design area 696028 um^2 40% utilization.

@@ -1,0 +1,50 @@
+{
+  "config": "full",
+  "library": "hd",
+  "activity": "VCD annotation unavailable -> equals default",
+  "vcd": "full.vcd",
+  "vcd_annotated": false,
+  "netlist": "post-synthesis (gate-level, no parasitics)",
+  "note": "RTL VCD net names differ from the flattened gate net; only matched nets (mostly top ports) are annotated -- approximate.",
+  "power": {
+    "by_category": {
+      "internal_W": 0.3014215,
+      "switching_W": 0.03477564,
+      "leakage_W": 1.916105e-07,
+      "total_W": 0.3361973
+    },
+    "by_group": {
+      "sequential": {
+        "internal_W": 0.2663126,
+        "switching_W": 0.00249921,
+        "leakage_W": 1.299716e-07,
+        "total_W": 0.2688119
+      },
+      "combinational": {
+        "internal_W": 0.03511032,
+        "switching_W": 0.03227919,
+        "leakage_W": 6.163074e-08,
+        "total_W": 0.06738957
+      },
+      "clock": {
+        "internal_W": 0.0,
+        "switching_W": 0.0,
+        "leakage_W": 0.0,
+        "total_W": 0.0
+      },
+      "macro": {
+        "internal_W": 0.0,
+        "switching_W": 0.0,
+        "leakage_W": 0.0,
+        "total_W": 0.0
+      },
+      "pad": {
+        "internal_W": 0.0,
+        "switching_W": 0.0,
+        "leakage_W": 0.0,
+        "total_W": 0.0
+      }
+    },
+    "total_W": 0.3361973
+  }
+}

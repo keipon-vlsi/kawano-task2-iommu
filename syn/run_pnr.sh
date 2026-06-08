@@ -20,10 +20,12 @@ CLEF="$B/lef/sky130_fd_sc_${VARIANT}.lef"
 MAGICRC="/foss/pdks/sky130A/libs.tech/magic/sky130A.magicrc"
 D=/foss/designs
 CELLGDS="$B/gds/sky130_fd_sc_${VARIANT}.gds"
+# placement row site: hd/hdll use 'unithd', the other variants use 'unit'
+case "$VARIANT" in hd|hdll) SITE=unithd;; *) SITE=unit;; esac
 ENVS=(-e NETLIST=$D/syn/build/${NAME}_netlist.v -e LIB=$LIB -e TLEF=$TLEF -e CLEF=$CLEF
       -e CELLGDS=$CELLGDS -e TOP=cfg_${NAME} -e PERIOD_NS=$PERIOD -e MAX_FANOUT=$MAXFO
       -e CLKBUF=sky130_fd_sc_${VARIANT}__clkbuf_4 -e CLKROOT=sky130_fd_sc_${VARIANT}__clkbuf_16
-      -e DETAILED=$DETAILED -e OUTDEF=$D/syn/build/${NAME}.def -e OUTODB=$D/syn/build/${NAME}.odb
+      -e DETAILED=$DETAILED -e SITE=$SITE -e OUTDEF=$D/syn/build/${NAME}.def -e OUTODB=$D/syn/build/${NAME}.odb
       -e OUTGDS=$D/results/${NAME}.gds)
 
 docker run --rm -v "$ROOT":/foss/designs "${ENVS[@]}" "$IMAGE" --skip bash -lc \
@@ -66,6 +68,9 @@ for t, m in stages.items():
 print(f"  GDS: {'results/%s.gds'%name if gds else 'NOT written (see results/%s_pnr.txt)'%name}")
 PY
 
-# combined RTL/synth/P&R PPA summary (keeps the per-stage JSONs intact)
-python3 "$ROOT/syn/ppa_compare.py" "$NAME" >/dev/null 2>&1 && \
-  echo "  combined PPA -> results/ppa_compare.md / ${NAME}_ppa.json" || true
+# combined RTL/synth/P&R PPA summary (keeps the per-stage JSONs intact).
+# flow.py drives this itself (SKIP_PPA=1) so the shared history gets exactly one row.
+if [ "${SKIP_PPA:-0}" != "1" ]; then
+  python3 "$ROOT/syn/ppa_compare.py" "$NAME" >/dev/null 2>&1 && \
+    echo "  combined PPA -> results/ppa_compare.md / ${NAME}_ppa.json" || true
+fi

@@ -13,5 +13,16 @@ results/*.def
 results/*.odb
 results/*_pnr.txt
 results/*_sta.txt
+# per-run flow.py dirs (results/<cfg>_<lib>/): keep reports/JSON/png, drop heavy raw
+results/*/*.gds
+results/*/*.def
+results/*/*.odb
+results/*/pnr.txt
+results/*/synth_sta.txt
+results/*/*_stdout.txt
+results/*/vcd_build.txt
+results/*/power_vcd.txt
+results/*/layout_render.txt
+tb_coco/_vcd_run.py
 open_pdks/
 pdk_full/

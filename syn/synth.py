@@ -38,6 +38,7 @@ RTL_FILES = ["iommu_pkg.sv", "cache_store.sv", "mem_if.sv", "walker.sv",
 # fixed widths (mirror iommu_pkg)
 VPN_W, DEVICE_W, PASID_W, VMID_W = 27, 16, 20, 14
 SPA_W, GPA_W, PPN_W, CTX_W = 40, 41, 28, 50
+LINE_W = 512                       # 64 B DRAM burst = 8 PTEs (mem read data width)
 IOTLB_KEY_W = CTX_W + VPN_W
 
 
@@ -59,7 +60,7 @@ module cfg_{name} (
   output logic rsp_valid, input logic rsp_ready,
   output logic [{SPA_W-1}:0] rsp_spa, output logic [{mshr_w-1}:0] rsp_tag,
   output logic arvalid, input logic arready, output logic [{GPA_W-1}:0] araddr, output logic [{tag_w-1}:0] arid,
-  input  logic rvalid, output logic rready, input logic [{PPN_W-1}:0] rdata, input logic [{tag_w-1}:0] rid,
+  input  logic rvalid, output logic rready, input logic [{LINE_W-1}:0] rdata, input logic [{tag_w-1}:0] rid,
   input  logic pl_valid, input logic [2:0] pl_sel,
   input  logic [{IOTLB_KEY_W-1}:0] pl_key, input logic [{SPA_W-1}:0] pl_data,
   output logic [31:0] cnt_iotlb_hit, cnt_coalesced, cnt_walks, buf_occupancy, active_walks, mem_outstanding

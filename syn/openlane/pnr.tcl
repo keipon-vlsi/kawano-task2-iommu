@@ -20,7 +20,7 @@ proc stage_report {tag} {
 }
 
 # ---------- floorplan ----------
-initialize_floorplan -utilization 35 -aspect_ratio 1.0 -core_space 5 -site unithd
+initialize_floorplan -utilization 35 -aspect_ratio 1.0 -core_space 5 -site $::env(SITE)
 make_tracks
 place_pins -hor_layers met3 -ver_layers met2
 set_wire_rc -signal -layer met3
@@ -48,6 +48,15 @@ set_routing_layers -signal met1-met5 -clock met1-met5
 global_route -allow_congestion
 estimate_parasitics -global_routing
 stage_report GROUTE
+
+# ---------- signoff-style reports (markers; flow.py splits into signoff/*.rpt) ----------
+puts "##SIGNOFF cellusage";   catch {report_cell_usage}
+puts "##SIGNOFF hold";        catch {report_checks -path_delay min -group_path_count 5 -fields {slew cap} -digits 4}
+puts "##SIGNOFF timing_worstN"; catch {report_checks -path_delay max -group_path_count 10 -digits 4}
+puts "##SIGNOFF clock";       catch {report_clock_skew}
+puts "##SIGNOFF wirelength";  catch {report_wire_length -net_count 1}
+puts "##SIGNOFF END"
+
 if {$::env(DETAILED) == 1} {
   detailed_route -output_drc [file rootname $::env(OUTDEF)].drc.rpt -verbose 0
   estimate_parasitics -global_routing
