@@ -1,0 +1,59 @@
+{
+  "config": "full",
+  "params": {
+    "MODE": 1,
+    "COALESCE_FACTOR": 8,
+    "PREFETCH_EN": 0,
+    "NUM_WALKERS": 4,
+    "BUFFER_DEPTH": 16,
+    "MEM_MAX_OUTSTANDING": 8,
+    "IOTLB_ENTRIES": 64,
+    "IOTLB_ASSOC": 4,
+    "IOTLB_STORAGE": 1,
+    "S1PWC_ENTRIES": 16,
+    "S1PWC_ASSOC": 16,
+    "S1PWC_STORAGE": 0
+  },
+  "clock_target_mhz": 400.0,
+  "area_um2_total": 705033.4608,
+  "area_um2_per_module": {
+    "walk_engine": 2645.352,
+    "walker": 3788.208,
+    "mem_if": 329.2704,
+    "cache_store": 419597.5824,
+    "cache_store'": 118791.4896,
+    "txn_buffer": 185510.304
+  },
+  "fmax_mhz": 48.02289731744096,
+  "critical_path_ns": 20.8234,
+  "wns_ns": -18.3234,
+  "critical_startpoint": "_54833_",
+  "critical_endpoint": "_54837_",
+  "critical_dominant_cells": [
+    {
+      "fanout": 469,
+      "slew_ns": 16.2687,
+      "delay_ns": 11.3997,
+      "cell": "sky130_fd_sc_hs__nor2_1"
+    },
+    {
+      "fanout": 75,
+      "slew_ns": 5.6064,
+      "delay_ns": 4.1262,
+      "cell": "sky130_fd_sc_hs__nor4_1"
+    },
+    {
+      "fanout": 42,
+      "slew_ns": 1.1472,
+      "delay_ns": 0.8715,
+      "cell": "sky130_fd_sc_hs__nand4_1"
+    }
+  ],
+  "power_W": {
+    "internal_W": 0.4743287,
+    "switching_W": 0.0427463,
+    "leakage_W": 1.591823e-05,
+    "total_W": 0.5170909
+  },
+  "meets_target": false
+}
