@@ -62,3 +62,7 @@ for t, m in stages.items():
     print(f"  {t:7} Fmax {fm:>9}  slack {m['worst_slack_ns']}  die {m['die_area_um2']}um^2  P {m['power_W_total']}W")
 print(f"  GDS: {'results/%s.gds'%name if gds else 'NOT written (see results/%s_pnr.txt)'%name}")
 PY
+
+# combined RTL/synth/P&R PPA summary (keeps the per-stage JSONs intact)
+python3 "$ROOT/syn/ppa_compare.py" "$NAME" >/dev/null 2>&1 && \
+  echo "  combined PPA -> results/ppa_compare.md / ${NAME}_ppa.json" || true

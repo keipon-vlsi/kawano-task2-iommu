@@ -15,6 +15,8 @@ proc stage_report {tag} {
   report_tns
   report_design_area
   report_power -digits 6
+  puts "##PATH $tag"
+  report_checks -path_delay max -group_path_count 1 -fields {fanout cap slew} -digits 4
 }
 
 # ---------- floorplan ----------

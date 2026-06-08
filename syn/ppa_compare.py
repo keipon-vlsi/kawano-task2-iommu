@@ -92,9 +92,13 @@ def main(name="full"):
            "- Fmax improves synth→place (buffering fixes the fanout-466 net) then dips slightly with",
            "  CTS/route parasitics; the design still needs pipelining to reach 400 MHz.",
            ]
-    (RESULTS / "ppa_compare.md").write_text("\n".join(md) + "\n")
-    (RESULTS / "ppa_compare.json").write_text(json.dumps(
-        {"architectural": arch, "post_synth": syn, "pnr_stages": stages}, indent=2))
+    (RESULTS / f"{name}_ppa.md").write_text("\n".join(md) + "\n")
+    (RESULTS / f"{name}_ppa.json").write_text(json.dumps(
+        {"config": name,
+         "architectural_rtl": arch,        # simulator estimate (normalized)
+         "post_synth": syn,                # results/<name>.json
+         "pnr_stages": stages},            # results/<name>_pnr.json stages
+        indent=2))
     print("\n".join(md))
 
 

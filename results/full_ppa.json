@@ -1,5 +1,6 @@
 {
-  "architectural": {
+  "config": "full",
+  "architectural_rtl": {
     "area_GE": 20571.1,
     "energy_per_xlate_norm": 283.81,
     "fmax_mhz": "n/a (behavioral)"

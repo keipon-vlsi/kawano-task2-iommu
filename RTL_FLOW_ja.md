@@ -249,8 +249,13 @@ cat results/full_pnr.json                       # 各段の Fmax/面積/電力
 ```bash
 ls -la results/full.gds                         # 例: 16 MB, die 1202.8 x 1202.8 µm
 ```
-- **GUI で見る**：`/space/iic-osic-tools/start_vnc.sh`（または `start_x.sh`）でコンテナの
-  klayout を起動し `results/full.gds` を開く（要 X/VNC）。
+- **GUI で見る**：コンテナは `$DESIGNS`（既定 `$HOME/eda/designs`）だけを `/foss/designs` に
+  マウントするので、**プロジェクトを見せるには `DESIGNS` を指定して起動**する：
+  ```bash
+  DESIGNS=/space/kawano-task2-iommu /space/iic-osic-tools/start_vnc.sh   # or start_x.sh
+  # klayout で /foss/designs/results/full.gds を開く
+  ```
+  （または `cp results/full.gds ~/eda/designs/` してデフォルトのまま開く）。
 - **ヘッドレスで画像化**：klayout の Python(pya) で `Layout.read` → `LayoutView.save_image`
   （`results/full_layout.png` を生成済み）。
 - 配線まで見たい場合は `DETAILED=1` で detailed_route（GDS に実メタル配線が入る）。
@@ -276,6 +281,8 @@ ls -la results/full.gds                         # 例: 16 MB, die 1202.8 x 1202.
 ```
 アーキ見積り（sim, 正規化GE）／合成後（µm²,Fmax,W）／配置・CTS・配線後（die µm²,Fmax,W）を
 1表に。単位が違う点（GE vs µm²）に注意（GE はアーキ相対比較用、EDA 段は物理絶対値）。
+**`run_pnr.sh` は P&R 完了後にこれを自動実行**し、各段の json（`full.json`/`full_pnr.json`）は
+そのまま残したうえで、まとめファイル **`results/<name>_ppa.json` / `_ppa.md`** を追加生成する。
 
 ### 5.2 パラメータ（コンフィグ）の指定方法
 - **アーキパラメータ**：`syn/synth.py`/`synth_osic.py` の `CONFIGS`（→ ネットリストに焼き込み）。
