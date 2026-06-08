@@ -1,48 +1,64 @@
 #!/usr/bin/env bash
-# Raw-OpenROAD P&R (place + repair) PPA for one config, via IIC-OSIC-TOOLS docker.
-# This is the in-container path (OpenLane is not installed in this image; OpenROAD is
-# what OpenLane drives anyway). It runs syn/openlane/pnr.tcl and writes results/<name>_pnr.txt.
+# Staged OpenROAD P&R (place -> CTS -> route) + magic GDS, via IIC-OSIC-TOOLS docker.
+# Per-stage PPA (Fmax/area/power) -> results/<name>_pnr.json ; GDS -> results/<name>.gds.
 #
-# Prereq: the gate netlist syn/build/<name>_netlist.v exists
-#         (produced by:  python3 syn/synth_osic.py <name>).
-# Usage:  syn/run_pnr.sh [name] [period_ns] [max_fanout]
+# Prereq:  python3 syn/synth_osic.py <name>   (makes syn/build/<name>_netlist.v)
+# Usage:   syn/run_pnr.sh [name] [period_ns] [max_fanout]
+#   env:   STD_VARIANT=hd|hs|...   DETAILED=0|1   (1 = run detailed routing, slow)
 set -e
-NAME="${1:-full}"
-PERIOD="${2:-2.5}"
-MAXFO="${3:-16}"
+NAME="${1:-full}"; PERIOD="${2:-2.5}"; MAXFO="${3:-16}"
+VARIANT="${STD_VARIANT:-hd}"; DETAILED="${DETAILED:-0}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 IMAGE="hpretl/iic-osic-tools:latest"
-B="/foss/pdks/sky130A/libs.ref/sky130_fd_sc_hd"
+B="/foss/pdks/sky130A/libs.ref/sky130_fd_sc_${VARIANT}"
+LIB="$B/lib/sky130_fd_sc_${VARIANT}__tt_025C_1v80.lib"
+TLEF="$B/techlef/sky130_fd_sc_${VARIANT}__nom.tlef"
+CLEF="$B/lef/sky130_fd_sc_${VARIANT}.lef"
+MAGICRC="/foss/pdks/sky130A/libs.tech/magic/sky130A.magicrc"
+D=/foss/designs
+CELLGDS="$B/gds/sky130_fd_sc_${VARIANT}.gds"
+ENVS=(-e NETLIST=$D/syn/build/${NAME}_netlist.v -e LIB=$LIB -e TLEF=$TLEF -e CLEF=$CLEF
+      -e CELLGDS=$CELLGDS -e TOP=cfg_${NAME} -e PERIOD_NS=$PERIOD -e MAX_FANOUT=$MAXFO
+      -e CLKBUF=sky130_fd_sc_${VARIANT}__clkbuf_4 -e CLKROOT=sky130_fd_sc_${VARIANT}__clkbuf_16
+      -e DETAILED=$DETAILED -e OUTDEF=$D/syn/build/${NAME}.def -e OUTODB=$D/syn/build/${NAME}.odb
+      -e OUTGDS=$D/results/${NAME}.gds)
 
-docker run --rm -v "$ROOT":/foss/designs \
-  -e NETLIST="/foss/designs/syn/build/${NAME}_netlist.v" \
-  -e LIB="$B/lib/sky130_fd_sc_hd__tt_025C_1v80.lib" \
-  -e TLEF="$B/techlef/sky130_fd_sc_hd__nom.tlef" \
-  -e CLEF="$B/lef/sky130_fd_sc_hd.lef" \
-  -e TOP="cfg_${NAME}" -e PERIOD_NS="$PERIOD" -e MAX_FANOUT="$MAXFO" \
-  "$IMAGE" --skip bash -lc "openroad -no_init -exit /foss/designs/syn/openlane/pnr.tcl" \
-  > "$ROOT/results/${NAME}_pnr.txt" 2>&1
+docker run --rm -v "$ROOT":/foss/designs "${ENVS[@]}" "$IMAGE" --skip bash -lc \
+  "openroad -no_init -exit $D/syn/openlane/pnr.tcl; \
+   magic -dnull -noconsole -rcfile $MAGICRC $D/syn/openlane/gds.tcl || echo '##GDS_FAILED'" \
+  > "$ROOT/results/${NAME}_pnr.txt" 2>&1 || true
 
-# parse a compact PPA summary
-python3 - "$NAME" "$PERIOD" "$ROOT" <<'PY'
+python3 - "$NAME" "$PERIOD" "$ROOT" "$VARIANT" <<'PY'
 import re, sys, json
-name, period, root = sys.argv[1], float(sys.argv[2]), sys.argv[3]
+name, period, root, variant = sys.argv[1], float(sys.argv[2]), sys.argv[3], sys.argv[4]
 log = open(f"{root}/results/{name}_pnr.txt").read()
-ws = re.search(r"worst slack(?:\s+max)?\s+(-?\d+\.?\d*)", log)
-slack = float(ws.group(1)) if ws else None
-crit = (period - slack) if slack is not None else None
-fmax = (1000.0/crit) if crit and crit > 0 else None
-area = re.search(r"Design area\s+(\d+)\s+um\^2\s+(\d+)%", log)
-pw = re.search(r"^Total\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)", log, re.M)
-out = {"config": name, "stage": "post-place+repair (no CTS/route)",
-       "period_ns": period, "worst_slack_ns": slack,
-       "critical_path_ns": crit, "fmax_mhz": fmax,
-       "die_area_um2": int(area.group(1)) if area else None,
-       "utilization_pct": int(area.group(2)) if area else None,
-       "power_W": ({"internal": float(pw.group(1)), "switching": float(pw.group(2)),
-                    "leakage": float(pw.group(3)), "total": float(pw.group(4))} if pw else {})}
+def block(tag, nxt):
+    m = re.search(rf"##STAGE {tag}(.*?)(##STAGE {nxt}|##DONE|##GDS|\Z)", log, re.S)
+    return m.group(1) if m else ""
+def metrics(b):
+    ws = re.search(r"worst slack(?:\s+max)?\s+(-?\d+\.?\d*)", b)
+    s = float(ws.group(1)) if ws else None
+    crit = (period - s) if s is not None else None
+    ar = re.search(r"Design area\s+(\d+)\s+um\^2\s+(\d+)%", b)
+    pw = re.search(r"^Total\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)", b, re.M)
+    return {"worst_slack_ns": s, "critical_path_ns": crit,
+            "fmax_mhz": (1000.0/crit) if crit and crit > 0 else None,
+            "die_area_um2": int(ar.group(1)) if ar else None,
+            "utilization_pct": int(ar.group(2)) if ar else None,
+            "power_W_total": float(pw.group(4)) if pw else None}
+order = ["PLACE", "CTS", "GROUTE", "DROUTE"]
+stages = {}
+for i, t in enumerate(order):
+    nxt = order[i+1] if i+1 < len(order) else "ZZZ"
+    b = block(t, nxt)
+    if b.strip():
+        stages[t] = metrics(b)
+gds = "##GDS_WRITTEN" in log
+out = {"config": name, "variant": variant, "period_ns": period, "stages": stages,
+       "gds": f"results/{name}.gds" if gds else None}
 json.dump(out, open(f"{root}/results/{name}_pnr.json", "w"), indent=2)
-print(f"  Fmax ~{fmax:.1f} MHz (crit {crit:.2f} ns, slack {slack} ns) | "
-      f"die {out['die_area_um2']} um^2 @ {out['utilization_pct']}% | power {out['power_W'].get('total')} W"
-      if fmax else "  parse failed; see results/%s_pnr.txt" % name)
+for t, m in stages.items():
+    fm = f"{m['fmax_mhz']:.1f}MHz" if m['fmax_mhz'] else "n/a"
+    print(f"  {t:7} Fmax {fm:>9}  slack {m['worst_slack_ns']}  die {m['die_area_um2']}um^2  P {m['power_W_total']}W")
+print(f"  GDS: {'results/%s.gds'%name if gds else 'NOT written (see results/%s_pnr.txt)'%name}")
 PY

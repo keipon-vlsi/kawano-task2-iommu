@@ -1,16 +1,32 @@
 {
   "config": "full",
-  "stage": "post-place+repair (no CTS/route)",
+  "variant": "hd",
   "period_ns": 2.5,
-  "worst_slack_ns": -14.1,
-  "critical_path_ns": 16.6,
-  "fmax_mhz": 60.24096385542168,
-  "die_area_um2": 530988,
-  "utilization_pct": 37,
-  "power_W": {
-    "internal": 0.3027835,
-    "switching": 0.1678328,
-    "leakage": 1.743881e-07,
-    "total": 0.4706166
-  }
+  "stages": {
+    "PLACE": {
+      "worst_slack_ns": -14.1,
+      "critical_path_ns": 16.6,
+      "fmax_mhz": 60.24096385542168,
+      "die_area_um2": 530988,
+      "utilization_pct": 37,
+      "power_W_total": 0.4706166
+    },
+    "CTS": {
+      "worst_slack_ns": -14.13,
+      "critical_path_ns": 16.630000000000003,
+      "fmax_mhz": 60.13229104028863,
+      "die_area_um2": 561624,
+      "utilization_pct": 40,
+      "power_W_total": 0.5965126
+    },
+    "GROUTE": {
+      "worst_slack_ns": -14.33,
+      "critical_path_ns": 16.83,
+      "fmax_mhz": 59.417706476530014,
+      "die_area_um2": 561624,
+      "utilization_pct": 40,
+      "power_W_total": 0.5965126
+    }
+  },
+  "gds": "results/full.gds"
 }

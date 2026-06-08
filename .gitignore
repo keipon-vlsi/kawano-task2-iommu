@@ -8,3 +8,8 @@ results/*_area.txt
 results/*_timing.txt
 results/*_ltp.txt
 results/ppa.json
+results/*.gds
+results/*.def
+results/*.odb
+results/*_pnr.txt
+results/*_sta.txt
