@@ -155,9 +155,22 @@ Full の例：`mem_if.can_issue` → `walk_engine` アービタ → `txn_buffer`
 **S1 PWC の連想（CAM）ルックアップ**。深さ713（generic levels）。
 → 次フェーズは**このルックアップのパイプライン化**で 400 MHz を狙う、という指針が出る。
 
-### 4.3 動作周波数（Fmax）・電力（このオフライン環境では保留）
-WASM 版 yosys/abc はフラット化ネットリストの STA を完走できず、OpenSTA/OpenROAD も未導入のため、
-**精密な Fmax・電力は OpenLane/OpenSTA フロー（§5）で取得する**。手順（PDK さえあれば）：
+### 4.3 動作周波数（Fmax）・クリティカルパス・電力（IIC-OSIC-TOOLS で取得）
+`/space/iic-osic-tools` の docker に native yosys + OpenSTA + sky130 PDK があるので、
+**`syn/synth_osic.py` がこれを使って実 Fmax・クリティカルパス・電力まで出す**（面積のみの
+`syn/synth.py` の上位版）。
+```bash
+.venv/bin/python syn/synth_osic.py full          # docker 経由で yosys(flatten)+OpenSTA
+cat results/full.json                            # 面積/Fmax/クリティカルパス/電力が全部入り
+```
+Full の実測（合成のみ・P&R前）：**Fmax ≈ 19.5 MHz（crit 51.4 ns, WNS −48.9 ns, 400MHz 未達）**、
+**電力 0.292 W**（internal 0.258 / switching 0.034 / leakage ~0）。
+クリティカルパスの支配セルは **fanout 466 の `nor4`（単体31ns）**＝CAM 連想一致リダクション。
+→ ルックアップ/アービタのパイプライン化＋P&R のバッファ挿入で改善（§4.3 の値は P&R 前の最悪値）。
+`results/full_sta.txt` に OpenSTA の `report_checks`（パス詳細）と `report_power` の生ログ。
+
+> 注：この OpenSTA 数値が**サインオフ前の合成段階の値**。P&R 後は OpenLane（§5）でさらに正確化。
+> 以下は OpenSTA を手で叩く場合の参考（`syn/synth_osic.py` が自動でやっている内容）：
 
 - **Fmax**：合成ネットリストを OpenSTA に読ませ、目標周期で slack を見る。
   `Fmax = 1 / (CLOCK_PERIOD − worst_slack)`。

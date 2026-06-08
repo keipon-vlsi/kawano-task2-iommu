@@ -25,29 +25,49 @@ cost driver) and motivates the **SRAM-macro storage pattern** and **smaller leaf
 IOTLB** (design_premises: spend area on PWC + coalescing, keep the leaf IOTLB
 small) in the next iteration.
 
-## Timing — critical path
+## Timing — Fmax / critical path (OpenSTA, IIC-OSIC-TOOLS)
 
-No OpenSTA/OpenROAD offline, so a calibrated Fmax is pending the OpenLane/OpenSTA
-flow (`syn/openlane/`). Yosys `ltp` on the flattened generic netlist gives the
-**critical-path location and depth**, which is what guides the next step:
+From `python3 syn/synth_osic.py full` (native yosys flatten+ABC → OpenSTA, sky130
+sc_hd tt, 400 MHz target). **Synthesis-only (no P&R/CTS/buffering)** — a worst
+case, see caveat.
 
-- **depth:** 713 generic logic levels (pre-tech-map; not a calibrated delay).
-- **path:** `mem_if.can_issue` → `walk_engine` arbiter (`any_free`, walker
-  `state`/`busy`) → `txn_buffer` lookup FSM (`lstate`) → **S1 PWC associative
-  (CAM) lookup** (`u_s1pwc.lookup_en` → `hit`).
+| metric | value |
+|---|---|
+| target | 400 MHz (2.5 ns) |
+| **Fmax** | **≈19.5 MHz** (critical path 51.4 ns, WNS −48.9 ns) |
+| meets 400 MHz | **no** (expected — single-cycle lookup, unpipelined) |
+| critical path | reg `_58315_` → reg `_58322_` (within the lookup/arbiter/FSM cone) |
 
-**Finding / next step:** the bottleneck is the **single-cycle fully-associative
-CAM lookup combined with cross-block combinational valid/ready + priority
-encoders** (arbiter `any_free`, `coalesce_hit` scan, IOTLB/PWC compare). To close
-400 MHz this must be **pipelined / registered**: register the CAM compare output
-(already 1-cycle in the wrapper, but the compare feeds combinationally into the
-arbiter+FSM), deepen `PIPELINE_DEPTH`, and break the cross-module combinational
-path. This is the Phase-2 lookup-mode / pipelining work the spec calls for.
+**Dominant cells on the path** (the actual bottleneck):
 
-## Power
-Dynamic power needs activity annotation (VCD from the cocotb run) + OpenSTA;
-deferred to the estimate↔synth calibration phase, where it is cross-checked
-against the simulator's per-module normalized power. Area + critical path are the
-Phase-1 synthesis deliverables.
+| cell | fanout | slew | delay |
+|---|---:|---:|---:|
+| `nor4_1` | **466** | 40.9 ns | **30.9 ns** |
+| `nor4_1` | 74 | 6.6 ns | 5.1 ns |
+| `a222oi_1` | 1 | 4.0 ns | 4.1 ns |
 
-Raw logs: `results/full_area.txt`, `results/full_ltp.txt`, `results/full.json`.
+**Finding / next step:** one min-drive `nor4` drives **466 loads** (≈31 ns alone)
+— a wide unbuffered reduction = the **fully-associative CAM "any-match" / priority
+reduction** feeding the arbiter+FSM combinationally (matches the earlier `ltp`
+path through `u_s1pwc` → arbiter → `lstate`). Two compounding causes: (1) the
+single-cycle associative compare + cross-block combinational valid/ready is one
+giant cone; (2) synth-only has no buffer tree/gate sizing, so high-fanout nets are
+catastrophic. **Phase-2:** pipeline/register the CAM compare and the arbiter
+(`PIPELINE_DEPTH`, `LOOKUP_MODE`), and a P&R run (CTS + sizing) will buffer the
+fanout. Post-P&R Fmax will be far higher than this synth-only 19.5 MHz, but the
+structural fix is pipelining.
+
+## Power (OpenSTA, default activity)
+
+| | internal | switching | leakage | **total** |
+|---|---:|---:|---:|---:|
+| W | 0.258 | 0.034 | ~1.5e-7 | **0.292 W** |
+
+Estimated with OpenSTA default switching activity (no VCD). For an activity-true
+number, feed the cocotb VCD (`read_power_activities -vcd`). Per-**module** power
+needs a hierarchical-power flow (the flattened netlist loses module boundaries) —
+a later refinement; the type split (internal/switching/leakage) is the Phase-1
+breakdown. This is the calibration target vs the simulator's normalized power.
+
+Raw logs: `results/full_area.txt` (per-module area), `results/full_area_flat.txt`
+(total), `results/full_sta.txt` (STA path + power), `results/full.json` (all of it).

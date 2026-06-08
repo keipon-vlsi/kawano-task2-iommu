@@ -14,22 +14,46 @@
     "S1PWC_ASSOC": 16,
     "S1PWC_STORAGE": 0
   },
+  "clock_target_mhz": 400.0,
+  "area_um2_total": 497943.8176,
   "area_um2_per_module": {
-    "txn_buffer": 133779.5552,
+    "walk_engine": 1906.8288,
     "walker": 2692.5824,
     "mem_if": 231.472,
-    "cache_store": 294846.5312,
-    "cache_store'": 84522.3136,
-    "walk_engine": 1906.8288
+    "cache_store": 295069.2448,
+    "cache_store'": 83653.9808,
+    "txn_buffer": 133309.104
   },
-  "total_area_um2": 526057.0304,
-  "critical_path_depth_generic_levels": 713,
-  "critical_path_modules": [
-    "u_front",
-    "u_walk",
-    "u_mem"
+  "fmax_mhz": 19.464682307187722,
+  "critical_path_ns": 51.3751,
+  "wns_ns": -48.8751,
+  "critical_startpoint": "_58315_",
+  "critical_endpoint": "_58322_",
+  "critical_dominant_cells": [
+    {
+      "fanout": 466,
+      "slew_ns": 40.9097,
+      "delay_ns": 30.8564,
+      "cell": "sky130_fd_sc_hd__nor4_1"
+    },
+    {
+      "fanout": 74,
+      "slew_ns": 6.6147,
+      "delay_ns": 5.1052,
+      "cell": "sky130_fd_sc_hd__nor4_1"
+    },
+    {
+      "fanout": 1,
+      "slew_ns": 3.9671,
+      "delay_ns": 4.0738,
+      "cell": "sky130_fd_sc_hd__a222oi_1"
+    }
   ],
-  "fmax_mhz": null,
-  "target_mhz": 400.0,
-  "note": "area from sky130 sc_hd tt; Fmax pending OpenSTA; critical path is the single-cycle CAM lookup + arbiter + FSM -> pipeline the lookup next."
+  "power_W": {
+    "internal_W": 0.2581179,
+    "switching_W": 0.03414665,
+    "leakage_W": 1.547342e-07,
+    "total_W": 0.2922647
+  },
+  "meets_target": false
 }
