@@ -195,3 +195,60 @@ later iterations.
   directly into the simulator's per-module normalized PPA (the calibration target).
 - An OpenLane `config.json` is provided in `syn/openlane/` for a full P&R PPA run
   where docker + OpenLane are available (out of scope for this offline run).
+
+---
+
+# ASSUMPTIONS — RTL 詳細化（STEP 1：実ポインタチェイス化）
+
+Phase-1 の合成的アドレスを廃し、`walker.sv` を**実 Sv39 ポインタチェイス**に詳細化した。
+ハッピーパスのみ（fault/permission の*判定*は省略）だが、それらに対応する**レジスタ（ビット）
+は生成**して面積・電力に反映する。
+
+## メモリ R チャネル幅の決定（記録）
+- **512 bit/beat（= 64 B キャッシュライン = 8 PTE を 1 ビートで返す）**を採用。
+  非リーフ読みでも 512 b を返し、`idx[2:0]` で該当 64bit PTE を選ぶ。リーフ読みでは 8 PTE を
+  そのまま 512b ラインバッファへ取り込む（コアレッシングの実体）。`mem_if.DATA_W=LINE_W(512)`。
+- 代替（64bit×8beat バースト）も仕様上可だが、実装単純化のため単一 512b ビートを選択。
+
+## mem_if のスキッドレジスタ
+- 現状は AR/R パススルー＋ outstanding カウンタのみ（応答スキッドレジスタは未挿入）。
+  TB スタブが固定レイテンシ後に 1 ビート返すモデルで R バックプレッシャ衝突が無いため。
+  実メモリ接続で R が詰まる場合は R スキッド段を入れる（TODO）。
+
+## 追加した全レジスタ一覧と意図（省略禁止＝面積/電力要因）
+**walker.sv（per walker、NUM_WALKERS 個複製）**
+- `pte_q`：**64bit 実 Sv39 PTE レジスタ**（`hi[9:0] | ppn44[43:0] | rsw[1:0] | D A G U X W R V`）。
+  フラグはハッピーパス未使用でも DFF を生成（permission/fault 対応ビットの面積を計上するため）。
+- `line_q` / `leafline_q`：**512bit ラインバッファ**（8×64bit PTE）。並列 walker 時の主要面積要因。
+  `line_q`=直近取得ライン、`leafline_q`=リーフライン（コアレッシング保持）。
+- `base_q`：走行中テーブルベース PPN（running-address レジスタ）。
+- `level_q` / `start_lvl_q`：実レベルインデックス（2=root/1/0=leaf）と開始レベル。
+- `vpn_q` / `mshr_q`：処理中 VPN と MSHR(=バッファ)インデックス。
+- `l1tab_q` / `leaftab_q` / `spa_q`：上位段で得た次段テーブルベース（PWC 充填用）と確定 SPA。
+- `state`：FSM（IDLE/ISSUE/WAIT/DONE）。
+
+**txn_buffer.sv（front-end）**
+- `root_ppn_q`：**per-context root ポインタ（satp 相当）レジスタ**。TB が `pl_sel=6` で事前ロード。
+  walk のレベル2テーブルベースはここから取る。
+- S1 PWC を**実体化**：`u_s1_l2`（key=ctx+vpn>>18 → L1 テーブルベース PPN）/`u_s1_l1`
+  （key=ctx+vpn>>9 → リーフテーブルベース PPN）。PWC ヒットで開始レベルを下げ（短絡）、
+  定常で 1 リーフ読み/ライン。値（next-level base PPN）を完了時に充填。
+- IOTLB：結合ライン（key=ctx+line, line=vpn>>log2(COALESCE)）→ **ライン先頭 SPA** を格納。
+  ページ別 SPA = ライン先頭 + ページ内オフセット（線形リーフ写像で成立。完全 per-PTE 充填は将来）。
+- バッファ各エントリ（`e_state/e_vpn/e_ctx/e_line/e_spa/e_leader`）は register-complete（既存）。
+  MSHR は同一ライン在飛エントリの相乗りで実現（別 CAM 無し）。
+
+**cache_store.sv**：key/data/valid を DFF 配列で保持（既存）。`STORAGE=sram` のとき将来 SRAM
+マクロ化する **TODO**（現状は全 config で DFF/CAM マップ。STEP2 で面積影響を計測）。
+
+**walk_engine.sv**：アービタはコンビ（クリティカルパス計測対象として温存）。
+
+## ネスト（MODE_NESTED）
+- 2D walk は単段完成・検証後に同方針（レジスタ省略なし）で 2 段 FSM へ拡張する二次優先。
+  STEP1 は単段（MODE_S1_ONLY/bare）を完成・検証（tb_coco happy_path 合格）した。
+
+## STEP1 完了条件の充足
+- tb_coco を**整合ページテーブル**（各 PTE PPN が次段を正しく指す）スタブに更新。
+- happy_path 合格：全変換が正しい SPA、`walks == coalesced lines`（256/8=32）。
+- CLAUDE.md 検証トレンド（A〜E, リトル則）は `iommu_sim` pytest 17件で再現（不変）。
+- 全 config がビルド可（verilator lint クリーン）。

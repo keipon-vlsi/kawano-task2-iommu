@@ -38,6 +38,30 @@ package iommu_pkg;
   localparam int ST_FF   = 0;  // DFF / CAM (register-based)
   localparam int ST_SRAM = 1;  // SRAM / register-file style (synth hint)
 
+  // ---- memory / page-table-entry geometry ----
+  localparam int PTE_W    = 64;          // real RISC-V Sv39 PTE width
+  localparam int LINE_PTES= 8;           // 64 B cache line / 8 B PTE
+  localparam int LINE_W   = LINE_PTES * PTE_W;   // 512 b -- one DRAM burst returns this
+  // Sv39 PTE layout: [63:54] reserved/PBMT/N | [53:10] PPN(44b) | [9:8] RSW | [7:0] flags
+  //   flags: D(7) A(6) G(5) U(4) X(3) W(2) R(1) V(0)
+  typedef struct packed {
+    logic [9:0]  hi;        // reserved / PBMT / N
+    logic [43:0] ppn44;     // full Sv39 PPN (we use the low PPN_W bits)
+    logic [1:0]  rsw;
+    logic        d, a, g, u, x, w, r, v;
+  } sv39_pte_t;             // = 64 b
+  function automatic logic [PPN_W-1:0] pte_ppn(sv39_pte_t p);
+    return p.ppn44[PPN_W-1:0];
+  endfunction
+  // VPN index for a given Sv39 level (2=root .. 0=leaf), 9 bits each
+  function automatic logic [8:0] vpn_index(logic [VPN_W-1:0] vpn, int level);
+    case (level)
+      2: return vpn[26:18];
+      1: return vpn[17:9];
+      default: return vpn[8:0];
+    endcase
+  endfunction
+
   // ---- request descriptor (control state only; no 4 kB payload) ----
   typedef struct packed {
     logic [VPN_W-1:0]    vpn;

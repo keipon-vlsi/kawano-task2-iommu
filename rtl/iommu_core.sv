@@ -12,7 +12,7 @@ import iommu_pkg::*;
 
 module iommu_core #(
   // ---- architecture / config ----
-  parameter int MODE                = MODE_S1_ONLY,
+  parameter int MODE                = MODE_NESTED,
   parameter int COALESCE_FACTOR     = 8,
   parameter int PREFETCH_EN         = 0,
   parameter int NUM_WALKERS         = 4,
@@ -29,7 +29,6 @@ module iommu_core #(
   // ---- derived widths ----
   parameter int TAG_W      = (NUM_WALKERS < 2) ? 1 : $clog2(NUM_WALKERS),
   parameter int MSHR_W     = (BUFFER_DEPTH < 2) ? 1 : $clog2(BUFFER_DEPTH),
-  parameter int MAXRD_W    = 4,
   parameter int IOTLB_KEY_W= CTX_W + VPN_W
 )(
   input  logic              clk,
@@ -57,7 +56,7 @@ module iommu_core #(
   output logic [TAG_W-1:0]  arid,
   input  logic              rvalid,
   output logic              rready,
-  input  logic [PPN_W-1:0]  rdata,
+  input  logic [LINE_W-1:0] rdata,        // 64 B line (8 PTEs) per beat
   input  logic [TAG_W-1:0]  rid,
 
   // --- cache preload (steady-state warm-up by TB) ---
@@ -87,18 +86,23 @@ module iommu_core #(
   // front-end <-> walk-engine
   logic                disp_valid, disp_ready;
   logic [VPN_W-1:0]    disp_vpn;
-  logic [MAXRD_W-1:0]  disp_nreads;
+  logic [1:0]          disp_start_level;
+  logic [PPN_W-1:0]    disp_base;
   logic [MSHR_W-1:0]   disp_mshr;
   logic                done_valid, done_ready;
   logic [MSHR_W-1:0]   done_mshr;
+  logic [VPN_W-1:0]    done_vpn;
+  logic [1:0]          done_start_level;
   logic [SPA_W-1:0]    done_spa;
+  logic [PPN_W-1:0]    done_l1tab, done_leaftab;
+  logic [LINE_W-1:0]   done_leafline;
 
   // walk-engine <-> mem_if
   logic                mreq_valid, mreq_ready;
   logic [GPA_W-1:0]    mreq_addr;
   logic [TAG_W-1:0]    mreq_tag;
   logic                mrsp_valid;
-  logic [PPN_W-1:0]    mrsp_data;
+  logic [LINE_W-1:0]   mrsp_line;
   logic [TAG_W-1:0]    mrsp_tag;
 
   // ---- block 2/3: transaction buffer + MSHR + caches ----
@@ -114,32 +118,35 @@ module iommu_core #(
     .req_valid(req_valid), .req_ready(req_ready), .req(req_w),
     .rsp_valid(rsp_valid), .rsp_ready(rsp_ready), .rsp_spa(rsp_spa), .rsp_tag(rsp_tag),
     .disp_valid(disp_valid), .disp_ready(disp_ready), .disp_vpn(disp_vpn),
-    .disp_nreads(disp_nreads), .disp_mshr(disp_mshr),
-    .done_valid(done_valid), .done_ready(done_ready), .done_mshr(done_mshr), .done_spa(done_spa),
+    .disp_start_level(disp_start_level), .disp_base(disp_base), .disp_mshr(disp_mshr),
+    .done_valid(done_valid), .done_ready(done_ready), .done_mshr(done_mshr),
+    .done_vpn(done_vpn), .done_start_level(done_start_level), .done_spa(done_spa),
+    .done_l1tab(done_l1tab), .done_leaftab(done_leaftab), .done_leafline(done_leafline),
     .pl_valid(pl_valid), .pl_sel(pl_sel), .pl_key(pl_key), .pl_data(pl_data),
     .cnt_iotlb_hit(cnt_iotlb_hit), .cnt_coalesced(cnt_coalesced),
     .cnt_walks(cnt_walks), .buf_occupancy(buf_occupancy));
 
   // ---- block 1/4: walk engine (N walkers) + memory-request arbiter ----
   walk_engine #(
-    .NUM_WALKERS(NUM_WALKERS), .TAG_W(TAG_W), .ADDR_W(GPA_W), .DATA_W(PPN_W),
-    .MSHR_W(MSHR_W), .MAXRD_W(MAXRD_W)
+    .NUM_WALKERS(NUM_WALKERS), .TAG_W(TAG_W), .MSHR_W(MSHR_W)
   ) u_walk (
     .clk(clk), .rst_n(rst_n),
     .disp_valid(disp_valid), .disp_ready(disp_ready), .disp_vpn(disp_vpn),
-    .disp_nreads(disp_nreads), .disp_mshr(disp_mshr),
+    .disp_start_level(disp_start_level), .disp_base(disp_base), .disp_mshr(disp_mshr),
     .mreq_valid(mreq_valid), .mreq_ready(mreq_ready), .mreq_addr(mreq_addr), .mreq_tag(mreq_tag),
-    .mrsp_valid(mrsp_valid), .mrsp_data(mrsp_data), .mrsp_tag(mrsp_tag),
-    .done_valid(done_valid), .done_ready(done_ready), .done_mshr(done_mshr), .done_spa(done_spa),
+    .mrsp_valid(mrsp_valid), .mrsp_line(mrsp_line), .mrsp_tag(mrsp_tag),
+    .done_valid(done_valid), .done_ready(done_ready), .done_mshr(done_mshr),
+    .done_vpn(done_vpn), .done_start_level(done_start_level), .done_spa(done_spa),
+    .done_l1tab(done_l1tab), .done_leaftab(done_leaftab), .done_leafline(done_leafline),
     .active_walks_o(active_walks));
 
-  // ---- block 5: memory interface (AXI-like read master) ----
+  // ---- block 5: memory interface (AXI-like read master, 64 B line) ----
   mem_if #(
-    .ADDR_W(GPA_W), .DATA_W(PPN_W), .TAG_W(TAG_W), .MEM_MAX_OUTSTANDING(MEM_MAX_OUTSTANDING)
+    .ADDR_W(GPA_W), .DATA_W(LINE_W), .TAG_W(TAG_W), .MEM_MAX_OUTSTANDING(MEM_MAX_OUTSTANDING)
   ) u_mem (
     .clk(clk), .rst_n(rst_n),
     .req_valid(mreq_valid), .req_ready(mreq_ready), .req_addr(mreq_addr), .req_tag(mreq_tag),
-    .rsp_valid(mrsp_valid), .rsp_data(mrsp_data), .rsp_tag(mrsp_tag),
+    .rsp_valid(mrsp_valid), .rsp_data(mrsp_line), .rsp_tag(mrsp_tag),
     .arvalid(arvalid), .arready(arready), .araddr(araddr), .arid(arid),
     .rvalid(rvalid), .rready(rready), .rdata(rdata), .rid(rid),
     .outstanding_o(mem_outstanding));
