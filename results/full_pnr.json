@@ -1,0 +1,16 @@
+{
+  "config": "full",
+  "stage": "post-place+repair (no CTS/route)",
+  "period_ns": 2.5,
+  "worst_slack_ns": -14.1,
+  "critical_path_ns": 16.6,
+  "fmax_mhz": 60.24096385542168,
+  "die_area_um2": 530988,
+  "utilization_pct": 37,
+  "power_W": {
+    "internal": 0.3027835,
+    "switching": 0.1678328,
+    "leakage": 1.743881e-07,
+    "total": 0.4706166
+  }
+}
