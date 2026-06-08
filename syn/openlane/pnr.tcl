@@ -9,6 +9,14 @@ read_verilog $::env(NETLIST)
 link_design $::env(TOP)
 create_clock -name clk -period $::env(PERIOD_NS) [get_ports clk]
 
+# Early-stop level for the fast RTL<->P&R tuning loop (flow.py --until):
+#   place -> stop after global/detailed placement + repair_design (realistic Fmax)
+#   cts   -> stop after clock-tree synthesis
+#   route -> full global route + signoff + DEF/ODB (default; GDS streamed by run_pnr.sh)
+# place/cts stops skip DEF/ODB writes (no GDS) to keep the inner loop fast.
+set STOP_AFTER "route"
+if {[info exists ::env(STOP_AFTER)]} { set STOP_AFTER $::env(STOP_AFTER) }
+
 proc stage_report {tag} {
   puts "##STAGE $tag"
   report_worst_slack -max
@@ -35,6 +43,7 @@ repair_design
 detailed_placement
 estimate_parasitics -placement
 stage_report PLACE
+if {$STOP_AFTER eq "place"} { puts "##DONE (stop after place)"; exit }
 
 # ---------- clock tree synthesis ----------
 clock_tree_synthesis -buf_list $::env(CLKBUF) -root_buf $::env(CLKROOT) -sink_clustering_enable
@@ -42,6 +51,7 @@ set_propagated_clock [all_clocks]
 detailed_placement
 estimate_parasitics -placement
 stage_report CTS
+if {$STOP_AFTER eq "cts"} { puts "##DONE (stop after cts)"; exit }
 
 # ---------- routing ----------
 set_routing_layers -signal met1-met5 -clock met1-met5

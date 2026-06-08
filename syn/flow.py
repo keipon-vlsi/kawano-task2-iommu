@@ -112,9 +112,11 @@ def stage_synth(cfg, lib, period, pdk_ref, corner, rundir):
     return (ok and fmax is not None), syn, out
 
 
-def stage_pnr(cfg, lib, period, pdk_ref, maxfo, detailed, rundir):
-    """OpenROAD staged P&R + magic GDS via syn/run_pnr.sh; collect pnr.* + GDS/DEF/ODB."""
+def stage_pnr(cfg, lib, period, pdk_ref, maxfo, detailed, stop_after, write_gds, rundir):
+    """OpenROAD staged P&R (+ optional magic GDS) via syn/run_pnr.sh; collect pnr.* + DEF/ODB/GDS.
+    stop_after=place|cts|route bounds how far P&R runs; write_gds gates the heavy GDS stream."""
     env = {"STD_VARIANT": lib, "PDK_REF": pdk_ref, "DETAILED": "1" if detailed else "0",
+           "STOP_AFTER": stop_after, "WRITE_GDS": "1" if write_gds else "0",
            "SKIP_PPA": "1"}                       # flow.py owns the shared history row
     rc, out = sh(["bash", str(SYN / "run_pnr.sh"), cfg, period, str(maxfo)], env=env,
                  log=rundir / "pnr_stdout.txt")
@@ -389,74 +391,92 @@ def main():
     ap.add_argument("--pdk-ref", default=os.environ.get("PDK_REF", DEFAULT_PDK_REF))
     ap.add_argument("--maxfo", type=int, default=16, help="max fanout for repair_design")
     ap.add_argument("--detailed", action="store_true",
-                    help="run detailed_route (slow) for DRC signoff")
+                    help="run detailed_route (slow) for DRC signoff (needs --until route or gds)")
     ap.add_argument("--no-vcd", action="store_true", help="skip VCD-annotated power")
+    ap.add_argument("--until", choices=["synth", "place", "cts", "route", "gds"],
+                    default="gds",
+                    help="stop after this stage (fast RTL<->P&R tuning loop). "
+                         "synth=Fmax/critical path only; place=realistic Fmax post-repair; "
+                         "route=routed timing+signoff; gds=full signoff (default). "
+                         "Below gds skips VCD/power/layout/GDS.")
     args = ap.parse_args()
 
     cfg, lib, period = args.config, args.lib, args.period
+    # stage ordering: each --until value runs everything up to and including it
+    ORDER = {"synth": 0, "place": 1, "cts": 2, "route": 3, "gds": 4}
+    lvl = ORDER[args.until]
+    full = (lvl >= ORDER["gds"])            # only the full run does GDS/VCD/power/layout
+    stop_after = {1: "place", 2: "cts", 3: "route", 4: "route"}.get(lvl, "route")
     rundir = RESULTS / f"{cfg}_{lib}"
     rundir.mkdir(parents=True, exist_ok=True)
     print(f"=== flow: config={cfg} lib=sky130_fd_sc_{lib} period={period}ns "
-          f"-> {rundir.relative_to(ROOT)} ===")
+          f"--until {args.until} -> {rundir.relative_to(ROOT)} ===")
     stage_ok = {}
+    pnr, pdefault, pannot, pannot_ok, png_ok = {}, {}, {}, False, False
 
-    # 1) synthesis
-    print("[1/7] synthesis (yosys + OpenSTA) ...")
+    # 1) synthesis (always) -- this is the Fmax / critical-path signal
+    print("[synth] yosys + OpenSTA ...")
     ok, syn, _ = stage_synth(cfg, lib, period, args.pdk_ref, args.corner, rundir)
     stage_ok["synth"] = ok
-    print(f"      {'ok' if ok else 'FAILED'}  "
-          f"Fmax={(syn.get('fmax_mhz') or 0):.1f}MHz area={syn.get('area_um2_total')}um^2")
+    print(f"        {'ok' if ok else 'FAILED'}  "
+          f"Fmax={(syn.get('fmax_mhz') or 0):.1f}MHz area={syn.get('area_um2_total')}um^2 "
+          f"WNS={syn.get('wns_ns')}ns")
+    if ok and lvl == ORDER["synth"]:
+        print(f"        critical path: {syn.get('critical_startpoint')} -> "
+              f"{syn.get('critical_endpoint')}")
 
-    # 2) P&R + GDS (needs the synth netlist)
-    pnr, pdefault, pannot, pannot_ok, png_ok = {}, {}, {}, False, False
-    if ok:
-        print("[2/7] P&R (OpenROAD staged) + GDS (magic) ...")
+    # 2) P&R bounded by --until (place/cts/route); GDS only at --until gds
+    if ok and lvl >= ORDER["place"]:
+        print(f"[pnr]   OpenROAD staged (stop after {stop_after})"
+              f"{' + GDS (magic)' if full else ''} ...")
         g_ok, pnr, _ = stage_pnr(cfg, lib, period, args.pdk_ref, args.maxfo,
-                                 args.detailed, rundir)
+                                 args.detailed, stop_after, full, rundir)
         stage_ok["pnr"] = bool(pnr.get("stages"))
-        stage_ok["gds"] = g_ok
-        pnr = enrich_pnr(rundir, pnr)             # addition 1
-        split_signoff(cfg, rundir, args.detailed) # addition 3
+        if full:
+            stage_ok["gds"] = g_ok
+        pnr = enrich_pnr(rundir, pnr)              # addition 1
+        split_signoff(cfg, rundir, args.detailed)  # addition 3
         last = next((k for k in ["DROUTE", "GROUTE", "CTS", "PLACE"]
                      if k in pnr.get("stages", {})), None)
-        print(f"      P&R {'ok' if stage_ok['pnr'] else 'FAILED'} (last={last})  "
-              f"GDS {'ok' if g_ok else 'FAILED'}")
-    else:
-        print("[2/7] P&R skipped (synthesis failed)")
-        stage_ok["pnr"] = stage_ok["gds"] = False
+        print(f"        P&R {'ok' if stage_ok['pnr'] else 'FAILED'} (last={last})"
+              f"{'  GDS ' + ('ok' if g_ok else 'FAILED') if full else ''}")
+    elif ok:
+        print("[pnr]   skipped (--until synth)")
 
-    # 3) VCD-annotated power (addition 2)
-    vcd = None
-    if ok and not args.no_vcd:
-        print("[3/7] VCD (cocotb/Verilator --trace) ...")
-        vcd = gen_vcd(cfg, rundir)
-        print(f"      VCD {'ok: ' + vcd.name if vcd else 'unavailable (annotated=default)'}")
-    if ok:
-        print("[4/7] power: default vs VCD-annotated (OpenSTA) ...")
+    # 3) VCD-annotated power + 4) layout: full (--until gds) only
+    if ok and full:
+        vcd = None
+        if not args.no_vcd:
+            print("[power] VCD (cocotb/Verilator --trace) ...")
+            vcd = gen_vcd(cfg, rundir)
+            print(f"        VCD {'ok: ' + vcd.name if vcd else 'unavailable (annotated=default)'}")
+        print("[power] default vs VCD-annotated (OpenSTA) ...")
         pdefault, pannot, pannot_ok = stage_power(cfg, lib, period, args.pdk_ref,
                                                   args.corner, vcd, rundir)
         stage_ok["power"] = bool(pdefault)
 
-    # 4) provenance + cross-stage PPA + layout + report (addition 4)
-    print("[5/7] provenance + cross-stage PPA table ...")
+    # 5) provenance + cross-stage PPA + report (always); layout only when GDS exists
+    print("[rpt]   provenance + cross-stage PPA + report ...")
     prov = provenance(cfg, lib, period, args.corner, args.pdk_ref, rundir)
     stage_ok["ppa_stages"] = collect_ppa_stages(cfg, lib, rundir)
-    print("[6/7] layout.png (klayout) ...")
-    png_ok = gen_layout_png(cfg, lib, args.pdk_ref, rundir) if stage_ok.get("gds") else False
-    stage_ok["layout"] = png_ok
-    print("[7/7] aggregate report.md/html ...")
+    if full and stage_ok.get("gds"):
+        print("[rpt]   layout.png (klayout) ...")
+        png_ok = gen_layout_png(cfg, lib, args.pdk_ref, rundir)
+        stage_ok["layout"] = png_ok
     write_report(cfg, lib, period, syn, pnr, prov, pdefault, pannot, pannot_ok,
                  png_ok, rundir, stage_ok)
 
-    # summary
+    # summary -- pass criteria scale with --until
     print("\n=== summary ===")
     for k, v in stage_ok.items():
         print(f"  {k:12} {'PASS' if v else 'FAIL'}")
     files = sorted(p.relative_to(rundir).as_posix() for p in rundir.rglob("*") if p.is_file())
     print(f"  artifacts in {rundir.relative_to(ROOT)}/: {len(files)} files")
-    all_pass = all(stage_ok.get(k) for k in ("synth", "pnr", "gds"))
-    print(f"  RESULT: {'PASS' if all_pass else 'PARTIAL'} "
-          f"(report: {(rundir / 'report.md').relative_to(ROOT)})")
+    need = ["synth"] + (["pnr"] if lvl >= ORDER["place"] else []) \
+                     + (["gds"] if full else [])
+    all_pass = all(stage_ok.get(k) for k in need)
+    print(f"  RESULT: {'PASS' if all_pass else 'PARTIAL'} (--until {args.until}; "
+          f"report: {(rundir / 'report.md').relative_to(ROOT)})")
     return 0 if all_pass else 1
 
 

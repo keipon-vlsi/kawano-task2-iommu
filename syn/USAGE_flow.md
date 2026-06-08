@@ -40,6 +40,14 @@ python3 syn/flow.py --config full --lib hs --detailed
 
 # クロックを 4ns(=250MHz) に緩めて評価
 python3 syn/flow.py --config no_coalesce --lib hd --period 4.0
+
+# === クリティカルパス改善の高速ループ(--until)===
+# 内側ループ: 合成だけ(Fmax / クリティカルパス) ~4 分
+python3 syn/flow.py --config full --lib hd --until synth
+# place 後の現実的 Fmax(repair_design 後) ~8 分
+python3 syn/flow.py --config full --lib hd --until place
+# 配線後タイミング + signoff(GDS 無し) ~18 分
+python3 syn/flow.py --config full --lib hd --until route
 ```
 
 ### 主な引数
@@ -53,11 +61,53 @@ python3 syn/flow.py --config no_coalesce --lib hd --period 4.0
 | `--maxfo` | `16` | `repair_design` の最大ファンアウト |
 | `--detailed` | off | `detailed_route` を実行（低速）。**DRC signoff はこれが必要** |
 | `--no-vcd` | off | VCD 注釈付き電力をスキップ（高速化） |
+| `--until` | `gds` | **停止段**: synth / place / cts / route / gds。下記「高速ループ」参照 |
 
 - **冪等**: 同じ引数で何度でも再実行可。途中段が失敗しても既存成果物は壊しません
   （各段は独立にログを残し、収集は上書きコピー）。
 - 最後に **stage ごとの PASS/FAIL サマリ**を標準出力します。終了コードは
-  synth/pnr/gds が全 PASS なら 0、部分成功なら 1。
+  `--until` で要求した段（synth なら synth、gds なら synth/pnr/gds）が全 PASS なら 0、
+  部分成功なら 1。
+
+---
+
+## 2.5. クリティカルパス改善の高速ループ（`--until`）
+
+RTL を直すたびに full flow（P&R＋GDS＋power＋layout, 約 24 分）を回す必要はありません。
+**クリティカルパスの情報（Fmax / WNS / 始点・終点・支配セル）は論理合成の OpenSTA から
+出る**ので、内側ループは合成だけで十分です。`--until` で停止段を選びます。
+
+| `--until` | 走る工程 | 目安時間 | 得られるもの | スキップされる物 |
+|---|---|---|---|---|
+| `synth` | 合成 + OpenSTA | **~4 分** | Fmax / WNS / **クリティカルパス始点・終点・支配セル** | P&R / GDS / VCD / power / layout |
+| `place` | + floorplan/place/repair_design | ~8 分 | repair 後の**現実的 Fmax**（fanout 修正済み） | CTS / route / GDS / VCD / power / layout |
+| `cts` | + クロックツリー合成 | ~10 分 | CTS 後タイミング | route / GDS / VCD / power / layout |
+| `route` | + global route + signoff | ~18 分 | **配線後タイミング**・`signoff/*.rpt`・DEF/ODB | GDS / VCD / power / layout |
+| `gds`（既定） | + magic GDS + power + layout | ~24 分 | フル signoff（GDS / 電力 / 画像） | — |
+
+**推奨ワークフロー（RTL ↔ 合成ループ）:**
+```bash
+# 1) クリティカルパスを見る
+python3 syn/flow.py --config full --until synth
+#    -> results/full_hd/synth.json の critical_startpoint / critical_endpoint /
+#       critical_dominant_cells を見て、どこにパイプラインレジスタを挟むか決める
+# 2) RTL を編集（レジスタ段追加など）
+# 3) 1) に戻る。Fmax が目標に近づいたら --until place で repair 後を確認
+# 4) 方針が固まったら --until route で配線後を、最後に(無印=gds)でフル signoff
+```
+
+**さらに速くするコツ:**
+- **docker を温める**: `flow.py` は各段で `docker run --rm` するため起動オーバーヘッドが乗る。
+  超高速で回したいなら長寿命コンテナ（`docker run -d ... sleep infinity` → `docker exec`）で
+  `synth_osic.py` 相当を直接叩く手もある（`--until synth` でも実用上は十分高速）。
+- **合成と P&R を切り離す**: RTL を変えた → 合成からやり直し必須。floorplan/util/period だけ
+  変えた → 既存ネットリストに対し `STOP_AFTER=place syn/run_pnr.sh full 2.5 16` 単体でよい。
+- **クリティカルパスの場所**は `synth.json` の `critical_startpoint`/`critical_endpoint`/
+  `critical_dominant_cells`（fanout・slew・delay・cell）に出る。これがパイプライン化の指針。
+
+> 内部的には `--until place|cts` は OpenROAD の `pnr.tcl` を `STOP_AFTER` env でその段で
+> 打ち切り（DEF/ODB も書かず即終了）、`route` は配線＋signoff＋DEF/ODB まで（GDS 無し）、
+> `gds` だけが magic GDS・VCD 電力・klayout 画像まで走ります。
 
 ---
 

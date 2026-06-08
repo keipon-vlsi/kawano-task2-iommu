@@ -8,6 +8,9 @@
 set -e
 NAME="${1:-full}"; PERIOD="${2:-2.5}"; MAXFO="${3:-16}"
 VARIANT="${STD_VARIANT:-hd}"; DETAILED="${DETAILED:-0}"
+# STOP_AFTER=place|cts|route (default route): early stop for fast tuning loops.
+# WRITE_GDS=0|1 (default 1): skip the magic GDS stream when only timing is wanted.
+STOP_AFTER="${STOP_AFTER:-route}"; WRITE_GDS="${WRITE_GDS:-1}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 IMAGE="hpretl/iic-osic-tools:latest"
 # PDK_REF: image PDK (sc_hd/hvl only) by default; set /foss/designs/pdk_full after
@@ -25,12 +28,19 @@ case "$VARIANT" in hd|hdll) SITE=unithd;; *) SITE=unit;; esac
 ENVS=(-e NETLIST=$D/syn/build/${NAME}_netlist.v -e LIB=$LIB -e TLEF=$TLEF -e CLEF=$CLEF
       -e CELLGDS=$CELLGDS -e TOP=cfg_${NAME} -e PERIOD_NS=$PERIOD -e MAX_FANOUT=$MAXFO
       -e CLKBUF=sky130_fd_sc_${VARIANT}__clkbuf_4 -e CLKROOT=sky130_fd_sc_${VARIANT}__clkbuf_16
-      -e DETAILED=$DETAILED -e SITE=$SITE -e OUTDEF=$D/syn/build/${NAME}.def -e OUTODB=$D/syn/build/${NAME}.odb
+      -e DETAILED=$DETAILED -e STOP_AFTER=$STOP_AFTER -e SITE=$SITE
+      -e OUTDEF=$D/syn/build/${NAME}.def -e OUTODB=$D/syn/build/${NAME}.odb
       -e OUTGDS=$D/results/${NAME}.gds)
 
+# Stream GDS only when routing completed AND GDS is wanted (heavy: 16 MB cell read).
+if [ "$WRITE_GDS" = "1" ] && [ "$STOP_AFTER" = "route" ]; then
+  MAGIC_CMD="magic -dnull -noconsole -rcfile $MAGICRC $D/syn/openlane/gds.tcl || echo '##GDS_FAILED'"
+else
+  MAGIC_CMD="echo '##GDS_SKIPPED (WRITE_GDS=$WRITE_GDS STOP_AFTER=$STOP_AFTER)'"
+fi
+
 docker run --rm -v "$ROOT":/foss/designs "${ENVS[@]}" "$IMAGE" --skip bash -lc \
-  "openroad -no_init -exit $D/syn/openlane/pnr.tcl; \
-   magic -dnull -noconsole -rcfile $MAGICRC $D/syn/openlane/gds.tcl || echo '##GDS_FAILED'" \
+  "openroad -no_init -exit $D/syn/openlane/pnr.tcl; $MAGIC_CMD" \
   > "$ROOT/results/${NAME}_pnr.txt" 2>&1 || true
 
 python3 - "$NAME" "$PERIOD" "$ROOT" "$VARIANT" <<'PY'
