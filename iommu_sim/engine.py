@@ -276,7 +276,7 @@ class Simulator:
     def _on_complete(self, t, payload):
         req, miss_type = payload
         self.m.completed += 1
-        self.m.add_latency(t - req.arrival, miss_type)
+        self.m.add_latency(t - req.arrival, miss_type, complete_cycle=t)
         self.m.last_complete = max(self.m.last_complete, t)
         self.buffer -= 1
         if miss_type != "iotlb_hit":

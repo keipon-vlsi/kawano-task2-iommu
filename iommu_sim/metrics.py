@@ -23,6 +23,7 @@ class Metrics:
     io_bridge_stalls: int = 0           # a demand miss back-pressured by a full I/O-bridge buffer
 
     latencies: list = field(default_factory=list)          # cycles, per translation
+    completion_log: list = field(default_factory=list)     # (complete_cycle, latency_cycles)
     # miss-penalty distribution by type: type -> [count, sum_cycles, max_cycles]
     miss_penalty: dict = field(default_factory=dict)
 
@@ -30,12 +31,44 @@ class Metrics:
     last_complete: float = 0.0
 
     # --- recording ---
-    def add_latency(self, cycles, miss_type):
+    def add_latency(self, cycles, miss_type, complete_cycle=None):
         self.latencies.append(cycles)
+        if complete_cycle is not None:
+            self.completion_log.append((complete_cycle, cycles))
         b = self.miss_penalty.setdefault(miss_type, [0, 0.0, 0.0])
         b[0] += 1
         b[1] += cycles
         b[2] = max(b[2], cycles)
+
+    # --- cold-start / warm-up duration ---
+    def time_to_steady(self, k=1.5, tail_frac=0.25):
+        """Cycles from first arrival until the cold-start transient settles.
+
+        The latency distribution is bimodal in steady state (most requests hit the
+        IOTLB; ~1/8 trigger a walk), so the reference is the steady-state *tail*
+        (p99 of the last ``tail_frac`` by time), NOT the median: a request is a
+        cold-start (back-logged) request only if its latency exceeds ``k`` x that
+        steady tail. Warm-up ends at the last such completion.
+        Returns (warmup_end_cycle [rel. first arrival], warmup_requests,
+        steady_typical_latency_cyc [median])."""
+        log = self.completion_log
+        if not log:
+            return 0.0, 0, 0.0
+        t0 = self.first_arrival or 0.0
+        last = self.last_complete or max(t for t, _ in log)
+        cutoff = last - tail_frac * (last - t0)
+        tail = sorted(lat for t, lat in log if t >= cutoff)
+        if not tail:
+            tail = sorted(lat for _, lat in log)
+        steady_med = tail[len(tail) // 2]
+        steady_p99 = tail[min(len(tail) - 1, int(0.99 * len(tail)))]
+        thr = k * steady_p99
+        elevated_t = [t for t, lat in log if lat > thr]
+        if not elevated_t:
+            return 0.0, 0, steady_med
+        end = max(elevated_t)
+        warmup_reqs = sum(1 for t, _ in log if t <= end)
+        return end - t0, warmup_reqs, steady_med
 
     # --- latency stats (cycles) ---
     @property

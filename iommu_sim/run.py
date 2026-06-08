@@ -56,6 +56,12 @@ def print_report(cfg, sim, m, s):
     print(f"  avg : {m.avg_lat:8.2f} cyc  ({m.avg_lat*cyc:8.2f} ns)")
     print(f"  p99 : {m.p99_lat:8.2f} cyc  ({m.p99_lat*cyc:8.2f} ns)")
     print(f"  max : {m.max_lat:8.2f} cyc  ({m.max_lat*cyc:8.2f} ns)")
+    wu_cyc, wu_reqs, steady_lat = m.time_to_steady()
+    print("\n-- cold-start / warm-up --")
+    print(f"  time to steady-state   : {wu_cyc:.0f} cyc  ({wu_cyc*cyc:.0f} ns),  {wu_reqs} requests")
+    print(f"  (steady-state latency ~ {steady_lat:.1f} cyc; warm-up = caches filling + initial backlog draining.")
+    print(f"   peaks above are cold-start-INCLUSIVE when resources are unlimited -> the HW needed to")
+    print(f"   sustain wire rate FROM cold start. `--measure peaks` reports the steady-state requirement.)")
     print("\n-- miss-penalty distribution by type (cycles) --")
     print(f"  {'type':<16}{'count':>8}{'avg_cyc':>10}{'avg_ns':>10}{'max_cyc':>10}")
     for t, cnt, avg, avgns, mx in m.miss_penalty_table(cyc):
@@ -92,8 +98,25 @@ def main():
     print_report(cfg, sim, m, s)
 
     if args.measure == "peaks":
-        print(f"\n  >>> 3c required parallel walkers N = {m.peak_walks}")
-        print(f"  >>> 3d required IOMMU request buffer = {m.peak_buffer}")
+        print(f"\n  >>> 3c required parallel walkers N (steady) = {m.peak_walks}")
+        print(f"  >>> 3d required IOMMU request buffer (steady) = {m.peak_buffer}")
+        # cold-start-inclusive requirement: same infinite-resource run, warmup=0
+        cold_cfg = Config.load(args.config)
+        cold_cfg.walkers.num_walkers = None
+        cold_cfg.buffers.iommu_req_buffer = None
+        cold_cfg.buffers.io_bridge_buffer = None
+        cold_cfg.memory.max_outstanding = None
+        csim, cm = run_sim(cold_cfg, warmup_frac=0.0)
+        wu_cyc, wu_reqs, _ = cm.time_to_steady()
+        print("\n  -- required HW: steady-state vs cold-start-inclusive --")
+        print(f"  {'resource':<22}{'steady':>9}{'cold-incl':>11}")
+        print(f"  {'num_walkers (N)':<22}{m.peak_walks:>9}{cm.peak_walks:>11}")
+        print(f"  {'iommu_req_buffer':<22}{m.peak_buffer:>9}{cm.peak_buffer:>11}")
+        print(f"  {'io_bridge_buffer':<22}{m.io_bridge_peak:>9}{cm.io_bridge_peak:>11}")
+        print(f"  {'mem_outstanding':<22}{sim.memory.peak_outstanding:>9}{csim.memory.peak_outstanding:>11}")
+        print(f"  warm-up to steady state: {wu_cyc:.0f} cyc ({wu_cyc*cfg.cycle_ns:.0f} ns), {wu_reqs} requests")
+        print(f"  (provision the COLD-INCL column to meet wire rate from cold start with zero stalls;")
+        print(f"   the steady column is the running requirement once warm.)")
 
     os.makedirs(FREEZE_DIR, exist_ok=True)
     fpath = args.freeze or os.path.join(FREEZE_DIR, f"{_slug(cfg.name)}.json")
