@@ -42,7 +42,8 @@ superpage: off          # off / 2M / 1G
 caches:
   iotlb:    {entries: 64, assoc: 4}
   s1_pwc:   {l2: {entries: 4, assoc: full}, l1: {entries: 8, assoc: full}}
-  s2_pwc:   {entries: 8, assoc: full}
+  s2_pwc:   {entries: 8, assoc: full}                 # データGPA変換の G-stage PWC
+  root_gpa: {enabled: false, entries: 1, assoc: full} # PDT root GPA->SPA 結果キャッシュ
   table_gpa:{entries: 16, assoc: full}
   data_gpa: {enabled: false, entries: 64, assoc: 4}   # invalidation時に true 推奨
   ddtc:     {entries: 16, assoc: full}
@@ -241,8 +242,9 @@ RTL階層と1対1対応（design_doc §13）。各モジュールの役割・主
 | `superpage` | off / 2M / 1G（leaf 被覆ページ数を拡大＝段数減） |
 | `caches.iotlb` | `{entries, assoc}` 結合 IOVA→SPA（line充填）。assoc は int か `full`(=CAM) |
 | `caches.s1_pwc` | `{l2:{entries,assoc}, l1:{entries,assoc}}` ゲスト上位（root はレジスタ） |
-| `caches.s2_pwc` | G-stage 上位（root はレジスタ） |
-| `caches.table_gpa` | ゲスト表ページの GPA→SPA（churn 低・常時ヒット） |
+| `caches.s2_pwc` | **データGPA変換の G-stage PWC**（S2 root+L1 PTE をキャッシュ）。無効化でデータ変換の上位を毎回ウォーク |
+| `caches.root_gpa` | **PDT$ の root GPA→SPA 結果キャッシュ**（ゲスト root ページテーブルの SPA）。`{enabled, entries, assoc}`。既定 disabled。ヒットで root の G-stage ウォーク(3アクセス)を省略 |
+| `caches.table_gpa` | ゲスト L1/leaf 表ページの GPA→SPA 結果（churn 低・常時ヒット） |
 | `caches.data_gpa` | `{enabled, entries, assoc}` データGPA独立キャッシュ。**invalidation時に true 推奨** |
 | `caches.ddtc/pdtc/msi` | デバイス／プロセス／割込文脈。`pdtc.enabled:false`=PASID未使用 |
 | `caches.lookup_mode` | parallel / sequential / hybrid（latency/energy に影響） |

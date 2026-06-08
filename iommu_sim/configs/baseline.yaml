@@ -9,7 +9,8 @@ superpage: off          # off / 2M / 1G
 caches:
   iotlb:     {enabled: false, entries: 64, assoc: 4}
   s1_pwc:    {l2: {enabled: false, entries: 4, assoc: full}, l1: {enabled: false, entries: 8, assoc: full}}
-  s2_pwc:    {enabled: false, entries: 8, assoc: full}
+  s2_pwc:    {enabled: false, entries: 8, assoc: full}   # data-GPA G-stage PWC (S2 root+L1)
+  root_gpa:  {enabled: false, entries: 1, assoc: full}   # caches PDT root GPA->SPA (S1 root table SPA)
   table_gpa: {enabled: false, entries: 16, assoc: full}
   data_gpa:  {enabled: false, entries: 64, assoc: 4}   # set true under invalidation
   ddtc:      {enabled: true, entries: 1, assoc: full}

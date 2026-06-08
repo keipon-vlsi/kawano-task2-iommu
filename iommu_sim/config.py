@@ -84,11 +84,14 @@ class S1PWCCfg:
                    l1=PWCLevelCfg.from_dict(d.get("l1")))
 
 
+
+
 @dataclass
 class CachesCfg:
     iotlb: CacheCfg = field(default_factory=lambda: CacheCfg(64, 4))
     s1_pwc: S1PWCCfg = field(default_factory=S1PWCCfg)
-    s2_pwc: CacheCfg = field(default_factory=lambda: CacheCfg(8, "full"))
+    s2_pwc: CacheCfg = field(default_factory=lambda: CacheCfg(8, "full"))   # data-GPA G-stage PWC (upper)
+    root_gpa: CacheCfg = field(default_factory=lambda: CacheCfg(1, "full", enabled=False))  # PDT root GPA->SPA
     table_gpa: CacheCfg = field(default_factory=lambda: CacheCfg(16, "full"))
     data_gpa: CacheCfg = field(default_factory=lambda: CacheCfg(64, 4, enabled=False))
     ddtc: CacheCfg = field(default_factory=lambda: CacheCfg(16, "full"))
@@ -107,6 +110,7 @@ class CachesCfg:
             iotlb=CacheCfg.from_dict(d.get("iotlb")) if "iotlb" in d else cls().iotlb,
             s1_pwc=S1PWCCfg.from_dict(d.get("s1_pwc")) if "s1_pwc" in d else cls().s1_pwc,
             s2_pwc=CacheCfg.from_dict(d.get("s2_pwc")) if "s2_pwc" in d else cls().s2_pwc,
+            root_gpa=CacheCfg.from_dict(d.get("root_gpa")) if "root_gpa" in d else cls().root_gpa,
             table_gpa=CacheCfg.from_dict(d.get("table_gpa")) if "table_gpa" in d else cls().table_gpa,
             data_gpa=CacheCfg.from_dict(d.get("data_gpa")) if "data_gpa" in d else cls().data_gpa,
             ddtc=CacheCfg.from_dict(d.get("ddtc")) if "ddtc" in d else cls().ddtc,

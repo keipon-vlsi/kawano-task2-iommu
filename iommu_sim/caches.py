@@ -237,10 +237,15 @@ class CacheSet:
         # enabled=False (or entries<=0) -> disabled (always miss), honoured per level.
         self.s1_l2 = make_level_cache(c.s1_pwc.l2, "s1_pwc")
         self.s1_l1 = make_level_cache(c.s1_pwc.l1, "s1_pwc")
-        # G-stage upper PWC holds the S2 root + S2 L1 PTE results (register-like
-        # once warm). Disabling it makes every G-stage walk pay the full 3 host
-        # accesses -> a DDT$/PDT$-only config costs the full 15-access 2D walk.
+        # data-GPA G-stage PWC: caches the S2 upper (root + L1) PTE reads on the
+        # path that translates the final DATA GPA. Disabled -> every data G-stage
+        # walk pays the full upper accesses.
         self.s2_pwc = make_cache(c.s2_pwc, "s2_pwc")
+        # root_gpa: caches the SPA of the guest root page table, i.e. the result of
+        # G-stage-translating the GPA held in the PDT$ entry. One per context, so it
+        # essentially always hits after the first walk. Disabled by default.
+        self.root_gpa = make_cache(c.root_gpa, "root_gpa")
+        # table_gpa: full GPA->SPA result cache for the guest L1/leaf table pages.
         self.table_gpa = make_cache(c.table_gpa, "table_gpa")
         self.data_gpa = make_cache(c.data_gpa, "data_gpa")     # disabled unless enabled=True
         self.ddtc = make_cache(c.ddtc, "ddtc")
@@ -256,6 +261,7 @@ class CacheSet:
             "s1_l2": self.s1_l2,
             "s1_l1": self.s1_l1,
             "s2_pwc": self.s2_pwc,
+            "root_gpa": self.root_gpa,
             "table_gpa": self.table_gpa,
             "data_gpa": self.data_gpa,
             "ddtc": self.ddtc,
@@ -279,5 +285,6 @@ class CacheSet:
         if stage in ("s2", "both"):
             self.iotlb.invalidate(ctx=ctx, page=page)
             self.s2_pwc.invalidate(ctx=ctx, page=page)
+            self.root_gpa.invalidate(ctx=ctx, page=page)
             self.table_gpa.invalidate(ctx=ctx, page=page)
             self.data_gpa.invalidate(ctx=ctx, page=page)

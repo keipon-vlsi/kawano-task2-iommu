@@ -92,13 +92,16 @@ class SingleStageCost(WalkCostModel):
 # --------------------------------------------------------------------------
 class NestedCost(WalkCostModel):
     """Sv39 (VS-stage) + Sv39x4 (G-stage). Every guest PTE pointer is a GPA that
-    the G-stage must translate before the guest PTE can be read. A G-stage walk
-    (Sv39x4) reads 3 host PTEs -- S2 root, S2 L1, S2 leaf -- cached by s2_pwc
-    (root + L1) and table_gpa/data_gpa (leaf). With NO translation caches (only
-    DDT$/PDT$), each of the 4 G-stage walks pays the full 3 accesses, so the PTW
-    after a PDT$ hit costs (3+1)(3+1)-1 = 15 (starting from the G-stage
-    translation of the root-table GPA). With s2_pwc warm, the root/L1 PTEs hit
-    (register-like) and the walk collapses to ~2 accesses per coalesced line."""
+    the G-stage must translate before the guest PTE can be read. Each G-stage walk
+    is a full 3-host-access (S2 root/L1/leaf) walk when uncached. S2-side caches:
+      * ``root_gpa``  -- GPA->SPA of the guest root page table (the GPA held in the
+        PDT$ entry); hit -> the root G-stage walk is skipped.
+      * ``table_gpa`` -- GPA->SPA result for the guest L1/leaf table pages.
+      * ``s2_pwc``    -- the G-stage PWC for the DATA-GPA translation (caches its
+        S2 root + S2 L1 PTE reads); ``data_gpa`` caches its leaf.
+    With ONLY DDT$/PDT$ (all of the above disabled), the PTW after a PDT$ hit is
+    the full (3+1)(3+1)-1 = 15-access 2D walk, starting from the root-GPA G-stage
+    translation."""
 
     # distinct GPA-table-page id namespaces (root / L1-table / leaf-table)
     ROOT_TBL = 1 << 40
@@ -108,33 +111,39 @@ class NestedCost(WalkCostModel):
     def cold_depth(self):
         return 15
 
-    # --- one G-stage (Sv39x4) walk: S2 root PTE + S2 L1 PTE (s2_pwc) + S2 leaf ---
-    def _gstage(self, region_id, ctx, cs, fills, leaf_cache, leaf_key, leaf_attr):
-        """Accesses for translating one GPA. Each level counted only on a miss, so
-        a disabled s2_pwc / leaf cache -> 3 accesses every time (full uncached
-        G-stage walk). A leaf-cache hit means the whole GPA->SPA is cached -> 0."""
-        if not leaf_cache.disabled and leaf_cache.lookup(leaf_key):
+    # --- G-stage translation cached as a FULL GPA->SPA result (root_gpa/table_gpa) ---
+    @staticmethod
+    def _result_cached(cache, key, fills, attr):
+        """A full-result cache: hit -> 0 accesses; miss -> a full uncached G-stage
+        walk (3 host PTE reads) and fill. Disabled cache -> always 3."""
+        if not cache.disabled and cache.lookup(key):
             return 0
-        n = 0
-        if not cs.s2_pwc.lookup(("s2root", ctx)):          # S2 root PTE (register-like once warm)
-            n += 1
-            fills.setdefault("s2_pwc", []).append(("s2root", ctx))
-        if not cs.s2_pwc.lookup(("s2L1", region_id >> 9, ctx)):   # S2 L1 PTE
-            n += 1
-            fills.setdefault("s2_pwc", []).append(("s2L1", region_id >> 9, ctx))
-        n += 1                                             # S2 leaf PTE read
-        if not leaf_cache.disabled:
-            fills.setdefault(leaf_attr, []).append(leaf_key)
-        return n
+        if not cache.disabled:
+            fills.setdefault(attr, []).append(key)
+        return 3
+
+    def _s2_root(self, ctx, cs, fills):
+        return self._result_cached(cs.root_gpa, ("root", ctx), fills, "root_gpa")
 
     def _s2_table(self, table_id, ctx, cs, fills):
-        return self._gstage(table_id, ctx, cs, fills,
-                            cs.table_gpa, ("tbl", table_id, ctx), "table_gpa")
+        return self._result_cached(cs.table_gpa, ("tbl", table_id, ctx), fills, "table_gpa")
 
+    # --- DATA-GPA G-stage walk: upper (S2 root + L1) in s2_pwc, leaf in data_gpa ---
     def _s2_data(self, data_page, ctx, cs, fills, c):
         dline = (data_page // c) * c
-        return self._gstage(data_page, ctx, cs, fills,
-                            cs.data_gpa, ("dat", dline, ctx), "data_gpa")
+        if not cs.data_gpa.disabled and cs.data_gpa.lookup(("dat", dline, ctx)):
+            return 0
+        n = 0
+        if not cs.s2_pwc.lookup(("s2root", ctx)):                 # S2 root PTE (data PWC)
+            n += 1
+            fills.setdefault("s2_pwc", []).append(("s2root", ctx))
+        if not cs.s2_pwc.lookup(("s2L1", data_page >> 9, ctx)):   # S2 L1 PTE (data PWC)
+            n += 1
+            fills.setdefault("s2_pwc", []).append(("s2L1", data_page >> 9, ctx))
+        n += 1                                                    # S2 data-leaf PTE read
+        if not cs.data_gpa.disabled:
+            fills.setdefault("data_gpa", []).append(("dat", dline, ctx))
+        return n
 
     def cost(self, vpn, data_page, ctx, sim):
         cs = sim.caches
@@ -143,10 +152,11 @@ class NestedCost(WalkCostModel):
         miss_levels = 0
         fills = {"iotlb": [], "s1_l2": [], "s1_l1": []}
 
-        # guest L2 (root table is invariant within a context)
+        # guest L2: translate the root-table GPA (from the PDT$ context) via the
+        # G-stage; cached in root_gpa. Then read the guest L2 PTE.
         l2key = ("L2", vpn >> 18, ctx)
         if not cs.s1_l2.lookup(l2key):
-            acc += self._s2_table(self.ROOT_TBL, ctx, cs, fills)
+            acc += self._s2_root(ctx, cs, fills)
             acc += 1                               # read guest L2 PTE
             miss_levels += 1
             fills["s1_l2"].append(l2key)

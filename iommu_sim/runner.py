@@ -33,8 +33,8 @@ def summarize(cfg, sim, m):
     caches = sim.caches
     hit = {}
     for name, c in [("iotlb", caches.iotlb), ("s1_pwc", caches.s1_l1), ("s2_pwc", caches.s2_pwc),
-                    ("table_gpa", caches.table_gpa), ("data_gpa", caches.data_gpa),
-                    ("ddtc", caches.ddtc), ("pdtc", caches.pdtc)]:
+                    ("root_gpa", caches.root_gpa), ("table_gpa", caches.table_gpa),
+                    ("data_gpa", caches.data_gpa), ("ddtc", caches.ddtc), ("pdtc", caches.pdtc)]:
         hit[name] = (c.hits, c.misses, c.hit_rate)
     return {
         "name": cfg.name,
