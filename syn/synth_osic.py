@@ -30,7 +30,11 @@ IMAGE = "hpretl/iic-osic-tools:latest"
 # ms/ls=medium/low speed. Override with STD_VARIANT=hs etc.
 VARIANT = os.environ.get("STD_VARIANT", "hd")
 CORNER = os.environ.get("STD_CORNER", "tt_025C_1v80")
-LIB = f"/foss/pdks/sky130A/libs.ref/sky130_fd_sc_{VARIANT}/lib/sky130_fd_sc_{VARIANT}__{CORNER}.lib"
+# PDK_REF: where the libs.ref live inside the container (default the image PDK, which
+# ships only sc_hd/hvl; point at /foss/designs/pdk_full after the open_pdks build for
+# the full set incl. hs/hdll/ms/ls).
+PDK_REF = os.environ.get("PDK_REF", "/foss/pdks")
+LIB = f"{PDK_REF}/sky130A/libs.ref/sky130_fd_sc_{VARIANT}/lib/sky130_fd_sc_{VARIANT}__{CORNER}.lib"
 PERIOD_NS = float(os.environ.get("PERIOD_NS", "2.5"))   # 400 MHz target
 DROOT = "/foss/designs"  # mount point of the repo inside the container
 # NOTE: max-fanout limiting + buffer insertion + gate sizing happen in P&R

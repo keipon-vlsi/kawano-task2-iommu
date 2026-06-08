@@ -10,7 +10,10 @@ NAME="${1:-full}"; PERIOD="${2:-2.5}"; MAXFO="${3:-16}"
 VARIANT="${STD_VARIANT:-hd}"; DETAILED="${DETAILED:-0}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 IMAGE="hpretl/iic-osic-tools:latest"
-B="/foss/pdks/sky130A/libs.ref/sky130_fd_sc_${VARIANT}"
+# PDK_REF: image PDK (sc_hd/hvl only) by default; set /foss/designs/pdk_full after
+# the open_pdks build to use hs/hdll/ms/ls.
+PDK_REF="${PDK_REF:-/foss/pdks}"
+B="${PDK_REF}/sky130A/libs.ref/sky130_fd_sc_${VARIANT}"
 LIB="$B/lib/sky130_fd_sc_${VARIANT}__tt_025C_1v80.lib"
 TLEF="$B/techlef/sky130_fd_sc_${VARIANT}__nom.tlef"
 CLEF="$B/lef/sky130_fd_sc_${VARIANT}.lef"
