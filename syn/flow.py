@@ -367,6 +367,28 @@ def write_report(cfg, lib, period, syn, pnr, prov, pdefault, pannot, pannot_ok,
                      f"{(st.get('fmax_mhz') or 0):.1f} MHz | "
                      f"{(st.get('power_W_total') or 0):.3f} W |")
 
+    # critical path mapped back to RTL (from synth STA + flat netlist)
+    if syn:
+        s, e = syn.get("critical_startpoint_rtl"), syn.get("critical_endpoint_rtl")
+        esrc = syn.get("critical_endpoint_src_rtl")
+        L.append("\n## Critical path (post-synthesis)")
+        L.append(f"- Fmax **{(syn.get('fmax_mhz') or 0):.1f} MHz** · WNS "
+                 f"**{syn.get('wns_ns')} ns** · critical delay "
+                 f"{syn.get('critical_path_ns')} ns @ {period} ns target")
+        if s and e:
+            L.append(f"- **launch** (`.Q`): `{s['signal']}` in **{s['module']}** "
+                     f"(`{s.get('rtl_file') or '-'}`)")
+            L.append(f"- **capture** (`.Q`): `{e['signal']}` in **{e['module']}** "
+                     f"(`{e.get('rtl_file') or '-'}`)")
+            if esrc:
+                L.append(f"- endpoint source (`.D`): `{esrc['signal']}` in "
+                         f"**{esrc['module']}** (`{esrc.get('rtl_file') or '-'}`)")
+        dom = syn.get("critical_dominant_cells") or []
+        if dom:
+            L.append("- dominant cells: " + ", ".join(
+                f"`{c['cell']}` (fanout {c['fanout']}, {c['delay_ns']:.1f} ns)" for c in dom[:3]))
+        L.append("- full hop-by-hop path: `synth_sta.txt` (=== CRITICAL PATH ===)")
+
     if last and stages[last].get("power_breakdown"):
         pb = stages[last]["power_breakdown"]
         L.append(f"\n## P&R power breakdown (post-{last.lower()})")
@@ -459,9 +481,14 @@ def main():
         print(f"        {'ok' if ok else 'FAILED'}  "
               f"Fmax={(syn.get('fmax_mhz') or 0):.1f}MHz area={syn.get('area_um2_total')}um^2 "
               f"WNS={syn.get('wns_ns')}ns")
-        if ok and lvl == ORDER["synth"]:
-            print(f"        critical path: {syn.get('critical_startpoint')} -> "
-                  f"{syn.get('critical_endpoint')}")
+        if ok:
+            s, e = syn.get("critical_startpoint_rtl"), syn.get("critical_endpoint_rtl")
+            if s and e:
+                print(f"        critical path (RTL): {s['module']}: {s['signal']} -> "
+                      f"{e['module']}: {e['signal']}")
+            else:
+                print(f"        critical path: {syn.get('critical_startpoint')} -> "
+                      f"{syn.get('critical_endpoint')}")
 
         # 2) P&R bounded by --until (place/cts/route); GDS only at --until gds
         if ok and lvl >= ORDER["place"]:

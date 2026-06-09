@@ -1,6 +1,6 @@
 # IOMMU flow report — `full` on `sky130_fd_sc_hd`
 
-- clock target: **400.0 MHz** (2.5 ns)  ·  corner `tt_025C_1v80`  ·  git `8e437519f8`
+- clock target: **400.0 MHz** (2.5 ns)  ·  corner `tt_025C_1v80`  ·  git `6603534fe4`
 - tools: yosys `Yosys 0.65 (git sha1 b85cad634, g++ 13.3.0-6ubuntu2~24.04.1 -fPIC -O3)` · openroad `26Q2-1164-g08f67ee5e` · magic `8.3.642` · klayout `KLayout 0.30.8`
 
 ## Stage pass/fail
@@ -13,6 +13,14 @@
 | stage | area | Fmax | power |
 |---|---|---|---|
 | post-synthesis | 616711 um² (cells) | 18.9 MHz | 0.336 W |
+
+## Critical path (post-synthesis)
+- Fmax **18.9 MHz** · WNS **-50.3111 ns** · critical delay 52.8111 ns @ 2.5 ns target
+- **launch** (`.Q`): `e_state[14][1]` in **txn_buffer** (`rtl/txn_buffer.sv`)
+- **capture** (`.Q`): `iotlb_rdata[20]` in **txn_buffer** (`rtl/txn_buffer.sv`)
+- endpoint source (`.D`): `comb_data[20]` in **cache_store (IOTLB)** (`rtl/cache_store.sv`)
+- dominant cells: `sky130_fd_sc_hd__nor4_1` (fanout 466, 31.0 ns), `sky130_fd_sc_hd__nor4_1` (fanout 40, 5.4 ns), `sky130_fd_sc_hd__nor4_1` (fanout 74, 5.1 ns)
+- full hop-by-hop path: `synth_sta.txt` (=== CRITICAL PATH ===)
 
 ## Power: default vs VCD-annotated (gate-level)
 | activity | internal | switching | leakage | total (W) |

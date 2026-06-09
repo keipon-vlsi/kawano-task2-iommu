@@ -4,9 +4,9 @@
 |---|---|---|---|
 | architectural (sim, normalized) | 20571.1 GE | n/a (behavioral) | 283.81 /xlate (norm) |
 | post-synthesis (yosys+OpenSTA) | 616711 um^2 (cells) | 18.9 MHz | 0.336 W |
-| post-place+repair (OpenROAD) | 915432 um^2 (die@37%) | 83.2 MHz | 0.721 W |
-| post-CTS (OpenROAD) | 974564 um^2 (die@39%) | 82.2 MHz | 0.928 W |
-| post-global-route (OpenROAD) | 974564 um^2 (die@39%) | 81.2 MHz | 0.928 W |
+| post-place+repair (OpenROAD) | 659445 um^2 (die@38%) | 55.5 MHz | 0.514 W |
+| post-CTS (OpenROAD) | 696028 um^2 (die@40%) | 55.4 MHz | 0.666 W |
+| post-global-route (OpenROAD) | 696028 um^2 (die@40%) | 54.5 MHz | 0.666 W |
 
 Notes:
 - *architectural* = simulator estimate, **normalized** units (GE / norm-energy) —

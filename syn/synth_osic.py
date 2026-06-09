@@ -112,6 +112,53 @@ def _rd(p):
     return (RESULTS / p).read_text() if (RESULTS / p).exists() else ""
 
 
+# instance name (in the flat netlist hierarchy) -> RTL module / file, so a critical
+# endpoint like \u.u_front.u_iotlb.comb_data maps back to rtl/cache_store.sv.
+INST_MODULE = {
+    "u": ("iommu_core", "rtl/iommu_core.sv"),
+    "u_front": ("txn_buffer", "rtl/txn_buffer.sv"),
+    "u_walk": ("walk_engine", "rtl/walk_engine.sv"),
+    "u_mem": ("mem_if", "rtl/mem_if.sv"),
+    "u_iotlb": ("cache_store (IOTLB)", "rtl/cache_store.sv"),
+    "u_s1_l2": ("cache_store (S1PWC L2)", "rtl/cache_store.sv"),
+    "u_s1_l1": ("cache_store (S1PWC L1)", "rtl/cache_store.sv"),
+    "u_s2pwc": ("cache_store (S2PWC)", "rtl/cache_store.sv"),
+    "u_w": ("walker", "rtl/walker.sv"),
+}
+
+
+def map_net(net):
+    """Turn a flat-netlist net like '\\u.u_front.u_iotlb.comb_data [20]' into the RTL
+    signal it came from: {net, module, rtl_file, signal}. Returns None for anonymous
+    ABC nets (e.g. _00765_) that carry no RTL name."""
+    if not net:
+        return None
+    s = net.strip().lstrip("\\")
+    s = re.sub(r"\s+\[", "[", s)          # join 'name [20]' -> 'name[20]'
+    if re.fullmatch(r"_[0-9a-fA-F]+_", s):  # anonymous ABC combinational net
+        return {"net": s, "module": "(combinational, no RTL name)", "rtl_file": None,
+                "signal": s}
+    parts = s.split(".")
+    signal = parts[-1]
+    insts = parts[:-1]
+    mod, rtl = None, None
+    for inst in reversed(insts):            # deepest known instance wins
+        key = re.sub(r"\[.*$", "", inst)    # strip any bus index on the instance
+        if key in INST_MODULE:
+            mod, rtl = INST_MODULE[key]
+            break
+    return {"net": s, "module": mod or "(unknown)", "rtl_file": rtl, "signal": signal}
+
+
+def ff_pin_net(netlist, inst, pin):
+    """Read the net on `pin` (D/Q) of flip-flop instance `inst` in the flat netlist."""
+    m = re.search(rf"\b{re.escape(inst)}\s*\((.*?)\);", netlist, re.S)
+    if not m:
+        return None
+    pm = re.search(rf"\.{pin}\(([^)]*)\)", m.group(1))
+    return pm.group(1).strip() if pm else None
+
+
 def parse(name, log):
     # per-module area (hierarchical pass), total area (flattened pass)
     modules, total_area = {}, None
@@ -145,6 +192,16 @@ def parse(name, log):
     crit_ns = (PERIOD_NS - slack_ns) if slack_ns is not None else (
         float(arrival[-1]) if arrival else None)
     fmax_mhz = (1000.0 / crit_ns) if crit_ns and crit_ns > 0 else None
+    # map the start/end flip-flops back to RTL nets via the flat netlist (.Q launches
+    # the path, .D captures it) -> which RTL register / module / file the path runs between
+    netlist = (BUILD / f"{name}_netlist.v")
+    nl = netlist.read_text() if netlist.exists() else ""
+    start_rtl = end_rtl = end_src_rtl = None
+    if nl and start:
+        start_rtl = map_net(ff_pin_net(nl, start.group(1), "Q"))
+    if nl and end:
+        end_rtl = map_net(ff_pin_net(nl, end.group(1), "Q"))       # captured register
+        end_src_rtl = map_net(ff_pin_net(nl, end.group(1), "D"))   # its combinational source
     # power: parse the Total row (Internal Switching Leakage Total, Watts)
     power = {}
     for ln in log.splitlines():
@@ -160,6 +217,9 @@ def parse(name, log):
         "wns_ns": slack_ns,
         "critical_startpoint": start.group(1) if start else None,
         "critical_endpoint": end.group(1) if end else None,
+        "critical_startpoint_rtl": start_rtl,     # launching RTL register (.Q)
+        "critical_endpoint_rtl": end_rtl,         # capturing RTL register (.Q)
+        "critical_endpoint_src_rtl": end_src_rtl,  # the RTL net feeding the endpoint (.D)
         "critical_dominant_cells": worst,
         "power_W": power,
         "meets_target": (slack_ns is not None and slack_ns >= 0),
@@ -178,4 +238,10 @@ if __name__ == "__main__":
         print(f"  area {a:.0f} um^2" if a else "  area: parse-failed (see results/%s_area.txt)" % name)
         print(f"  Fmax {f:.1f} MHz  crit {res['critical_path_ns']} ns  WNS {res['wns_ns']} ns"
               if f else "  Fmax: parse-failed (see results/%s_sta.txt)" % name)
+        s, e = res.get("critical_startpoint_rtl"), res.get("critical_endpoint_rtl")
+        if s and e:
+            print(f"  crit path RTL: {s['module']}: {s['signal']}  ->  "
+                  f"{e['module']}: {e['signal']}")
+            if s.get("rtl_file") or e.get("rtl_file"):
+                print(f"                 ({s.get('rtl_file')}  ->  {e.get('rtl_file')})")
         print(f"  power {res['power_W']}")
