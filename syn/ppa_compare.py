@@ -100,7 +100,13 @@ def main(name="full"):
          "pnr_stages": stages},            # results/<name>_pnr.json stages
         indent=2))
     print("\n".join(md))
-    append_history(name, syn, pnr, stages)
+    # SKIP_HISTORY=1 (set by flow.py for synth/place/cts-only runs) suppresses the
+    # shared append-only log, which is meant to track *routed* results -- otherwise a
+    # synth-only run would log a row pairing fresh synth with a stale prior route.
+    if os.environ.get("SKIP_HISTORY") == "1":
+        print("  (SKIP_HISTORY=1: shared history row not appended)")
+    else:
+        append_history(name, syn, pnr, stages)
 
 
 MODE_NAME = {0: "bare", 1: "s1_only", 2: "s2_only", 3: "nested"}
@@ -133,6 +139,8 @@ def append_history(name, syn, pnr, stages):
     n = sum(1 for ln in hist.read_text().splitlines() if ln.startswith("| ") and ln[2:3].isdigit())
     variant = pnr.get("variant", "hd")
     arch = arch_summary(syn.get("params"))
+    if (syn.get("clock_gating") or {}).get("enabled"):
+        arch += f" cg={syn['clock_gating'].get('icg_count', 1)}"   # clock-gated run
     sfmax = f"{(syn.get('fmax_mhz') or 0):.1f}" if syn else "-"
     sarea = f"{syn.get('area_um2_total',0):.0f}" if syn else "-"
     spow = f"{syn.get('power_W',{}).get('total_W',0):.3f}" if syn else "-"

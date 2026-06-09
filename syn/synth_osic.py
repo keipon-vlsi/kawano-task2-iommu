@@ -36,6 +36,12 @@ CORNER = os.environ.get("STD_CORNER", "tt_025C_1v80")
 PDK_REF = os.environ.get("PDK_REF", "/foss/pdks")
 LIB = f"{PDK_REF}/sky130A/libs.ref/sky130_fd_sc_{VARIANT}/lib/sky130_fd_sc_{VARIANT}__{CORNER}.lib"
 PERIOD_NS = float(os.environ.get("PERIOD_NS", "2.5"))   # 400 MHz target
+# CLOCK_GATING_EN=1: insert integrated clock gates via yosys `clockgate`, which auto-
+# detects FF groups sharing a clock+enable and replaces the per-FF CE with one ICG
+# (sky130 dlclkp, latch_posedge) driving a gated clock. Saves sequential/clock power
+# (the idle cache/buffer banks dominate). Pins: GATE(enable):CLK(in):GCLK(gated out).
+CLOCK_GATING = os.environ.get("CLOCK_GATING_EN", "0") == "1"
+ICG_CELL = f"sky130_fd_sc_{VARIANT}__dlclkp_1"
 DROOT = "/foss/designs"  # mount point of the repo inside the container
 # NOTE: max-fanout limiting + buffer insertion + gate sizing happen in P&R
 # (OpenLane SYNTH_MAX_FANOUT / OpenROAD repair_design); this synth-only flow
@@ -51,13 +57,16 @@ def gen_scripts(name):
     vfile = f"{DROOT}/syn/build/{name}.v"
     netlist = f"{DROOT}/syn/build/{name}_netlist.v"
     period_ps = int(PERIOD_NS * 1000)
+    # clockgate runs on generic FFs (enables still visible as CE), after synth and
+    # before dfflibmap maps FFs to library cells. Empty string when CG is disabled.
+    cg = f"clockgate -pos {ICG_CELL} GATE:CLK:GCLK\n" if CLOCK_GATING else ""
 
     # hierarchical pass: per-module area (keep block boundaries)
     (BUILD / f"{name}_hier.ys").write_text(f"""\
 read_verilog {vfile}
 hierarchy -top {top}
 synth -top {top}
-dfflibmap -liberty {LIB}
+{cg}dfflibmap -liberty {LIB}
 abc -liberty {LIB}
 opt_clean
 tee -o {DROOT}/results/{name}_area.txt stat -liberty {LIB}
@@ -67,7 +76,7 @@ tee -o {DROOT}/results/{name}_area.txt stat -liberty {LIB}
 read_verilog {vfile}
 hierarchy -top {top}
 synth -top {top} -flatten
-dfflibmap -liberty {LIB}
+{cg}dfflibmap -liberty {LIB}
 abc -liberty {LIB} -D {period_ps}
 setundef -zero
 hilomap -hicell sky130_fd_sc_{VARIANT}__conb_1 HI -locell sky130_fd_sc_{VARIANT}__conb_1 LO
@@ -202,6 +211,8 @@ def parse(name, log):
     if nl and end:
         end_rtl = map_net(ff_pin_net(nl, end.group(1), "Q"))       # captured register
         end_src_rtl = map_net(ff_pin_net(nl, end.group(1), "D"))   # its combinational source
+    # clock gating: count inserted integrated clock-gate cells (dlclkp) in the netlist
+    icg_cells = len(re.findall(r"sky130_fd_sc_\w+__s?dlclkp_\d+\s+\S+\s*\(", nl)) if nl else 0
     # power: parse the Total row (Internal Switching Leakage Total, Watts)
     power = {}
     for ln in log.splitlines():
@@ -222,6 +233,8 @@ def parse(name, log):
         "critical_endpoint_src_rtl": end_src_rtl,  # the RTL net feeding the endpoint (.D)
         "critical_dominant_cells": worst,
         "power_W": power,
+        "clock_gating": {"enabled": CLOCK_GATING, "icg_cell": ICG_CELL if CLOCK_GATING else None,
+                         "icg_count": icg_cells},
         "meets_target": (slack_ns is not None and slack_ns >= 0),
     }
     (RESULTS / f"{name}.json").write_text(json.dumps(res, indent=2))
@@ -244,4 +257,7 @@ if __name__ == "__main__":
                   f"{e['module']}: {e['signal']}")
             if s.get("rtl_file") or e.get("rtl_file"):
                 print(f"                 ({s.get('rtl_file')}  ->  {e.get('rtl_file')})")
+        cg = res["clock_gating"]
+        if cg["enabled"]:
+            print(f"  clock gating: ON  ({cg['icg_count']} ICG cells, {cg['icg_cell']})")
         print(f"  power {res['power_W']}")

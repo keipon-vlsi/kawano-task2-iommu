@@ -63,6 +63,22 @@ python3 syn/flow.py --config full --lib hd --until route
 | `--no-vcd` | off | VCD 注釈付き電力をスキップ（高速化） |
 | `--until` | `gds` | **停止段**: synth / place / cts / route / gds。下記「高速ループ」参照 |
 
+### env で渡す合成オプション
+| env | 既定 | 意味 |
+|---|---|---|
+| `CLOCK_GATING_EN` | `0` | `1` で **クロックゲーティング挿入**（yosys `clockgate` パス）。同一クロック＋同一イネーブルの FF 群を自動判別し ICG（sky130 `dlclkp`）に置換。アイドルなキャッシュ/バッファバンクの seq/clock 電力を削減 |
+| `STD_CORNER` | `tt_025C_1v80` | liberty コーナー（`--corner` と同じ） |
+| `PDK_REF` | `open_pdks/sky130` | PDK ルート（`--pdk-ref` と同じ） |
+
+クロックゲーティング例（自動判別・対象 DFF を手で選ぶ必要なし）：
+```bash
+CLOCK_GATING_EN=1 python3 syn/flow.py --config full --lib hd --until synth
+```
+→ `synth.json` の `clock_gating` 欄に `{enabled, icg_cell, icg_count}`。挿入後は
+機能等価性を gate-level sim / `eqy` 等で確認するのが望ましい（`clockgate` は構造上
+イネーブル等価だが、本番では検証推奨）。実測例: full/hd で **263 ICG 挿入 → 面積 −22%
+(617k→481k um²)・合成電力 −85% (0.336→0.050 W)**（OpenSTA デフォルトトグル見積り）。
+
 - **冪等**: 同じ引数で何度でも再実行可。途中段が失敗しても既存成果物は壊しません
   （各段は独立にログを残し、収集は上書きコピー）。
 - 最後に **stage ごとの PASS/FAIL サマリ**を標準出力します。終了コードは

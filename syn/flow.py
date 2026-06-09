@@ -312,14 +312,17 @@ def gen_layout_png(cfg, lib, pdk_ref, rundir):
     return (rundir / "layout.png").exists()   # PNG may exist even if klayout hung on exit
 
 
-def collect_ppa_stages(cfg, lib, rundir):
+def collect_ppa_stages(cfg, lib, rundir, route_done):
     """Reuse ppa_compare.py for the cross-stage table + the shared history row.
     ppa_compare.py reads the shared scratch results/<cfg>.json / <cfg>_pnr.json, which
     other (cfg,lib) runs overwrite -- sync them from THIS run's per-run dir first so the
-    appended history row pairs the same library's synth + route (no cross-lib mixups)."""
+    appended history row pairs the same library's synth + route (no cross-lib mixups).
+    The shared append-only history is for *routed* results, so only routed runs append
+    (route_done); synth/place/cts-only runs still get their per-run cross-stage table."""
     copy(rundir / "synth.json", RESULTS / f"{cfg}.json")
     copy(rundir / "pnr.json", RESULTS / f"{cfg}_pnr.json")
     rc, out = sh([sys.executable, str(SYN / "ppa_compare.py"), cfg],
+                 env={"SKIP_HISTORY": "0" if route_done else "1"},
                  log=rundir / "ppa_compare_stdout.txt")
     copy(RESULTS / f"{cfg}_ppa.md", rundir / "ppa_stages.md")
     copy(RESULTS / f"{cfg}_ppa.json", rundir / "ppa_stages.json")
@@ -478,9 +481,11 @@ def main():
         print("[synth] yosys + OpenSTA ...")
         ok, syn, _ = stage_synth(cfg, lib, period, args.pdk_ref, args.corner, rundir)
         stage_ok["synth"] = ok
+        cg = (syn.get("clock_gating") or {})
+        cg_s = f" CG=ON({cg.get('icg_count', 0)} ICG)" if cg.get("enabled") else ""
         print(f"        {'ok' if ok else 'FAILED'}  "
               f"Fmax={(syn.get('fmax_mhz') or 0):.1f}MHz area={syn.get('area_um2_total')}um^2 "
-              f"WNS={syn.get('wns_ns')}ns")
+              f"WNS={syn.get('wns_ns')}ns{cg_s}")
         if ok:
             s, e = syn.get("critical_startpoint_rtl"), syn.get("critical_endpoint_rtl")
             if s and e:
@@ -523,7 +528,10 @@ def main():
         # 5) provenance + cross-stage PPA; layout only when GDS exists
         print("[rpt]   provenance + cross-stage PPA ...")
         prov = provenance(cfg, lib, period, args.corner, args.pdk_ref, rundir)
-        stage_ok["ppa_stages"] = collect_ppa_stages(cfg, lib, rundir)
+        # only a fresh routed run (GROUTE/DROUTE this invocation) updates shared history
+        route_done = lvl >= ORDER["route"] and any(
+            k in (pnr or {}).get("stages", {}) for k in ("GROUTE", "DROUTE"))
+        stage_ok["ppa_stages"] = collect_ppa_stages(cfg, lib, rundir, route_done)
         if full and stage_ok.get("gds"):
             print("[rpt]   layout.png (klayout, bounded) ...")
             png_ok = gen_layout_png(cfg, lib, args.pdk_ref, rundir)
