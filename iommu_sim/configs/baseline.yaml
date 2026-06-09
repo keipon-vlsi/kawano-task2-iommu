@@ -26,7 +26,7 @@ prefetch: {algo: off, distance: 16, confidence: 2}      # off/next_line/stride/r
 memory:   {latency_cycles: 40, max_outstanding: null, bank_parallel: true, coalescing_effective: true}
 timing:   {clock_mhz: 400, lookup_cycles: 2, arbitration_cycles: 1, hit_latency_cycles: 1}
 workload:
-  iova_pattern: sequential   # sequential / stride / random
+  iova_pattern: random   # sequential / stride / random
   stride: 1
   data_gpa: sequential       # sequential / random
   n_requests: 8000

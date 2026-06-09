@@ -66,28 +66,28 @@
   },
   "pnr_stages": {
     "PLACE": {
-      "worst_slack_ns": -15.53,
-      "critical_path_ns": 18.03,
-      "fmax_mhz": 55.46311702717692,
-      "die_area_um2": 659445,
-      "utilization_pct": 38,
-      "power_W_total": 0.513777
+      "worst_slack_ns": -9.52,
+      "critical_path_ns": 12.02,
+      "fmax_mhz": 83.19467554076539,
+      "die_area_um2": 915432,
+      "utilization_pct": 37,
+      "power_W_total": 0.7205619
     },
     "CTS": {
-      "worst_slack_ns": -15.54,
-      "critical_path_ns": 18.04,
-      "fmax_mhz": 55.43237250554324,
-      "die_area_um2": 696028,
-      "utilization_pct": 40,
-      "power_W_total": 0.6659478
+      "worst_slack_ns": -9.67,
+      "critical_path_ns": 12.17,
+      "fmax_mhz": 82.16926869350863,
+      "die_area_um2": 974564,
+      "utilization_pct": 39,
+      "power_W_total": 0.9275668
     },
     "GROUTE": {
-      "worst_slack_ns": -15.86,
-      "critical_path_ns": 18.36,
-      "fmax_mhz": 54.46623093681917,
-      "die_area_um2": 696028,
-      "utilization_pct": 40,
-      "power_W_total": 0.6659478
+      "worst_slack_ns": -9.82,
+      "critical_path_ns": 12.32,
+      "fmax_mhz": 81.16883116883116,
+      "die_area_um2": 974564,
+      "utilization_pct": 39,
+      "power_W_total": 0.9275668
     }
   }
 }

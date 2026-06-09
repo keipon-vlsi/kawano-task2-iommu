@@ -19,7 +19,7 @@
   "period_ns": 2.5,
   "clock_target_mhz": 400.0,
   "pdk_ref": "/foss/designs/open_pdks/sky130",
-  "git_commit": "b59e50ad52a7b77755dc358477be311f36664b92",
+  "git_commit": "8e437519f8b6d18cd1cecd9f99ebcb8a4e2c1360",
   "tools": {
     "yosys": "Yosys 0.65 (git sha1 b85cad634, g++ 13.3.0-6ubuntu2~24.04.1 -fPIC -O3)",
     "openroad": "26Q2-1164-g08f67ee5e",
