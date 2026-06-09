@@ -7,20 +7,90 @@
     },
     "caches": {
       "coalesce_factor": 8,
-      "data_gpa": {
-        "assoc": 4,
-        "enabled": false,
-        "entries": 64
-      },
       "ddtc": {
         "assoc": "full",
         "enabled": true,
         "entries": 1
       },
+      "g_final": {
+        "l0": {
+          "assoc": 4,
+          "enabled": true,
+          "entries": 64
+        },
+        "l1": {
+          "assoc": "full",
+          "enabled": true,
+          "entries": 8
+        },
+        "l2": {
+          "assoc": "full",
+          "enabled": true,
+          "entries": 8
+        }
+      },
+      "g_pwc": {
+        "root": {
+          "assoc": "full",
+          "enabled": true,
+          "entries": 1
+        },
+        "vm_l0": {
+          "l0": {
+            "assoc": "full",
+            "enabled": true,
+            "entries": 16
+          },
+          "l1": {
+            "assoc": "full",
+            "enabled": true,
+            "entries": 8
+          },
+          "l2": {
+            "assoc": "full",
+            "enabled": true,
+            "entries": 4
+          }
+        },
+        "vm_l1": {
+          "l0": {
+            "assoc": "full",
+            "enabled": true,
+            "entries": 4
+          },
+          "l1": {
+            "assoc": "full",
+            "enabled": true,
+            "entries": 4
+          },
+          "l2": {
+            "assoc": "full",
+            "enabled": true,
+            "entries": 4
+          }
+        },
+        "vm_l2": {
+          "l0": {
+            "assoc": "full",
+            "enabled": true,
+            "entries": 2
+          },
+          "l1": {
+            "assoc": "full",
+            "enabled": true,
+            "entries": 2
+          },
+          "l2": {
+            "assoc": "full",
+            "enabled": true,
+            "entries": 2
+          }
+        }
+      },
       "iotlb": {
         "assoc": 4,
-        "enabled": false,
-        "entries": 64
+        "enabled": true,
+        "entries": 8
       },
       "lookup_mode": "hybrid",
       "msi": {
@@ -33,34 +103,28 @@
         "enabled": true,
         "entries": 1
       },
-      "root_gpa": {
-        "assoc": "full",
-        "enabled": false,
-        "entries": 1
-      },
-      "s1_pwc": {
+      "vm_pwc": {
+        "l0": {
+          "assoc": "full",
+          "enabled": true,
+          "entries": 16
+        },
         "l1": {
           "assoc": "full",
-          "enabled": false,
-          "entries": 8
+          "enabled": true,
+          "entries": 16
         },
         "l2": {
           "assoc": "full",
-          "enabled": false,
-          "entries": 4
+          "enabled": true,
+          "entries": 8
+        },
+        "root": {
+          "assoc": "full",
+          "enabled": true,
+          "entries": 1
         }
-      },
-      "s2_pwc": {
-        "assoc": "full",
-        "enabled": false,
-        "entries": 8
-      },
-      "table_gpa": {
-        "assoc": "full",
-        "enabled": false,
-        "entries": 16
-      },
-      "walk_trigger": "demand"
+      }
     },
     "memory": {
       "bank_parallel": true,
@@ -86,7 +150,7 @@
       "lookup_cycles": 2
     },
     "walkers": {
-      "num_walkers": null,
+      "num_walkers": 1,
       "pipeline_depth": 2
     },
     "workload": {
@@ -98,7 +162,7 @@
         "rate": 0.0,
         "target": "s1"
       },
-      "iova_pattern": "random",
+      "iova_pattern": "sequential",
       "n_devices": 1,
       "n_pasids": 1,
       "n_requests": 8000,
@@ -109,177 +173,213 @@
       "wire_gbs": 100.0
     }
   },
-  "config_hash": "fddaf6aeee981f0aac3c9ae67d4405a2360aded9797f57b8f08d10a04cf239c3",
+  "config_hash": "3811d324061cb8baaff760b327f9d01a0a08ca0d2ed049a68bc22fbd540e75da",
   "modules": [
     {
-      "accesses": 8000.0,
-      "area_ge": 0.0,
+      "accesses": 16000.0,
+      "area_ge": 207.68000000000004,
       "cam_bits": 0,
-      "dyn": 0.0,
+      "dyn": 0.2343971464100734,
       "ff_bits": 0,
-      "gates": 0,
+      "gates": 8,
       "name": "iotlb",
-      "sram_bits": 0,
-      "stat": 0.0,
-      "total_power": 0.0
+      "sram_bits": 768,
+      "stat": 0.007840000000000001,
+      "total_power": 0.2422371464100734
     },
     {
-      "accesses": 15994.0,
-      "area_ge": 0.0,
-      "cam_bits": 0,
-      "dyn": 0.0,
+      "accesses": 17.0,
+      "area_ge": 812.96,
+      "cam_bits": 424,
+      "dyn": 0.002822532304687967,
       "ff_bits": 0,
-      "gates": 0,
-      "name": "s1_pwc",
-      "sram_bits": 0,
-      "stat": 0.0,
-      "total_power": 0.0
+      "gates": 424,
+      "name": "vm_l2",
+      "sram_bits": 224,
+      "stat": 0.014960000000000001,
+      "total_power": 0.01778253230468797
     },
     {
-      "accesses": 15994.0,
-      "area_ge": 0.0,
-      "cam_bits": 0,
-      "dyn": 0.0,
+      "accesses": 1016.0,
+      "area_ge": 1625.92,
+      "cam_bits": 848,
+      "dyn": 0.33303439558376247,
       "ff_bits": 0,
-      "gates": 0,
-      "name": "s2_pwc",
-      "sram_bits": 0,
-      "stat": 0.0,
-      "total_power": 0.0
+      "gates": 848,
+      "name": "vm_l1",
+      "sram_bits": 448,
+      "stat": 0.029920000000000002,
+      "total_power": 0.36295439558376247
+    },
+    {
+      "accesses": 3900.0,
+      "area_ge": 1625.92,
+      "cam_bits": 848,
+      "dyn": 1.2783800617880645,
+      "ff_bits": 0,
+      "gates": 848,
+      "name": "vm_l0",
+      "sram_bits": 448,
+      "stat": 0.029920000000000002,
+      "total_power": 1.3083000617880645
     },
     {
       "accesses": 0.0,
-      "area_ge": 0.0,
-      "cam_bits": 0,
+      "area_ge": 101.62,
+      "cam_bits": 53,
       "dyn": 0.0,
       "ff_bits": 0,
-      "gates": 0,
-      "name": "root_gpa",
-      "sram_bits": 0,
-      "stat": 0.0,
-      "total_power": 0.0
+      "gates": 53,
+      "name": "vm_root",
+      "sram_bits": 28,
+      "stat": 0.0018700000000000001,
+      "total_power": 0.0018700000000000001
+    },
+    {
+      "accesses": 6.0,
+      "area_ge": 705.84,
+      "cam_bits": 372,
+      "dyn": 0.00030947748236955,
+      "ff_bits": 0,
+      "gates": 372,
+      "name": "g@vm_l2",
+      "sram_bits": 168,
+      "stat": 0.01284,
+      "total_power": 0.01314947748236955
+    },
+    {
+      "accesses": 21.0,
+      "area_ge": 1411.68,
+      "cam_bits": 744,
+      "dyn": 0.002076612218976744,
+      "ff_bits": 0,
+      "gates": 744,
+      "name": "g@vm_l1",
+      "sram_bits": 336,
+      "stat": 0.02568,
+      "total_power": 0.027756612218976746
+    },
+    {
+      "accesses": 1035.0,
+      "area_ge": 3293.92,
+      "cam_bits": 1736,
+      "dyn": 0.39233748403474644,
+      "ff_bits": 0,
+      "gates": 1736,
+      "name": "g@vm_l0",
+      "sram_bits": 784,
+      "stat": 0.05992,
+      "total_power": 0.4522574840347464
     },
     {
       "accesses": 0.0,
-      "area_ge": 0.0,
-      "cam_bits": 0,
+      "area_ge": 117.64,
+      "cam_bits": 62,
       "dyn": 0.0,
       "ff_bits": 0,
-      "gates": 0,
-      "name": "table_gpa",
-      "sram_bits": 0,
-      "stat": 0.0,
-      "total_power": 0.0
+      "gates": 62,
+      "name": "g_root",
+      "sram_bits": 28,
+      "stat": 0.00214,
+      "total_power": 0.00214
     },
     {
-      "accesses": 0.0,
-      "area_ge": 0.0,
-      "cam_bits": 0,
-      "dyn": 0.0,
+      "accesses": 4933.0,
+      "area_ge": 3443.84,
+      "cam_bits": 992,
+      "dyn": 0.2534486290574817,
       "ff_bits": 0,
-      "gates": 0,
-      "name": "data_gpa",
-      "sram_bits": 0,
-      "stat": 0.0,
-      "total_power": 0.0
+      "gates": 1056,
+      "name": "g_final",
+      "sram_bits": 6208,
+      "stat": 0.09312000000000001,
+      "total_power": 0.34656862905748176
     },
     {
-      "accesses": 7998.0,
+      "accesses": 1001.0,
       "area_ge": 41.7,
       "cam_bits": 17,
-      "dyn": 0.10509247503444764,
+      "dyn": 0.013213299816169154,
       "ff_bits": 0,
       "gates": 17,
       "name": "ddtc",
       "sram_bits": 44,
       "stat": 0.0009500000000000001,
-      "total_power": 0.10604247503444765
+      "total_power": 0.014163299816169154
     },
     {
-      "accesses": 7998.0,
+      "accesses": 1001.0,
       "area_ge": 48.82,
       "cam_bits": 21,
-      "dyn": 0.11724189411357455,
+      "dyn": 0.01474084892786501,
       "ff_bits": 0,
       "gates": 21,
       "name": "pdtc",
       "sram_bits": 44,
       "stat": 0.0010700000000000002,
-      "total_power": 0.11831189411357455
+      "total_power": 0.01581084892786501
     },
     {
-      "accesses": 0.0,
-      "area_ge": 0.0,
+      "accesses": 1000,
+      "area_ge": 1072.0,
       "cam_bits": 0,
-      "dyn": 0.0,
-      "ff_bits": 0,
-      "gates": 0,
-      "name": "msi",
-      "sram_bits": 0,
-      "stat": 0.0,
-      "total_power": 0.0
-    },
-    {
-      "accesses": 7997,
-      "area_ge": 40736.0,
-      "cam_bits": 0,
-      "dyn": 40.95368109169412,
-      "ff_bits": 4256,
-      "gates": 15200,
+      "dyn": 0.7212595525993301,
+      "ff_bits": 112,
+      "gates": 400,
       "name": "walkers",
       "sram_bits": 0,
-      "stat": 0.34656000000000003,
-      "total_power": 41.30024109169412
+      "stat": 0.00912,
+      "total_power": 0.7303795525993301
     },
     {
       "accesses": 8000,
-      "area_ge": 21888.0,
+      "area_ge": 24192.0,
       "cam_bits": 0,
-      "dyn": 36.59666358905689,
-      "ff_bits": 3648,
+      "dyn": 40.43719857320504,
+      "ff_bits": 4032,
       "gates": 0,
       "name": "buffer",
       "sram_bits": 0,
-      "stat": 0.036480000000000005,
-      "total_power": 36.633143589056886
+      "stat": 0.04032,
+      "total_power": 40.47751857320504
     },
     {
       "accesses": 8000,
       "area_ge": 800,
       "cam_bits": 0,
-      "dyn": 0.04860982877370101,
+      "dyn": 0.04883273883543196,
       "ff_bits": 0,
       "gates": 800,
       "name": "arbiter",
       "sram_bits": 0,
       "stat": 0.016,
-      "total_power": 0.064609828773701
+      "total_power": 0.06483273883543196
     },
     {
       "accesses": 8000,
       "area_ge": 2000,
       "cam_bits": 0,
-      "dyn": 0.06076228596712626,
+      "dyn": 0.06104092354428995,
       "ff_bits": 0,
       "gates": 2000,
       "name": "control",
       "sram_bits": 0,
       "stat": 0.04,
-      "total_power": 0.10076228596712626
+      "total_power": 0.10104092354428995
     }
   ],
   "note": "Process-independent GE/normalized-energy estimate; relative comparison + calibration, NOT sign-off.",
   "scale_factor": null,
   "schema": "iommu-ppa-prediction/v2-normalized",
-  "sim_cycles": 131660.616,
+  "sim_cycles": 131059.61600000001,
   "totals": {
-    "area_ge": 65514.52,
-    "dram_accesses": 119955,
-    "dram_energy": 2399100.0,
-    "dyn_power": 77.88205116463986,
-    "energy_per_translation": 1289.0086328716202,
-    "stat_power": 0.44106000000000006,
-    "total_power": 78.32311116463985
+    "area_ge": 41501.54,
+    "dram_accesses": 2058,
+    "dram_energy": 41160.0,
+    "dyn_power": 43.793092275808284,
+    "energy_per_translation": 723.7564524028401,
+    "stat_power": 0.38567,
+    "total_power": 44.17876227580828
   },
   "weights": {
     "cam_bit_ge": 0.6,

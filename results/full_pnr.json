@@ -1,32 +1,156 @@
 {
   "config": "full",
-  "variant": "hs",
+  "variant": "hd",
   "period_ns": 2.5,
   "stages": {
     "PLACE": {
-      "worst_slack_ns": -9.52,
-      "critical_path_ns": 12.02,
-      "fmax_mhz": 83.19467554076539,
-      "die_area_um2": 915432,
-      "utilization_pct": 37,
-      "power_W_total": 0.7205619
+      "worst_slack_ns": -15.53,
+      "critical_path_ns": 18.03,
+      "fmax_mhz": 55.46311702717692,
+      "die_area_um2": 659445,
+      "utilization_pct": 38,
+      "power_W_total": 0.513777,
+      "power_breakdown": {
+        "by_category": {
+          "internal_W": 0.3492886,
+          "switching_W": 0.1644882,
+          "leakage_W": 2.162463e-07,
+          "total_W": 0.513777
+        },
+        "by_group": {
+          "sequential": {
+            "internal_W": 0.265422,
+            "switching_W": 0.004777232,
+            "leakage_W": 1.299673e-07,
+            "total_W": 0.2701994
+          },
+          "combinational": {
+            "internal_W": 0.08386468,
+            "switching_W": 0.1597143,
+            "leakage_W": 8.627333e-08,
+            "total_W": 0.243579
+          },
+          "clock": {
+            "internal_W": 0.0,
+            "switching_W": 0.0,
+            "leakage_W": 0.0,
+            "total_W": 0.0
+          },
+          "macro": {
+            "internal_W": 0.0,
+            "switching_W": 0.0,
+            "leakage_W": 0.0,
+            "total_W": 0.0
+          },
+          "pad": {
+            "internal_W": 0.0,
+            "switching_W": 0.0,
+            "leakage_W": 0.0,
+            "total_W": 0.0
+          }
+        },
+        "total_W": 0.513777
+      }
     },
     "CTS": {
-      "worst_slack_ns": -9.67,
-      "critical_path_ns": 12.17,
-      "fmax_mhz": 82.16926869350863,
-      "die_area_um2": 974564,
-      "utilization_pct": 39,
-      "power_W_total": 0.9275668
+      "worst_slack_ns": -15.54,
+      "critical_path_ns": 18.04,
+      "fmax_mhz": 55.43237250554324,
+      "die_area_um2": 696028,
+      "utilization_pct": 40,
+      "power_W_total": 0.6659478,
+      "power_breakdown": {
+        "by_category": {
+          "internal_W": 0.4336887,
+          "switching_W": 0.2322588,
+          "leakage_W": 2.374014e-07,
+          "total_W": 0.6659478
+        },
+        "by_group": {
+          "sequential": {
+            "internal_W": 0.2603245,
+            "switching_W": 0.004778588,
+            "leakage_W": 1.299673e-07,
+            "total_W": 0.2651033
+          },
+          "combinational": {
+            "internal_W": 0.08386538,
+            "switching_W": 0.1597839,
+            "leakage_W": 8.627333e-08,
+            "total_W": 0.2436494
+          },
+          "clock": {
+            "internal_W": 0.08949212,
+            "switching_W": 0.06769967,
+            "leakage_W": 2.11439e-08,
+            "total_W": 0.1571918
+          },
+          "macro": {
+            "internal_W": 0.0,
+            "switching_W": 0.0,
+            "leakage_W": 0.0,
+            "total_W": 0.0
+          },
+          "pad": {
+            "internal_W": 0.0,
+            "switching_W": 0.0,
+            "leakage_W": 0.0,
+            "total_W": 0.0
+          }
+        },
+        "total_W": 0.6659478
+      }
     },
     "GROUTE": {
-      "worst_slack_ns": -9.82,
-      "critical_path_ns": 12.32,
-      "fmax_mhz": 81.16883116883116,
-      "die_area_um2": 974564,
-      "utilization_pct": 39,
-      "power_W_total": 0.9275668
+      "worst_slack_ns": -15.86,
+      "critical_path_ns": 18.36,
+      "fmax_mhz": 54.46623093681917,
+      "die_area_um2": 696028,
+      "utilization_pct": 40,
+      "power_W_total": 0.6659478,
+      "power_breakdown": {
+        "by_category": {
+          "internal_W": 0.4336887,
+          "switching_W": 0.2322588,
+          "leakage_W": 2.374014e-07,
+          "total_W": 0.6659478
+        },
+        "by_group": {
+          "sequential": {
+            "internal_W": 0.2603245,
+            "switching_W": 0.004778588,
+            "leakage_W": 1.299673e-07,
+            "total_W": 0.2651033
+          },
+          "combinational": {
+            "internal_W": 0.08386538,
+            "switching_W": 0.1597839,
+            "leakage_W": 8.627333e-08,
+            "total_W": 0.2436494
+          },
+          "clock": {
+            "internal_W": 0.08949212,
+            "switching_W": 0.06769967,
+            "leakage_W": 2.11439e-08,
+            "total_W": 0.1571918
+          },
+          "macro": {
+            "internal_W": 0.0,
+            "switching_W": 0.0,
+            "leakage_W": 0.0,
+            "total_W": 0.0
+          },
+          "pad": {
+            "internal_W": 0.0,
+            "switching_W": 0.0,
+            "leakage_W": 0.0,
+            "total_W": 0.0
+          }
+        },
+        "total_W": 0.6659478
+      }
     }
   },
-  "gds": "results/full.gds"
+  "gds": "results/full.gds",
+  "cell_usage_raw": "Cell type report:                       Count       Area\n  Clock buffer                           3782   32894.05\n  Timing Repair Buffer                   5243   39452.84\n  Inverter                                342    1286.23\n  Clock inverter                          461    3688.54\n  Sequential cell                       13780  408496.78\n  Multi-Input combinational cell        31479  210209.11\n  Total                                 55087  696027.55"
 }

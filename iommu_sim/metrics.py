@@ -14,6 +14,7 @@ class Metrics:
     walks_started: int = 0              # true misses (memory-bound walks)
     mshr_coalesced: int = 0             # piggybacked on an in-flight line
     iotlb_hit: int = 0
+    pwc_hit: int = 0                    # within-line reuse served by the PWC (no memory)
     faults: int = 0
     context_switches: int = 0
     invalidations: int = 0
@@ -26,6 +27,8 @@ class Metrics:
     completion_log: list = field(default_factory=list)     # (complete_cycle, latency_cycles)
     # miss-penalty distribution by type: type -> [count, sum_cycles, max_cycles]
     miss_penalty: dict = field(default_factory=dict)
+    # parallelism (active-walk count) distribution: level -> cycles spent at it
+    walk_concurrency: dict = field(default_factory=dict)
 
     first_arrival: float = None
     last_complete: float = 0.0
@@ -97,6 +100,14 @@ class Metrics:
             return 0.0
         sim_s = self.sim_cycles * cycle_ns * 1e-9
         return self.completed / sim_s / 1e6
+
+    def concurrency_distribution(self):
+        """Time-weighted active-walk distribution: list of (level, cycles, frac),
+        ascending by level. Level 0 (idle) is included."""
+        total = sum(self.walk_concurrency.values())
+        if total <= 0:
+            return []
+        return [(lvl, cyc, cyc / total) for lvl, cyc in sorted(self.walk_concurrency.items())]
 
     def miss_penalty_table(self, cycle_ns):
         """Return rows (type, count, avg_cycles, avg_ns, max_cycles)."""

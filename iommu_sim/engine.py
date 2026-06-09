@@ -89,6 +89,7 @@ class Simulator:
         self.buffer = 0
         self.io_bridge = 0
         self.mshr = {}                 # line -> _MSHR
+        self._conc_last_t = 0.0        # last time the active-walk count changed
         self.walk_wait = []            # lines awaiting a walker / memory slot
         self.buf_wait = []             # arrivals awaiting a request-buffer slot
         self.iob_wait = []             # demand misses awaiting an I/O-bridge slot
@@ -97,6 +98,15 @@ class Simulator:
     def _push(self, t, kind, payload):
         heapq.heappush(self._q, (t, self._seq, kind, payload))
         self._seq += 1
+
+    def _account_concurrency(self, t):
+        """Accumulate elapsed cycles at the current active-walk level (post-warmup),
+        then advance the marker. Call just BEFORE active_walks changes."""
+        dt = t - self._conc_last_t
+        if dt > 0 and t >= self.warmup_cutoff:
+            wc = self.m.walk_concurrency
+            wc[self.active_walks] = wc.get(self.active_walks, 0.0) + dt
+        self._conc_last_t = t
 
     def line_of(self, vpn):
         return (vpn // self.eff_coalesce) * self.eff_coalesce
@@ -158,12 +168,13 @@ class Simulator:
     # --- translation (demand or prefetch) ---
     def _translate(self, t, req, is_prefetch):
         td = t + self.lookup_cycles
+        ctx = req.ctx
         line = self.line_of(req.vpn)
-        key = (line, req.ctx)
+        key = (req.vpn, ctx)                           # IOTLB is per-page (one IOVA->SPA)
 
-        if self.parallel_lookup:                      # parallel mode probes PWC too (energy)
-            self.caches.s1_l1.lookup(("L1", req.vpn >> 9, req.ctx))
-            self.caches.s1_l2.lookup(("L2", req.vpn >> 18, req.ctx))
+        if self.parallel_lookup:                      # parallel mode probes VM PWC too (energy)
+            self.caches.vm_l1.lookup(("vmL1", req.vpn >> 9, ctx))
+            self.caches.vm_l2.lookup(("vmL2", req.vpn >> 18, ctx))
 
         if self.caches.iotlb.peek(key):               # IOTLB hit -> immediate response (no bridge)
             self.caches.iotlb.lookup(key)             # count the hit
@@ -182,15 +193,30 @@ class Simulator:
                 self.m.io_bridge_stalls += 1
             return
 
-        self.caches.iotlb.lookup(key)                 # count the miss
+        self.caches.iotlb.lookup(key)                 # count the IOTLB miss
 
         ent = self.mshr.get(line)
-        if ent is not None:                           # coalesce onto an in-flight/pending line
+        if ent is not None:                           # concurrent within-line -> share the in-flight read
             self._add_waiter(t, ent, req, is_prefetch, coalesced=True)
             return
 
+        # Line not in flight. Within-line REUSE: the leaf line (and data line) may be
+        # cached from an earlier walk -> resolve from the PWC with NO memory access and
+        # no walker (the leaf PTE was already fetched). This is where VM-L0 hits.
+        if self.cost.warm_hit(req.vpn, req.data_page, ctx, self):
+            if is_prefetch:
+                return                                # already cached -> redundant prefetch
+            self.cost.warm_lookup(req.vpn, req.data_page, ctx, self)   # count the PWC hits
+            self.caches.iotlb.insert(key)
+            self.io_bridge += 1
+            if self._rec(t):
+                self.m.io_bridge_peak = max(self.m.io_bridge_peak, self.io_bridge)
+            self.m.pwc_hit += 1
+            self._push(td + self.arb_cycles + self.hit_latency, "complete", (req, "pwc_hit"))
+            return
+
         # first miss for this line: register MSHR, then try to start a walk
-        ent = _MSHR(line, req.vpn, req.data_page, req.ctx)
+        ent = _MSHR(line, req.vpn, req.data_page, ctx)
         self.mshr[line] = ent
         self._add_waiter(t, ent, req, is_prefetch, coalesced=False)
         self.walk_wait.append(line)
@@ -229,6 +255,7 @@ class Simulator:
 
         self.memory.enter()
         self.memory.account(plan.total_accesses)
+        self._account_concurrency(t)
         self.active_walks += 1
         self.m.walks_started += 1
         self.m.walker_busy_cycles += plan_acc * self.memory.latency
@@ -256,6 +283,7 @@ class Simulator:
     def _on_walk_done(self, t, payload):
         line, plan = payload
         ent = self.mshr.pop(line, None)
+        self._account_concurrency(t)
         self.active_walks -= 1
         self.memory.exit()
         for attr, keys in plan.fills.items():
@@ -266,6 +294,7 @@ class Simulator:
         if ent is not None:
             first_demand = True
             for req, is_pf in ent.waiters:
+                self.caches.iotlb.insert((req.vpn, req.ctx))   # per-page IOTLB fill
                 if is_pf:
                     continue
                 mt = plan.miss_type if first_demand else "mshr_coalesced"

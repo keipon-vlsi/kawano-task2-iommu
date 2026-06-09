@@ -122,8 +122,11 @@ def test_nested_ddtc_pdtc_only_is_15_accesses():
 
 
 def test_nested_about_2x_single():
+    # the "2x" relationship needs BOTH leaf streams coalesced: guest-leaf (VM-L0)
+    # and data-leaf (G-final-L0 == data_gpa). With the data-leaf cache off, the
+    # per-page IOTLB correctly re-reads the data leaf and nested costs more.
     sims, ms = metrics(mk(mode="bare"))
-    simn, mn = metrics(mk(mode="nested"))
+    simn, mn = metrics(mk(mode="nested", data_gpa_en=True))
     single = sims.memory.accesses / ms.completed
     nested = simn.memory.accesses / mn.completed
     assert 1.5 <= nested / single <= 3.0                     # ~2x (two coalesced leaf streams)
@@ -188,9 +191,9 @@ def test_estimator_units_ge_and_normalized():
     res = estimate(cfg, sim.caches, m, dram_accesses=sim.memory.accesses)
     # CAM (fully-assoc) structures must carry cam_bits; SRAM structures must not.
     iotlb = next(x for x in res.modules if x.name == "iotlb")     # 4-way -> SRAM
-    s1 = next(x for x in res.modules if x.name == "s1_pwc")       # full -> CAM
+    vm = next(x for x in res.modules if x.name == "vm_l1")        # full -> CAM
     assert iotlb.cam_bits == 0 and iotlb.sram_bits > 0
-    assert s1.cam_bits > 0
+    assert vm.cam_bits > 0
 
 
 # --------------------------------------------------------------------------
@@ -220,7 +223,7 @@ def test_config_normalization():
     assert cfg.superpage == "off"               # bool False -> "off"
     assert cfg.prefetch.algo == "off"
     assert cfg.walkers.num_walkers is None
-    assert cfg.caches.s1_pwc.l2.assoc == "full"
+    assert cfg.caches.vm_pwc.l2.assoc == "full"  # legacy s1_pwc.l2 -> vm_pwc.l2
     assert cfg.caches.coalesce_factor == 8
 
 

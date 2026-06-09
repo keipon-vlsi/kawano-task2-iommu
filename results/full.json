@@ -15,45 +15,68 @@
     "S1PWC_STORAGE": 0
   },
   "clock_target_mhz": 400.0,
-  "area_um2_total": 616711.4752,
+  "area_um2_total": 480973.792,
   "area_um2_per_module": {
     "walk_engine": 13086.3008,
-    "walker": 26265.1904,
+    "walker": 19311.0208,
     "mem_if": 231.472,
-    "cache_store": 295069.2448,
-    "cache_store'": 83653.9808,
-    "txn_buffer": 132112.9568
+    "cache_store": 225811.5712,
+    "cache_store'": 67120.624,
+    "txn_buffer": 108407.7216
   },
-  "fmax_mhz": 18.93541319911912,
-  "critical_path_ns": 52.8111,
-  "wns_ns": -50.3111,
-  "critical_startpoint": "_76835_",
-  "critical_endpoint": "_63078_",
+  "fmax_mhz": 19.744077270420807,
+  "critical_path_ns": 50.6481,
+  "wns_ns": -48.1481,
+  "critical_startpoint": "_72966_",
+  "critical_endpoint": "_59204_",
+  "critical_startpoint_rtl": {
+    "net": "u.u_front.e_state[14][1]",
+    "module": "txn_buffer",
+    "rtl_file": "rtl/txn_buffer.sv",
+    "signal": "e_state[14][1]"
+  },
+  "critical_endpoint_rtl": {
+    "net": "u.u_front.iotlb_rdata[15]",
+    "module": "txn_buffer",
+    "rtl_file": "rtl/txn_buffer.sv",
+    "signal": "iotlb_rdata[15]"
+  },
+  "critical_endpoint_src_rtl": {
+    "net": "u.u_front.u_iotlb.comb_data[15]",
+    "module": "cache_store (IOTLB)",
+    "rtl_file": "rtl/cache_store.sv",
+    "signal": "comb_data[15]"
+  },
   "critical_dominant_cells": [
     {
-      "fanout": 466,
-      "slew_ns": 41.1289,
-      "delay_ns": 30.9507,
-      "cell": "sky130_fd_sc_hd__nor4_1"
-    },
-    {
-      "fanout": 40,
-      "slew_ns": 7.1103,
-      "delay_ns": 5.3683,
+      "fanout": 467,
+      "slew_ns": 41.0465,
+      "delay_ns": 31.0202,
       "cell": "sky130_fd_sc_hd__nor4_1"
     },
     {
       "fanout": 74,
-      "slew_ns": 6.6419,
-      "delay_ns": 5.1321,
+      "slew_ns": 6.6604,
+      "delay_ns": 5.1441,
       "cell": "sky130_fd_sc_hd__nor4_1"
+    },
+    {
+      "fanout": 1,
+      "slew_ns": 5.6439,
+      "delay_ns": 4.0765,
+      "cell": "sky130_fd_sc_hd__a222oi_1"
     }
   ],
   "power_W": {
-    "internal_W": 0.3014215,
-    "switching_W": 0.03477564,
-    "leakage_W": 1.916105e-07,
-    "total_W": 0.3361973
+    "internal_W": 0.03140411,
+    "switching_W": 0.01852261,
+    "leakage_W": 1.788577e-07,
+    "total_W": 0.04992691
+  },
+  "clock_gating": {
+    "enabled": true,
+    "icg_cell": "sky130_fd_sc_hd__dlclkp_1",
+    "icg_count": 263
   },
   "meets_target": false
 }

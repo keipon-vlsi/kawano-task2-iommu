@@ -40,6 +40,16 @@ class WalkCostModel(ABC):
     def cold_depth(self):
         return 3
 
+    def warm_hit(self, vpn, data_page, ctx, sim):
+        """True iff the translation needs NO memory access -- fully resolvable from
+        the PWC (the guest-leaf line, and for nested the data line, are cached). This
+        is the within-line *reuse* case: an IOTLB miss whose leaf line was already
+        fetched. Side-effect-free (peek only)."""
+        return False
+
+    def warm_lookup(self, vpn, data_page, ctx, sim):
+        """Count the PWC hits for a ``warm_hit`` page (called on the fast path)."""
+
 
 # --------------------------------------------------------------------------
 class SingleStageCost(WalkCostModel):
@@ -55,27 +65,45 @@ class SingleStageCost(WalkCostModel):
         c = sim.eff_coalesce
         acc = 0
         miss_levels = 0
-        fills = {"iotlb": [], "s1_l2": [], "s1_l1": []}
-
-        if self.levels >= 3:
-            l2key = ("L2", vpn >> 18, ctx)
-            if not cs.s1_l2.lookup(l2key):
-                acc += 1
-                miss_levels += 1
-                fills["s1_l2"].append(l2key)
-        if self.levels >= 2:
-            l1key = ("L1", vpn >> 9, ctx)
-            if not cs.s1_l1.lookup(l1key):
-                acc += 1
-                miss_levels += 1
-                fills["s1_l1"].append(l1key)
-
-        acc += 1                                   # leaf line read (coalesced)
+        fills = {}
         line = (vpn // c) * c
-        fills["iotlb"] = [(line, ctx)]             # one combined IOTLB line entry covers c pages
+        vm_l0_key = ("vmL0", line, ctx)
+        l1key = ("vmL1", vpn >> 9, ctx)
+        l2key = ("vmL2", vpn >> 18, ctx)
+
+        # Deepest-first PWC probe. VM-L0 caches the leaf PTE line (1 read = c PTEs);
+        # a hit -> the SPA is known with no memory access (within-line reuse).
+        if cs.vm_l0.lookup(vm_l0_key):
+            pass
+        else:
+            if self.levels >= 2 and cs.vm_l1.lookup(l1key):
+                pass                               # leaf table located
+            elif self.levels >= 3 and cs.vm_l2.lookup(l2key):
+                acc += 1                           # read VM-L1 PTE
+                miss_levels += 1
+                fills.setdefault("vm_l1", []).append(l1key)
+            else:                                  # cold from the root
+                if self.levels >= 3:
+                    acc += 1                       # read VM-L2 PTE
+                    miss_levels += 1
+                    fills.setdefault("vm_l2", []).append(l2key)
+                if self.levels >= 2:
+                    acc += 1                       # read VM-L1 PTE
+                    miss_levels += 1
+                    fills.setdefault("vm_l1", []).append(l1key)
+            acc += 1                               # leaf line read (coalesced -> fills VM-L0)
+            fills.setdefault("vm_l0", []).append(vm_l0_key)
 
         miss_type = self._classify(miss_levels)
         return WalkPlan(accesses=acc, total_accesses=acc, miss_type=miss_type, fills=fills)
+
+    def warm_hit(self, vpn, data_page, ctx, sim):
+        c = sim.eff_coalesce
+        return sim.caches.vm_l0.peek(("vmL0", (vpn // c) * c, ctx))
+
+    def warm_lookup(self, vpn, data_page, ctx, sim):
+        c = sim.eff_coalesce
+        sim.caches.vm_l0.lookup(("vmL0", (vpn // c) * c, ctx))
 
     @staticmethod
     def _classify(miss_levels):
@@ -89,60 +117,52 @@ class SingleStageCost(WalkCostModel):
         return self.levels
 
 
+# flat cache-attribute names for each G-stage hierarchy (l0, l1, l2 order)
+_GA_VML2 = ("g_l0_vml2", "g_l1_vml2", "g_l2_vml2")   # translate VM-root pointer
+_GA_VML1 = ("g_l0_vml1", "g_l1_vml1", "g_l2_vml1")   # translate VM-L2 PTE ppn
+_GA_VML0 = ("g_l0_vml0", "g_l1_vml0", "g_l2_vml0")   # translate VM-L1 PTE ppn
+_GA_FINAL = ("gf_l0", "gf_l1", "gf_l2")              # translate the final data GPA
+
+
 # --------------------------------------------------------------------------
 class NestedCost(WalkCostModel):
-    """Sv39 (VS-stage) + Sv39x4 (G-stage). Every guest PTE pointer is a GPA that
-    the G-stage must translate before the guest PTE can be read. Each G-stage walk
-    is a full 3-host-access (S2 root/L1/leaf) walk when uncached. S2-side caches:
-      * ``root_gpa``  -- GPA->SPA of the guest root page table (the GPA held in the
-        PDT$ entry); hit -> the root G-stage walk is skipped.
-      * ``table_gpa`` -- GPA->SPA result for the guest L1/leaf table pages.
-      * ``s2_pwc``    -- the G-stage PWC for the DATA-GPA translation (caches its
-        S2 root + S2 L1 PTE reads); ``data_gpa`` caches its leaf.
-    With ONLY DDT$/PDT$ (all of the above disabled), the PTW after a PDT$ hit is
-    the full (3+1)(3+1)-1 = 15-access 2D walk, starting from the root-GPA G-stage
-    translation."""
-
-    # distinct GPA-table-page id namespaces (root / L1-table / leaf-table)
-    ROOT_TBL = 1 << 40
-    L1_TBL = 2 << 40
-    LEAF_TBL = 3 << 40
+    """Sv39 (VS / VM-stage) + Sv39x4 (G-stage). Every guest PTE pointer is a GPA
+    that the G-stage must translate (its own 3-level walk) before the guest PTE can
+    be read. Caches, per the user taxonomy:
+      * VM-L0/L1/L2 PWC + VM-root  -- guest-side, keyed by IOVA.
+      * G-Lx@VM-Ly (g_pwc)         -- G-stage PWC for the guest-TABLE-page GPAs,
+        physically separated per VM level. L0 = full GPA->SPA result.
+      * G-final-L0/L1/L2           -- G-stage PWC for the final DATA GPA.
+      * IOTLB                      -- G-final-L0 made directly VPN-hittable.
+    With everything but DDT$/PDT$ disabled, a walk is the full (3+1)(3+1)-1 = 15
+    -access 2D walk."""
 
     def cold_depth(self):
         return 15
 
-    # --- G-stage translation cached as a FULL GPA->SPA result (root_gpa/table_gpa) ---
     @staticmethod
-    def _result_cached(cache, key, fills, attr):
-        """A full-result cache: hit -> 0 accesses; miss -> a full uncached G-stage
-        walk (3 host PTE reads) and fill. Disabled cache -> always 3."""
-        if not cache.disabled and cache.lookup(key):
+    def _gwalk(gcaches, keybase, ctx, fills, attrs):
+        """Deepest-first G-stage (Sv39x4) walk translating ONE GPA. ``gcaches`` and
+        ``attrs`` are (L0, L1, L2). L0 holds the full GPA->SPA result: hit -> 0 host
+        accesses. Returns the host PTE reads on the critical path and schedules
+        fills for every level walked (from the shared G-root register)."""
+        g0, g1, g2 = gcaches
+        a0, a1, a2 = attrs
+        k0 = ("g0", keybase, ctx)
+        if g0.lookup(k0):
             return 0
-        if not cache.disabled:
-            fills.setdefault(attr, []).append(key)
-        return 3
-
-    def _s2_root(self, ctx, cs, fills):
-        return self._result_cached(cs.root_gpa, ("root", ctx), fills, "root_gpa")
-
-    def _s2_table(self, table_id, ctx, cs, fills):
-        return self._result_cached(cs.table_gpa, ("tbl", table_id, ctx), fills, "table_gpa")
-
-    # --- DATA-GPA G-stage walk: upper (S2 root + L1) in s2_pwc, leaf in data_gpa ---
-    def _s2_data(self, data_page, ctx, cs, fills, c):
-        dline = (data_page // c) * c
-        if not cs.data_gpa.disabled and cs.data_gpa.lookup(("dat", dline, ctx)):
-            return 0
-        n = 0
-        if not cs.s2_pwc.lookup(("s2root", ctx)):                 # S2 root PTE (data PWC)
-            n += 1
-            fills.setdefault("s2_pwc", []).append(("s2root", ctx))
-        if not cs.s2_pwc.lookup(("s2L1", data_page >> 9, ctx)):   # S2 L1 PTE (data PWC)
-            n += 1
-            fills.setdefault("s2_pwc", []).append(("s2L1", data_page >> 9, ctx))
-        n += 1                                                    # S2 data-leaf PTE read
-        if not cs.data_gpa.disabled:
-            fills.setdefault("data_gpa", []).append(("dat", dline, ctx))
+        k1 = ("g1", keybase >> 9, ctx)
+        k2 = ("g2", keybase >> 18, ctx)
+        if g1.lookup(k1):
+            n = 1                                  # read G-L0 PTE
+        elif g2.lookup(k2):
+            n = 2                                  # read G-L1, G-L0 PTE
+            fills.setdefault(a1, []).append(k1)
+        else:
+            n = 3                                  # read G-L2, G-L1, G-L0 PTE (from G-root)
+            fills.setdefault(a2, []).append(k2)
+            fills.setdefault(a1, []).append(k1)
+        fills.setdefault(a0, []).append(k0)
         return n
 
     def cost(self, vpn, data_page, ctx, sim):
@@ -150,37 +170,61 @@ class NestedCost(WalkCostModel):
         c = sim.eff_coalesce
         acc = 0
         miss_levels = 0
-        fills = {"iotlb": [], "s1_l2": [], "s1_l1": []}
-
-        # guest L2: translate the root-table GPA (from the PDT$ context) via the
-        # G-stage; cached in root_gpa. Then read the guest L2 PTE.
-        l2key = ("L2", vpn >> 18, ctx)
-        if not cs.s1_l2.lookup(l2key):
-            acc += self._s2_root(ctx, cs, fills)
-            acc += 1                               # read guest L2 PTE
-            miss_levels += 1
-            fills["s1_l2"].append(l2key)
-
-        # guest L1 (1 GB region)
-        l1key = ("L1", vpn >> 9, ctx)
-        if not cs.s1_l1.lookup(l1key):
-            acc += self._s2_table(self.L1_TBL | (vpn >> 18), ctx, cs, fills)
-            acc += 1                               # read guest L1 PTE
-            miss_levels += 1
-            fills["s1_l1"].append(l1key)
-
-        # guest leaf line (2 MB region table); always read on an IOTLB miss
-        acc += self._s2_table(self.LEAF_TBL | (vpn >> 9), ctx, cs, fills)
-        acc += 1                                   # read guest leaf line (coalesced)
-
-        # final data-GPA G-stage translation (coalesced)
-        acc += self._s2_data(data_page, ctx, cs, fills, c)
-
+        fills = {}
         line = (vpn // c) * c
-        fills["iotlb"] = [(line, ctx)]             # combined IOTLB line entry (covers c pages)
+        vm_l0_key = ("vmL0", line, ctx)
+        vm_l1_key = ("vmL1", vpn >> 9, ctx)
+        vm_l2_key = ("vmL2", vpn >> 18, ctx)
+        gw = self._gwalk
 
+        # Deepest-first VM probe. Each guest PTE we must READ first pays the G-stage
+        # translation of its (GPA) address via the matching G-Lx@VM-Ly hierarchy.
+        if cs.vm_l0.lookup(vm_l0_key):
+            pass                                   # guest leaf PTE cached (rare for streaming)
+        elif cs.vm_l1.lookup(vm_l1_key):
+            acc += gw(cs.gstage("vml0"), vpn >> 9, ctx, fills, _GA_VML0)   # leaf-table GPA
+            acc += 1                               # read guest leaf PTE (VM-L0)
+            fills.setdefault("vm_l0", []).append(vm_l0_key)
+        elif cs.vm_l2.lookup(vm_l2_key):
+            acc += gw(cs.gstage("vml1"), vpn >> 18, ctx, fills, _GA_VML1)  # L1-table GPA
+            acc += 1                               # read guest L1 PTE (VM-L1)
+            fills.setdefault("vm_l1", []).append(vm_l1_key)
+            acc += gw(cs.gstage("vml0"), vpn >> 9, ctx, fills, _GA_VML0)   # leaf-table GPA
+            acc += 1                               # read guest leaf PTE (VM-L0)
+            fills.setdefault("vm_l0", []).append(vm_l0_key)
+            miss_levels += 1
+        else:                                      # cold from VM-root (register)
+            acc += gw(cs.gstage("vml2"), 0, ctx, fills, _GA_VML2)          # root-table GPA
+            acc += 1                               # read guest L2 PTE (VM-L2)
+            fills.setdefault("vm_l2", []).append(vm_l2_key)
+            acc += gw(cs.gstage("vml1"), vpn >> 18, ctx, fills, _GA_VML1)
+            acc += 1                               # read guest L1 PTE (VM-L1)
+            fills.setdefault("vm_l1", []).append(vm_l1_key)
+            acc += gw(cs.gstage("vml0"), vpn >> 9, ctx, fills, _GA_VML0)
+            acc += 1                               # read guest leaf PTE (VM-L0)
+            fills.setdefault("vm_l0", []).append(vm_l0_key)
+            miss_levels += 2
+
+        # final data-GPA G-stage walk (G-final-L0 = the coalesced data leaf line)
+        acc += gw((cs.gf_l0, cs.gf_l1, cs.gf_l2), (data_page // c) * c, ctx, fills, _GA_FINAL)
+
+        # IOTLB is filled per-PAGE by the engine on completion (one IOVA->SPA each);
+        # the coalescing benefit lives in the c-page VM-L0 / G-final fills above.
         miss_type = "full_cold" if miss_levels >= 2 else ("pwc_partial" if miss_levels == 1 else "pwc_full_hit")
         return WalkPlan(accesses=acc, total_accesses=acc, miss_type=miss_type, fills=fills)
+
+    def warm_hit(self, vpn, data_page, ctx, sim):
+        c = sim.eff_coalesce
+        cs = sim.caches
+        # leaf guest PTE cached (-> data GPA known) AND data GPA->SPA cached -> no memory.
+        return (cs.vm_l0.peek(("vmL0", (vpn // c) * c, ctx))
+                and cs.gf_l0.peek(("g0", (data_page // c) * c, ctx)))
+
+    def warm_lookup(self, vpn, data_page, ctx, sim):
+        c = sim.eff_coalesce
+        cs = sim.caches
+        cs.vm_l0.lookup(("vmL0", (vpn // c) * c, ctx))
+        cs.gf_l0.lookup(("g0", (data_page // c) * c, ctx))
 
 
 def make_cost_model(cfg):

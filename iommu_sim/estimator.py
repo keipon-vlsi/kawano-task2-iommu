@@ -53,18 +53,42 @@ class PAWeights:
 
 # Per-structure tag/data bit widths (RTL-realizable; context-tagged). ctx ~= 32 b.
 CTX_BITS = 32
-STRUCT_BITS = {
-    # module        (tag_bits,            data_bits)
-    "iotlb":      (27 + CTX_BITS + 1,     28 + 8),
-    "s1_pwc":     (18 + 2 + CTX_BITS + 1, 28),
-    "s2_pwc":     (29 + CTX_BITS + 1,     28),
-    "root_gpa":   (29 + CTX_BITS + 1,     28),
-    "table_gpa":  (29 + CTX_BITS + 1,     28),
-    "data_gpa":   (29 + CTX_BITS + 1,     28),
-    "ddtc":       (16 + 1,                28 + 16),
-    "pdtc":       (20 + 1,                28 + 16),
-    "msi":        (20 + 1,                28 + 8),
-}
+
+
+def _struct_bits(name):
+    """(tag_bits, data_bits) for a cache, by name family."""
+    if name == "iotlb":
+        return (27 + CTX_BITS + 1, 28 + 8)
+    if name.startswith("vm_"):                       # guest (VM-stage) PWC
+        return (18 + 2 + CTX_BITS + 1, 28)
+    if name.startswith("g_") or name.startswith("gf_"):   # G-stage / G-final PWC
+        return (29 + CTX_BITS + 1, 28)
+    if name == "ddtc":
+        return (16 + 1, 28 + 16)
+    if name == "pdtc":
+        return (20 + 1, 28 + 16)
+    if name == "msi":
+        return (20 + 1, 28 + 8)
+    return (29 + CTX_BITS + 1, 28)
+
+
+# report grouping: collapse the 9 G-Lx@VM-Ly into one row per VM level, the 3
+# G-final levels into one row (per-structure detail stays in the frozen JSON).
+GROUPS = [
+    ("iotlb",   ("iotlb",)),
+    ("vm_l2",   ("vm_l2",)),
+    ("vm_l1",   ("vm_l1",)),
+    ("vm_l0",   ("vm_l0",)),
+    ("vm_root", ("vm_root",)),
+    ("g@vm_l2", ("g_l2_vml2", "g_l1_vml2", "g_l0_vml2")),
+    ("g@vm_l1", ("g_l2_vml1", "g_l1_vml1", "g_l0_vml1")),
+    ("g@vm_l0", ("g_l2_vml0", "g_l1_vml0", "g_l0_vml0")),
+    ("g_root",  ("g_root",)),
+    ("g_final", ("gf_l2", "gf_l1", "gf_l0")),
+    ("ddtc",    ("ddtc",)),
+    ("pdtc",    ("pdtc",)),
+    ("msi",     ("msi",)),
+]
 
 # FF-based / logic structures
 BUFFER_CTRL_BITS = 96          # tag/ID + IOVA + device_id + pasid + type/len + status
@@ -243,26 +267,22 @@ def estimate(cfg, caches, metrics, *, weights=None, dram_accesses=0):
     def cache_activity(c):
         return float(c.hits + c.misses + c.inserts)
 
-    # combined S1 PWC activity (two physical levels share the module name)
-    s1_entries = caches.s1_l2.entries + caches.s1_l1.entries
-    s1_cam = caches.s1_l2.is_cam or caches.s1_l1.is_cam
-    s1_acc = cache_activity(caches.s1_l2) + cache_activity(caches.s1_l1)
-
-    cache_inputs = [
-        ("iotlb", caches.iotlb.entries, caches.iotlb.is_cam, cache_activity(caches.iotlb)),
-        ("s1_pwc", s1_entries, s1_cam, s1_acc),
-        ("s2_pwc", caches.s2_pwc.entries, caches.s2_pwc.is_cam, cache_activity(caches.s2_pwc)),
-        ("root_gpa", caches.root_gpa.entries, caches.root_gpa.is_cam, cache_activity(caches.root_gpa)),
-        ("table_gpa", caches.table_gpa.entries, caches.table_gpa.is_cam, cache_activity(caches.table_gpa)),
-        ("data_gpa", caches.data_gpa.entries, caches.data_gpa.is_cam, cache_activity(caches.data_gpa)),
-        ("ddtc", caches.ddtc.entries, caches.ddtc.is_cam, cache_activity(caches.ddtc)),
-        ("pdtc", caches.pdtc.entries, caches.pdtc.is_cam, cache_activity(caches.pdtc)),
-        ("msi", caches.msi.entries, caches.msi.is_cam, cache_activity(caches.msi)),
-    ]
-    for name, entries, is_cam, acc in cache_inputs:
-        tagb, datab = STRUCT_BITS[name]
-        area, sb, cb, g, dyn, stat = _cache_area_energy(w, entries, tagb, datab, is_cam, acc, sim_cycles)
-        modules.append(ModuleEstimate(name, area, sb, cb, 0, g, accesses=acc, dyn=dyn, stat=stat))
+    # one report row per group (the 9 G-Lx@VM-Ly collapse to 3 per-VM-level rows,
+    # the 3 G-final levels to one). Disabled (entries<=0) structures are omitted.
+    for label, members in GROUPS:
+        parts = [(n, caches.get(n)) for n in members]
+        parts = [(n, c) for n, c in parts if c is not None and c.entries > 0]
+        if not parts:
+            continue
+        area = sb = cb = g = 0
+        dyn = stat = acc = 0.0
+        for n, c in parts:
+            tagb, datab = _struct_bits(n)
+            a, s, cm, gg, dy, st = _cache_area_energy(
+                w, c.entries, tagb, datab, c.is_cam, cache_activity(c), sim_cycles)
+            area += a; sb += s; cb += cm; g += gg; dyn += dy; stat += st
+            acc += cache_activity(c)
+        modules.append(ModuleEstimate(label, area, sb, cb, 0, g, accesses=acc, dyn=dyn, stat=stat))
 
     # ---- walkers (provisioned = explicit num_walkers else measured peak) ----
     n_walk = cfg.walkers.num_walkers if cfg.walkers.num_walkers is not None else max(1, metrics.peak_walks)

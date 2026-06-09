@@ -31,11 +31,29 @@ def summarize(cfg, sim, m):
     completed = m.completed or 1
     res = estimate(cfg, sim.caches, m, dram_accesses=sim.memory.accesses)
     caches = sim.caches
-    hit = {}
-    for name, c in [("iotlb", caches.iotlb), ("s1_pwc", caches.s1_l1), ("s2_pwc", caches.s2_pwc),
-                    ("root_gpa", caches.root_gpa), ("table_gpa", caches.table_gpa),
-                    ("data_gpa", caches.data_gpa), ("ddtc", caches.ddtc), ("pdtc", caches.pdtc)]:
-        hit[name] = (c.hits, c.misses, c.hit_rate)
+
+    def grp(names):
+        h = mi = 0
+        for n in names:
+            c = caches.get(n)
+            if c is not None:
+                h += c.hits
+                mi += c.misses
+        tot = h + mi
+        return (h, mi, h / tot if tot else 0.0)
+
+    hit = {
+        "iotlb":   grp(["iotlb"]),
+        "vm_l2":   grp(["vm_l2"]),
+        "vm_l1":   grp(["vm_l1"]),
+        "vm_l0":   grp(["vm_l0"]),
+        "g@vm_l2": grp(["g_l2_vml2", "g_l1_vml2", "g_l0_vml2"]),
+        "g@vm_l1": grp(["g_l2_vml1", "g_l1_vml1", "g_l0_vml1"]),
+        "g@vm_l0": grp(["g_l2_vml0", "g_l1_vml0", "g_l0_vml0"]),
+        "g_final": grp(["gf_l2", "gf_l1", "gf_l0"]),
+        "ddtc":    grp(["ddtc"]),
+        "pdtc":    grp(["pdtc"]),
+    }
     return {
         "name": cfg.name,
         "mode": cfg.mode,

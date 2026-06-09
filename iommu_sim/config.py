@@ -71,34 +71,131 @@ class PWCLevelCfg:
 
 
 @dataclass
-class S1PWCCfg:
-    l2: PWCLevelCfg = field(default_factory=lambda: PWCLevelCfg(4, "full"))
-    l1: PWCLevelCfg = field(default_factory=lambda: PWCLevelCfg(8, "full"))
+class VMPWCCfg:
+    """Guest (VS / VM-stage, Sv39) page-walk cache, one structure per level.
+    L0 = leaf (guest leaf PTE, IOVA->data-GPA before G-stage). root = guest
+    root-table GPA from the PDT context (register-like, ~always hits)."""
+    l2: PWCLevelCfg = field(default_factory=lambda: PWCLevelCfg(8, "full"))
+    l1: PWCLevelCfg = field(default_factory=lambda: PWCLevelCfg(16, "full"))
+    l0: PWCLevelCfg = field(default_factory=lambda: PWCLevelCfg(16, "full"))
+    root: PWCLevelCfg = field(default_factory=lambda: PWCLevelCfg(1, "full"))
 
     @classmethod
     def from_dict(cls, d):
         if d is None:
             return cls()
+        d = dict(d); b = cls()
+        pick = lambda k, dv: PWCLevelCfg.from_dict(d[k]) if k in d else dv
+        return cls(l2=pick("l2", b.l2), l1=pick("l1", b.l1),
+                   l0=pick("l0", b.l0), root=pick("root", b.root))
+
+
+@dataclass
+class GStageCfg:
+    """One G-stage (Sv39x4) 3-level PWC hierarchy translating a single GPA stream
+    (L0 = the full GPA->SPA result level)."""
+    l2: PWCLevelCfg = field(default_factory=lambda: PWCLevelCfg(4, "full"))
+    l1: PWCLevelCfg = field(default_factory=lambda: PWCLevelCfg(4, "full"))
+    l0: PWCLevelCfg = field(default_factory=lambda: PWCLevelCfg(4, "full"))
+
+    @classmethod
+    def from_dict(cls, d, dflt=None):
+        b = dflt or cls()
+        if d is None:
+            return b
         d = dict(d)
-        return cls(l2=PWCLevelCfg.from_dict(d.get("l2")),
-                   l1=PWCLevelCfg.from_dict(d.get("l1")))
+        pick = lambda k, dv: PWCLevelCfg.from_dict(d[k]) if k in d else dv
+        return cls(l2=pick("l2", b.l2), l1=pick("l1", b.l1), l0=pick("l0", b.l0))
+
+
+def _gstage(entries, enabled=True):
+    lv = lambda: PWCLevelCfg(entries, "full", enabled=enabled)
+    return GStageCfg(lv(), lv(), lv())
+
+
+@dataclass
+class GPWCCfg:
+    """G-stage caches for the guest-TABLE-page GPAs (temporal, few; heavily reused),
+    physically separated per VM level: G-Lx@VM-Ly. root = shared G-stage root
+    register (host root table, hgatp)."""
+    vm_l2: GStageCfg = field(default_factory=lambda: _gstage(2))   # translate VM-root ptr
+    vm_l1: GStageCfg = field(default_factory=lambda: _gstage(4))   # translate VM-L2 PTE ppn
+    vm_l0: GStageCfg = field(default_factory=lambda: _gstage(8))   # translate VM-L1 PTE ppn
+    root: PWCLevelCfg = field(default_factory=lambda: PWCLevelCfg(1, "full"))
+
+    @classmethod
+    def from_dict(cls, d):
+        if d is None:
+            return cls()
+        d = dict(d); b = cls()
+        gv = lambda k, dv: GStageCfg.from_dict(d[k], dv) if k in d else dv
+        root = PWCLevelCfg.from_dict(d["root"]) if "root" in d else b.root
+        return cls(vm_l2=gv("vm_l2", b.vm_l2), vm_l1=gv("vm_l1", b.vm_l1),
+                   vm_l0=gv("vm_l0", b.vm_l0), root=root)
+
+
+@dataclass
+class GFinalCfg:
+    """G-stage caches for the FINAL data GPA (spatial, streaming). G-final-L0 made
+    directly hittable by VPN == the IOTLB."""
+    l2: PWCLevelCfg = field(default_factory=lambda: PWCLevelCfg(8, "full"))
+    l1: PWCLevelCfg = field(default_factory=lambda: PWCLevelCfg(8, "full"))
+    l0: PWCLevelCfg = field(default_factory=lambda: PWCLevelCfg(64, 4))
+
+    @classmethod
+    def from_dict(cls, d):
+        if d is None:
+            return cls()
+        d = dict(d); b = cls()
+        pick = lambda k, dv: PWCLevelCfg.from_dict(d[k]) if k in d else dv
+        return cls(l2=pick("l2", b.l2), l1=pick("l1", b.l1), l0=pick("l0", b.l0))
+
+
+def _legacy_caches(d):
+    """Map the old flat cache keys (s1_pwc / s2_pwc / root_gpa / table_gpa /
+    data_gpa) onto the new VM / G / G-final structure so pre-rename configs and
+    tests keep loading. Explicit new-style keys (handled by the caller) win."""
+    s1 = dict(d.get("s1_pwc") or {})
+    l2 = PWCLevelCfg.from_dict(s1["l2"]) if "l2" in s1 else PWCLevelCfg(8, "full")
+    l1 = PWCLevelCfg.from_dict(s1["l1"]) if "l1" in s1 else PWCLevelCfg(16, "full")
+    # VM-L0 (guest leaf PTE) mirrors the deepest VM PWC level's enabled-state.
+    l0 = PWCLevelCfg(max(16, l1.entries), "full", enabled=l1.enabled)
+    vm = VMPWCCfg(l2=l2, l1=l1, l0=l0, root=PWCLevelCfg(1, "full"))
+
+    root_gpa = CacheCfg.from_dict(d["root_gpa"]) if "root_gpa" in d else CacheCfg(1, "full", enabled=False)
+    table = CacheCfg.from_dict(d["table_gpa"]) if "table_gpa" in d else CacheCfg(16, "full", enabled=False)
+    g = GPWCCfg(
+        vm_l2=_gstage(max(1, root_gpa.entries), root_gpa.enabled),   # root-table G translation
+        vm_l1=_gstage(max(1, table.entries), table.enabled),         # guest L1-table G translation
+        vm_l0=_gstage(max(1, table.entries), table.enabled),         # guest leaf-table G translation
+        root=PWCLevelCfg(1, "full", enabled=root_gpa.enabled or table.enabled),
+    )
+    s2 = CacheCfg.from_dict(d["s2_pwc"]) if "s2_pwc" in d else CacheCfg(8, "full", enabled=False)
+    data = CacheCfg.from_dict(d["data_gpa"]) if "data_gpa" in d else CacheCfg(64, 4, enabled=False)
+    gf = GFinalCfg(
+        l2=PWCLevelCfg(max(1, s2.entries), "full", enabled=s2.enabled),
+        l1=PWCLevelCfg(max(1, s2.entries), "full", enabled=s2.enabled),
+        l0=PWCLevelCfg(max(1, data.entries), data.assoc, enabled=data.enabled),
+    )
+    return vm, g, gf
 
 
 
 
 @dataclass
 class CachesCfg:
+    # IOTLB: fully-resolved IOVA->SPA (== G-final-L0 made VPN-hittable).
     iotlb: CacheCfg = field(default_factory=lambda: CacheCfg(64, 4))
-    s1_pwc: S1PWCCfg = field(default_factory=S1PWCCfg)
-    s2_pwc: CacheCfg = field(default_factory=lambda: CacheCfg(8, "full"))   # data-GPA G-stage PWC (upper)
-    root_gpa: CacheCfg = field(default_factory=lambda: CacheCfg(1, "full", enabled=False))  # PDT root GPA->SPA
-    table_gpa: CacheCfg = field(default_factory=lambda: CacheCfg(16, "full"))
-    data_gpa: CacheCfg = field(default_factory=lambda: CacheCfg(64, 4, enabled=False))
-    ddtc: CacheCfg = field(default_factory=lambda: CacheCfg(16, "full"))
-    pdtc: CacheCfg = field(default_factory=lambda: CacheCfg(16, "full", enabled=False))
-    msi: CacheCfg = field(default_factory=lambda: CacheCfg(16, "full"))
+    # VM-stage (guest) PWC: L0(leaf)/L1/L2 + root.
+    vm_pwc: VMPWCCfg = field(default_factory=VMPWCCfg)
+    # G-stage PWC for guest-table-page GPAs, separated per VM level (G-Lx@VM-Ly).
+    g_pwc: GPWCCfg = field(default_factory=GPWCCfg)
+    # G-stage PWC for the final data GPA: G-final-L0/L1/L2.
+    g_final: GFinalCfg = field(default_factory=GFinalCfg)
+    ddtc: CacheCfg = field(default_factory=lambda: CacheCfg(1, "full"))
+    pdtc: CacheCfg = field(default_factory=lambda: CacheCfg(1, "full", enabled=False))
+    msi: CacheCfg = field(default_factory=lambda: CacheCfg(16, "full", enabled=False))
     lookup_mode: str = "hybrid"      # parallel / sequential / hybrid
-    walk_trigger: str = "demand"     # demand / predictive
     coalesce_factor: int = 8         # 64B line / 8B PTE = 8
 
     @classmethod
@@ -106,18 +203,25 @@ class CachesCfg:
         if d is None:
             return cls()
         d = dict(d)
+        b = cls()
+        vm_pwc = VMPWCCfg.from_dict(d["vm_pwc"]) if "vm_pwc" in d else None
+        g_pwc = GPWCCfg.from_dict(d["g_pwc"]) if "g_pwc" in d else None
+        g_final = GFinalCfg.from_dict(d["g_final"]) if "g_final" in d else None
+        # legacy flat keys -> new structure (explicit new-style keys win)
+        if any(k in d for k in ("s1_pwc", "s2_pwc", "root_gpa", "table_gpa", "data_gpa")):
+            lvm, lg, lgf = _legacy_caches(d)
+            vm_pwc = vm_pwc or lvm
+            g_pwc = g_pwc or lg
+            g_final = g_final or lgf
         return cls(
-            iotlb=CacheCfg.from_dict(d.get("iotlb")) if "iotlb" in d else cls().iotlb,
-            s1_pwc=S1PWCCfg.from_dict(d.get("s1_pwc")) if "s1_pwc" in d else cls().s1_pwc,
-            s2_pwc=CacheCfg.from_dict(d.get("s2_pwc")) if "s2_pwc" in d else cls().s2_pwc,
-            root_gpa=CacheCfg.from_dict(d.get("root_gpa")) if "root_gpa" in d else cls().root_gpa,
-            table_gpa=CacheCfg.from_dict(d.get("table_gpa")) if "table_gpa" in d else cls().table_gpa,
-            data_gpa=CacheCfg.from_dict(d.get("data_gpa")) if "data_gpa" in d else cls().data_gpa,
-            ddtc=CacheCfg.from_dict(d.get("ddtc")) if "ddtc" in d else cls().ddtc,
-            pdtc=CacheCfg.from_dict(d.get("pdtc")) if "pdtc" in d else cls().pdtc,
-            msi=CacheCfg.from_dict(d.get("msi")) if "msi" in d else cls().msi,
+            iotlb=CacheCfg.from_dict(d.get("iotlb")) if "iotlb" in d else b.iotlb,
+            vm_pwc=vm_pwc or b.vm_pwc,
+            g_pwc=g_pwc or b.g_pwc,
+            g_final=g_final or b.g_final,
+            ddtc=CacheCfg.from_dict(d.get("ddtc")) if "ddtc" in d else b.ddtc,
+            pdtc=CacheCfg.from_dict(d.get("pdtc")) if "pdtc" in d else b.pdtc,
+            msi=CacheCfg.from_dict(d.get("msi")) if "msi" in d else b.msi,
             lookup_mode=str(d.get("lookup_mode", "hybrid")),
-            walk_trigger=str(d.get("walk_trigger", "demand")),
             coalesce_factor=int(d.get("coalesce_factor", 8)),
         )
 

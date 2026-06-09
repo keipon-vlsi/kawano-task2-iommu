@@ -225,66 +225,77 @@ def make_level_cache(lvl, name):
 
 
 # ---- Named IOMMU cache set ------------------------------------------------
+# VM levels whose pointer GPA each per-VM-level G-stage hierarchy translates.
+_VM_TAGS = ("vml2", "vml1", "vml0")
+
+
 class CacheSet:
-    """All translation/context caches for one IOMMU configuration. The walk cost
-    models query these; the engine applies fills/invalidations to them; the
+    """All translation/context caches for one IOMMU configuration (user taxonomy:
+    VM-Lx PWC / G-Lx@VM-Ly / G-final-Lx / IOTLB). The walk cost models query these;
+    the engine applies fills/invalidations to them by flat attribute name; the
     estimator reads their sizes and activity counters."""
 
     def __init__(self, cfg):
         c = cfg.caches
-        self.iotlb = make_cache(c.iotlb, "iotlb")
-        # S1 PWC has per-level structures (L2 upper, L1 deeper-and-hotter).
-        # enabled=False (or entries<=0) -> disabled (always miss), honoured per level.
-        self.s1_l2 = make_level_cache(c.s1_pwc.l2, "s1_pwc")
-        self.s1_l1 = make_level_cache(c.s1_pwc.l1, "s1_pwc")
-        # data-GPA G-stage PWC: caches the S2 upper (root + L1) PTE reads on the
-        # path that translates the final DATA GPA. Disabled -> every data G-stage
-        # walk pays the full upper accesses.
-        self.s2_pwc = make_cache(c.s2_pwc, "s2_pwc")
-        # root_gpa: caches the SPA of the guest root page table, i.e. the result of
-        # G-stage-translating the GPA held in the PDT$ entry. One per context, so it
-        # essentially always hits after the first walk. Disabled by default.
-        self.root_gpa = make_cache(c.root_gpa, "root_gpa")
-        # table_gpa: full GPA->SPA result cache for the guest L1/leaf table pages.
-        self.table_gpa = make_cache(c.table_gpa, "table_gpa")
-        self.data_gpa = make_cache(c.data_gpa, "data_gpa")     # disabled unless enabled=True
-        self.ddtc = make_cache(c.ddtc, "ddtc")
-        self.pdtc = make_cache(c.pdtc, "pdtc")
-        self.msi = make_cache(c.msi, "msi")
+        self._all = {}
+
+        def reg(name, obj):
+            cache = make_level_cache(obj, name)   # honours enabled / entries / assoc
+            self._all[name] = cache
+            setattr(self, name, cache)
+            return cache
+
+        # IOTLB: fully-resolved IOVA->SPA (== G-final-L0 made VPN-hittable).
+        reg("iotlb", c.iotlb)
+        # VM-stage (guest, Sv39) PWC: L0(leaf)/L1/L2 + root register.
+        reg("vm_l2", c.vm_pwc.l2)
+        reg("vm_l1", c.vm_pwc.l1)
+        reg("vm_l0", c.vm_pwc.l0)
+        reg("vm_root", c.vm_pwc.root)
+        # G-stage PWC for guest-table-page GPAs, separated per VM level (G-Lx@VM-Ly).
+        for tag, gs in zip(_VM_TAGS, (c.g_pwc.vm_l2, c.g_pwc.vm_l1, c.g_pwc.vm_l0)):
+            reg(f"g_l2_{tag}", gs.l2)
+            reg(f"g_l1_{tag}", gs.l1)
+            reg(f"g_l0_{tag}", gs.l0)
+        reg("g_root", c.g_pwc.root)               # shared G-stage root register
+        # G-stage PWC for the final DATA GPA.
+        reg("gf_l2", c.g_final.l2)
+        reg("gf_l1", c.g_final.l1)
+        reg("gf_l0", c.g_final.l0)
+        # context / interrupt caches.
+        reg("ddtc", c.ddtc)
+        reg("pdtc", c.pdtc)
+        reg("msi", c.msi)
         self.cfg = cfg
+
+    def get(self, name):
+        return self._all.get(name)
+
+    def gstage(self, vm_tag):
+        """(L0, L1, L2) G-stage caches translating VM-`vm_tag`'s pointer GPA."""
+        return (self._all[f"g_l0_{vm_tag}"], self._all[f"g_l1_{vm_tag}"],
+                self._all[f"g_l2_{vm_tag}"])
 
     def named(self):
         """component-name -> cache (for invalidation targeting & estimator)."""
-        return {
-            "iotlb": self.iotlb,
-            "s1_pwc": self.s1_l1,        # representative; both levels share the name
-            "s1_l2": self.s1_l2,
-            "s1_l1": self.s1_l1,
-            "s2_pwc": self.s2_pwc,
-            "root_gpa": self.root_gpa,
-            "table_gpa": self.table_gpa,
-            "data_gpa": self.data_gpa,
-            "ddtc": self.ddtc,
-            "pdtc": self.pdtc,
-            "msi": self.msi,
-        }
+        return dict(self._all)
+
+    # cache groups for stage-targeted invalidation
+    _S1_NAMES = ("iotlb", "vm_l2", "vm_l1", "vm_l0", "vm_root")
+    _S2_NAMES = ("iotlb", "gf_l2", "gf_l1", "gf_l0", "g_root",
+                 "g_l2_vml2", "g_l1_vml2", "g_l0_vml2",
+                 "g_l2_vml1", "g_l1_vml1", "g_l0_vml1",
+                 "g_l2_vml0", "g_l1_vml0", "g_l0_vml0")
 
     def invalidate_stage(self, stage, ctx=None, page=None):
-        """stage in {s1, s2, both}. S1 -> guest-side caches (IOTLB combined result,
-        S1 PWC). S2 -> G-stage caches (S2 PWC, table_gpa, data_gpa). The combined
-        IOTLB holds the final IOVA->SPA so it is invalidated by either stage."""
+        """stage in {s1, s2, both}. S1 -> guest-side caches (VM PWC + IOTLB).
+        S2 -> G-stage caches (G / G-final + IOTLB). The combined IOTLB holds the
+        final IOVA->SPA so either stage invalidates it; the separate G-final (data)
+        caches survive an S1-only invalidation (stage separation benefit)."""
+        names = []
         if stage in ("s1", "both"):
-            self.iotlb.invalidate(ctx=ctx, page=page)
-            self.s1_l2.invalidate(ctx=ctx, page=page)
-            self.s1_l1.invalidate(ctx=ctx, page=page)
-            if stage == "s1":
-                # S1-only invalidation: combined IOTLB also loses the entry, but a
-                # separate data_gpa cache (if enabled) retains the S2 result.
-                if not self.data_gpa.disabled:
-                    pass                 # data_gpa survives (stage separation benefit)
+            names += self._S1_NAMES
         if stage in ("s2", "both"):
-            self.iotlb.invalidate(ctx=ctx, page=page)
-            self.s2_pwc.invalidate(ctx=ctx, page=page)
-            self.root_gpa.invalidate(ctx=ctx, page=page)
-            self.table_gpa.invalidate(ctx=ctx, page=page)
-            self.data_gpa.invalidate(ctx=ctx, page=page)
+            names += self._S2_NAMES
+        for n in dict.fromkeys(names):            # dedup, keep order
+            self._all[n].invalidate(ctx=ctx, page=page)

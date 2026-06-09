@@ -15,7 +15,6 @@ base:
     pdtc:      {enabled: true, entries: 1, assoc: full}
     msi:       {entries: 16}
     lookup_mode: hybrid
-    walk_trigger: demand
     coalesce_factor: 8
   walkers:  {num_walkers: 4, pipeline_depth: 2}
   buffers:  {iommu_req_buffer: 16, io_bridge_buffer: 16}
