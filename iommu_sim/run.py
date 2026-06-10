@@ -62,12 +62,32 @@ def print_report(cfg, sim, m, s, m_steady=None):
     print(f"  mem_bandwidth          : {s['mem_bandwidth_gbs']:.2f} GB/s")
     print(f"  mem_accesses           : {s['mem_accesses']}  ({s['accesses_per_translation']:.4f} /translation)")
     print(f"  io_bridge_buffer_peak  : {m.io_bridge_peak}   (4 kB payload holders)")
-    print("\n-- cache hit/miss --")
-    print(f"  {'cache':<11}{'hits':>10}{'misses':>10}{'hit_rate':>10}")
-    for name, (h, mi, hr) in s["hit"].items():
-        if h + mi > 0:
-            print(f"  {name:<11}{h:>10d}{mi:>10d}{hr:>10.3f}")
-    print(f"  iotlb_hit={m.iotlb_hit}  pwc_hit={m.pwc_hit}  mshr_coalesced={m.mshr_coalesced}  walks={m.walks_started}")
+    print("\n-- cache hit/miss (demand vs prefetch) --")
+    print(f"  {'cache':<11}{'d_hit':>9}{'d_miss':>8}{'d_rate':>8}{'pf_hit':>8}{'pf_miss':>8}")
+    for name, (dh, dm, dr, ph, pm) in s["hit"].items():
+        if dh + dm + ph + pm > 0:
+            print(f"  {name:<11}{dh:>9d}{dm:>8d}{dr:>8.3f}{ph:>8d}{pm:>8d}")
+    print(f"  iotlb_hit(demand)={m.iotlb_hit}  pwc_hit={m.pwc_hit}  mshr_coalesced={m.mshr_coalesced}  walks={m.walks_started}")
+    print(f"  (d_=demand, pf_=prefetch. prefetch misses are intended first-touches that warm the cache;")
+    print(f"   d_rate is the demand-facing hit rate -- the number that reflects how well the cache serves traffic.)")
+
+    # G-stage PWC is a 2D structure (G-Lx @ VM-Ly); the flat rows above hide which
+    # G-level serves which VM-level. Total (demand+prefetch) so it is prefetch-agnostic.
+    def _gcell(name):
+        x = sim.caches.get(name)
+        if x is None:
+            return "-"
+        h, mi = x.hits, x.misses
+        return f"{h}/{mi} ({h/(h+mi):.0%})" if (h + mi) else "-"
+    _g_names = ("g_l0_vml0", "g_l1_vml0", "g_l2_vml0", "gf_l0", "gf_l1", "gf_l2")
+    if any((sim.caches.get(n) and (sim.caches.get(n).hits + sim.caches.get(n).misses)) for n in _g_names):
+        print("\n-- G-stage PWC hit/miss [VM-level x G-level] (total) --")
+        print(f"  {'':<9}{'G-L0(result)':>17}{'G-L1':>17}{'G-L2':>17}")
+        for label, tag in (("@VM-L2", "vml2"), ("@VM-L1", "vml1"), ("@VM-L0", "vml0")):
+            print(f"  {label:<9}{_gcell('g_l0_'+tag):>17}{_gcell('g_l1_'+tag):>17}{_gcell('g_l2_'+tag):>17}")
+        print(f"  {'G-final':<9}{_gcell('gf_l0'):>17}{_gcell('gf_l1'):>17}{_gcell('gf_l2'):>17}")
+        print(f"  (row = which VM-level pointer GPA is G-translated; col = G-stage level probed.")
+        print(f"   deepest-first: G-L0 = full GPA->SPA result -> a hit means 0 host accesses.)")
     print("\n-- latency --")
     print(f"  avg : {m.avg_lat:8.2f} cyc  ({m.avg_lat*cyc:8.2f} ns)")
     print(f"  p99 : {m.p99_lat:8.2f} cyc  ({m.p99_lat*cyc:8.2f} ns)")

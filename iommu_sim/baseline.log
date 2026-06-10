@@ -3,80 +3,101 @@
   clock 400 MHz, 1 cycle = 2.5 ns, mem = 40 cyc, inter-arrival = 16.38 cyc
 
 -- throughput / wire rate --
-  completed              : 8000
-  throughput             : 24.416 M/s   (target 24.414 M/s)
-  wire_rate_met          : False
+  completed              : 70000
+  throughput             : 24.401 M/s   (target 24.414 M/s)
+  wire_rate_met          : True
 
 -- required hardware (3c / 3d) --
-  peak_walks (3c, N)     : 1   [num_walkers fixed]
-  peak_buffer (3d)       : 42   [iommu_req_buffer fixed]
+  resource                   steady  cold-incl
+  peak_walks (3c, N)              9         10
+  peak_buffer (3d)               69         74
+  io_bridge_buffer               69         74
+  (steady = post-warm-up running requirement; cold-incl = from cold start.
+   measured @ unlimited resources.)
+
+  parallel-walk distribution (steady, time-weighted):
+  active walks      cycles  fraction
+             1         131     0.0%  
+             2         131     0.0%  
+             3         131     0.0%  
+             4         131     0.0%  
+             5      152955    14.8%  ######
+             6      711878    68.9%  ############################
+             7       32244     3.1%  #
+             8       71168     6.9%  ###
+             9       64079     6.2%  ##
+  (zero-stall peak provisions the tail; typical concurrency is the mode above.)
 
 -- memory / I/O-bridge performance requirements --
-  mem_outstanding_peak   : 1
-  mem_bandwidth          : 0.40 GB/s
-  mem_accesses           : 2058  (0.2572 /translation)
-  io_bridge_buffer_peak  : 42   (4 kB payload holders)
+  mem_outstanding_peak   : 10
+  mem_bandwidth          : 3.96 GB/s
+  mem_accesses           : 177376  (2.5339 /translation)
+  io_bridge_buffer_peak  : 74   (4 kB payload holders)
 
--- cache hit/miss --
-  cache            hits    misses  hit_rate
-  iotlb               0      8000     0.000
-  vm_l2              15         1     0.938
-  vm_l1             984        16     0.984
-  vm_l0            1900      1000     0.655
-  g@vm_l2             0         3     0.000
-  g@vm_l1            15         3     0.833
-  g@vm_l0           999        18     0.982
-  g_final          2899      1017     0.740
-  ddtc              999         1     0.999
-  pdtc              999         1     0.999
-  iotlb_hit=0  pwc_hit=1900  mshr_coalesced=5100  walks=1000
+-- cache hit/miss (demand vs prefetch) --
+  cache          d_hit  d_miss  d_rate  pf_hit pf_miss
+  iotlb              0   70000   0.000       0       0
+  vm_l2              0    1234   0.000       0       0
+  vm_l1           7516    1234   0.859       0       0
+  vm_l0              0    8750   0.000       0       0
+  g@vm_l2            0    3702   0.000       0       0
+  g@vm_l1            0    3702   0.000       0       0
+  g@vm_l0         8740    1254   0.875       0       0
+  g_final            0   26250   0.000       0       0
+  iotlb_hit(demand)=0  pwc_hit=0  mshr_coalesced=61250  walks=8750
+  (d_=demand, pf_=prefetch. prefetch misses are intended first-touches that warm the cache;
+   d_rate is the demand-facing hit rate -- the number that reflects how well the cache serves traffic.)
+
+-- G-stage PWC hit/miss [VM-level x G-level] (total) --
+                G-L0(result)             G-L1             G-L2
+  @VM-L2         0/1234 (0%)      0/1234 (0%)      0/1234 (0%)
+  @VM-L1         0/1234 (0%)      0/1234 (0%)      0/1234 (0%)
+  @VM-L0     7516/1234 (86%)    1224/10 (99%)        0/10 (0%)
+  G-final        0/8750 (0%)      0/8750 (0%)      0/8750 (0%)
+  (row = which VM-level pointer GPA is G-translated; col = G-stage level probed.
+   deepest-first: G-L0 = full GPA->SPA result -> a hit means 0 host accesses.)
 
 -- latency --
-  avg :    40.97 cyc  (  102.42 ns)
-  p99 :   205.00 cyc  (  512.50 ns)
-  max :   685.00 cyc  ( 1712.50 ns)
+  avg :   758.52 cyc  ( 1896.29 ns)
+  p99 :  1125.00 cyc  ( 2812.50 ns)
+  max :  1205.00 cyc  ( 3012.50 ns)
 
 -- cold-start / warm-up --
-  time to steady-state   : 1432 cyc  (3580 ns),  80 requests
-  (steady-state latency ~ 35.8 cyc; warm-up = caches filling + initial backlog draining.
+  time to steady-state   : 0 cyc  (0 ns),  0 requests
+  (steady-state latency ~ 715.8 cyc; warm-up = caches filling + initial backlog draining.
    the required-hardware table above gives both the steady (warm) and the cold-start-
    inclusive peaks; provision the cold-incl column to sustain wire rate from cold start.)
 
 -- miss-penalty distribution by type (cycles) --
   type               count   avg_cyc    avg_ns   max_cyc
-  mshr_coalesced      5100     44.68    111.69    668.62
-  pwc_full_hit         984     89.97    224.92    636.93
-  pwc_partial           15    205.00    512.50    205.00
-  full_cold              1    685.00   1712.50    685.00
-  pwc_hit             1900      4.00     10.00      4.00
+  mshr_coalesced     61250    750.33   1875.81   1188.62
+  pwc_full_hit        7516    765.00   1912.50    765.00
+  full_cold           1234   1125.65   2814.12   1205.00
   (characteristic full-cold walk depth for mode nested: 15 x 40 cyc)
 
 -- normalized area & power (per module) --
 module           area_GE   sram_b   cam_b    ff_b  gates    access        dyn       stat
 ----------------------------------------------------------------------------------------
-iotlb              207.7      768       0       0      8     16000     0.2344    0.00784
-vm_l2              813.0      224     424       0    424        17     0.0028    0.01496
-vm_l1             1625.9      448     848       0    848      1016     0.3330    0.02992
-vm_l0             1625.9      448     848       0    848      3900     1.2784    0.02992
-vm_root            101.6       28      53       0     53         0     0.0000    0.00187
-g@vm_l2            705.8      168     372       0    372         6     0.0003    0.01284
-g@vm_l1           1411.7      336     744       0    744        21     0.0021    0.02568
-g@vm_l0           3293.9      784    1736       0   1736      1035     0.3923    0.05992
+iotlb             1661.4     6144       0       0     64    140000     0.2342    0.06272
+vm_l1             1625.9      448     848       0    848      8887     0.3327    0.02992
+vm_l0             1625.9      448     848       0    848     17500     0.6552    0.02992
+g@vm_l0           3293.9      784    1736       0   1736     10133     0.4159    0.05992
 g_root             117.6       28      62       0     62         0     0.0000    0.00214
-g_final           3443.8     6208     992       0   1056      4933     0.2534    0.09312
-ddtc                41.7       44      17       0     17      1001     0.0132    0.00095
-pdtc                48.8       44      21       0     21      1001     0.0147    0.00107
-walkers           1072.0        0       0     112    400      1000     0.7213    0.00912
-buffer           24192.0        0       0    4032      0      8000    40.4372    0.04032
-arbiter            800.0        0       0       0    800      8000     0.0488    0.01600
-control           2000.0        0       0       0   2000      8000     0.0610    0.04000
+walkers          10720.0        0       0    1120   4000      8750     6.9420    0.09120
+buffer           42624.0        0       0    7104      0     70000    71.1571    0.07104
+arbiter            800.0        0       0       0    800     70000     0.0488    0.01600
+control           2000.0        0       0       0   2000     70000     0.0610    0.04000
 ----------------------------------------------------------------------------------------
-TOTAL            41501.5                                              43.7931    0.38567
-  area: 41,501.5 GE
-  power(norm): dyn 43.7931 + stat 0.38567 = 44.1788 units/cycle
-  energy/translation: 723.756 norm-units
-  DRAM (separate): 2058 accesses, 41,160 norm-units (5.14/translation)
+TOTAL            64468.8                                              79.8469    0.40286
+  area: 64,468.8 GE
+  power(norm): dyn 79.8469 + stat 0.40286 = 80.2498 units/cycle
+  energy/translation: 1315.539 norm-units
+  DRAM (separate): 177376 accesses, 3,547,520 norm-units (50.68/translation)
 
-  FoM (area_GE x energy/translation): 30037007.36
+  FoM (area_GE x energy/translation): 84811283.72
 
-  frozen prediction -> freeze/baseline.json  (config_hash 3811d324061c...)
+  >>> 3c required parallel walkers N : steady 9, cold-incl 10
+  >>> 3d required IOMMU request buffer: steady 69, cold-incl 74
+      warm-up to steady state: 0 cyc (0 ns), 0 requests
+
+  frozen prediction -> freeze/baseline.json  (config_hash 2ada8b47d52f...)

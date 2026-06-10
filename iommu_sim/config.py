@@ -197,6 +197,13 @@ class CachesCfg:
     msi: CacheCfg = field(default_factory=lambda: CacheCfg(16, "full", enabled=False))
     lookup_mode: str = "hybrid"      # parallel / sequential / hybrid
     coalesce_factor: int = 8         # 64B line / 8B PTE = 8
+    # context-resolution walk (DDTW/PDTW). When False the directory walk is free
+    # (legacy: +1 latency per DDTC/PDTC cold miss). When True it is modelled as a
+    # real walk -- DDTW = ddt_levels host accesses, PDTW = nested (pdt_levels guest
+    # levels x G-stage) -- and a DISABLED DDTC/PDTC walks on EVERY request.
+    context_walk: bool = False
+    ddt_levels: int = 3              # device directory depth (host memory)
+    pdt_levels: int = 3              # process directory depth (guest memory -> nested)
 
     @classmethod
     def from_dict(cls, d):
@@ -223,6 +230,9 @@ class CachesCfg:
             msi=CacheCfg.from_dict(d.get("msi")) if "msi" in d else b.msi,
             lookup_mode=str(d.get("lookup_mode", "hybrid")),
             coalesce_factor=int(d.get("coalesce_factor", 8)),
+            context_walk=bool(d.get("context_walk", False)),
+            ddt_levels=int(d.get("ddt_levels", 3)),
+            pdt_levels=int(d.get("pdt_levels", 3)),
         )
 
 
@@ -386,7 +396,7 @@ class PACfg:
 # --------------------------------------------------------------------------
 @dataclass
 class Config:
-    mode: str = "nested"                # bare / s1_only / s2_only / nested
+    mode: str = "nested"                # bare(=passthrough, no PTW) / s1_only / s2_only / nested
     superpage: str = "off"              # off / 2M / 1G
     caches: CachesCfg = field(default_factory=CachesCfg)
     walkers: WalkersCfg = field(default_factory=WalkersCfg)

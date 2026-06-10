@@ -34,15 +34,16 @@ from metrics import Metrics
 
 class _MSHR:
     """One in-flight / pending leaf line. Coalesces all requests for the line."""
-    __slots__ = ("line", "lead_vpn", "lead_data", "ctx", "started", "waiters")
+    __slots__ = ("line", "lead_vpn", "lead_data", "ctx", "started", "waiters", "origin")
 
-    def __init__(self, line, vpn, data, ctx):
+    def __init__(self, line, vpn, data, ctx, origin="demand"):
         self.line = line
         self.lead_vpn = vpn
         self.lead_data = data
         self.ctx = ctx
         self.started = False
         self.waiters = []          # list of (req, is_prefetch)
+        self.origin = origin       # "demand" | "prefetch": which first-missed the line
 
 
 class Simulator:
@@ -81,6 +82,7 @@ class Simulator:
         self.num_walkers = cfg.walkers.num_walkers
         self.buffer_size = cfg.buffers.iommu_req_buffer
         self.io_bridge_size = cfg.buffers.io_bridge_buffer
+        self.context_walk = cfg.caches.context_walk
 
         self.m = Metrics()
         self._q = []
@@ -171,6 +173,7 @@ class Simulator:
         ctx = req.ctx
         line = self.line_of(req.vpn)
         key = (req.vpn, ctx)                           # IOTLB is per-page (one IOVA->SPA)
+        self.caches.origin = "prefetch" if is_prefetch else "demand"   # tag this request's lookups
 
         if self.parallel_lookup:                      # parallel mode probes VM PWC too (energy)
             self.caches.vm_l1.lookup(("vmL1", req.vpn >> 9, ctx))
@@ -216,7 +219,8 @@ class Simulator:
             return
 
         # first miss for this line: register MSHR, then try to start a walk
-        ent = _MSHR(line, req.vpn, req.data_page, ctx)
+        ent = _MSHR(line, req.vpn, req.data_page, ctx,
+                    origin="prefetch" if is_prefetch else "demand")
         self.mshr[line] = ent
         self._add_waiter(t, ent, req, is_prefetch, coalesced=False)
         self.walk_wait.append(line)
@@ -243,18 +247,26 @@ class Simulator:
         if not self.memory.can_issue():
             return False
 
+        self.caches.origin = ent.origin               # tag the walk's PWC/G/context lookups
         plan = self.cost.cost(ent.lead_vpn, ent.lead_data, ent.ctx, self)
         plan_acc = plan.accesses
-        # context resolution (DDTW/PDTW): near-always a hit; a context switch misses.
-        if not self.caches.ddtc.disabled and not self.caches.ddtc.lookup(("dev", ent.ctx[0])):
-            plan_acc += 1
-            self.caches.ddtc.insert(("dev", ent.ctx[0]))
-        if not self.caches.pdtc.disabled and not self.caches.pdtc.lookup(("pas", ent.ctx[1])):
-            plan_acc += 1
-            self.caches.pdtc.insert(("pas", ent.ctx[1]))
+        total_acc = plan.total_accesses
+        # context resolution (DDTW/PDTW), shared by the coalesced line (same context).
+        if self.context_walk:
+            ctx_acc = self.cost.context_accesses(ent.ctx, self)   # real directory walks
+            plan_acc += ctx_acc                       # on the critical path (precede the PTW)
+            total_acc += ctx_acc                      # and count as memory bandwidth
+        else:
+            # legacy: +1 latency per DDTC/PDTC cold miss (not counted as bandwidth).
+            if not self.caches.ddtc.disabled and not self.caches.ddtc.lookup(("dev", ent.ctx[0])):
+                plan_acc += 1
+                self.caches.ddtc.insert(("dev", ent.ctx[0]))
+            if not self.caches.pdtc.disabled and not self.caches.pdtc.lookup(("pas", ent.ctx[1])):
+                plan_acc += 1
+                self.caches.pdtc.insert(("pas", ent.ctx[1]))
 
         self.memory.enter()
-        self.memory.account(plan.total_accesses)
+        self.memory.account(total_acc)
         self._account_concurrency(t)
         self.active_walks += 1
         self.m.walks_started += 1
@@ -292,9 +304,12 @@ class Simulator:
                 for k in keys:
                     cache.insert(k)
         if ent is not None:
+            # Coalesced IOTLB fill: one walk resolves c per-page IOVA->SPA entries
+            # (both leaf reads return c PTEs) -> the rest of the line hits the IOTLB.
+            for p in plan.iotlb_pages:
+                self.caches.iotlb.insert((p, ent.ctx))
             first_demand = True
             for req, is_pf in ent.waiters:
-                self.caches.iotlb.insert((req.vpn, req.ctx))   # per-page IOTLB fill
                 if is_pf:
                     continue
                 mt = plan.miss_type if first_demand else "mshr_coalesced"

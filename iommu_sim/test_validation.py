@@ -17,7 +17,7 @@ from estimator import estimate
 HERE = os.path.dirname(__file__)
 
 
-def mk(mode="bare", cache_on=True, coalesce=8, prefetch="off", nw=None, buf=None, iob=None,
+def mk(mode="s1_only", cache_on=True, coalesce=8, prefetch="off", nw=None, buf=None, iob=None,
        iova="sequential", data="sequential", coal_eff=True, n=8000, data_gpa_en=False,
        inval_rate=0.0, inval_target="s1"):
     if cache_on:
@@ -125,7 +125,7 @@ def test_nested_about_2x_single():
     # the "2x" relationship needs BOTH leaf streams coalesced: guest-leaf (VM-L0)
     # and data-leaf (G-final-L0 == data_gpa). With the data-leaf cache off, the
     # per-page IOTLB correctly re-reads the data leaf and nested costs more.
-    sims, ms = metrics(mk(mode="bare"))
+    sims, ms = metrics(mk(mode="s1_only"))
     simn, mn = metrics(mk(mode="nested", data_gpa_en=True))
     single = sims.memory.accesses / ms.completed
     nested = simn.memory.accesses / mn.completed

@@ -1,0 +1,45 @@
+【全16パスのキャッシュルックアップフロー】
+
+[初期ルックアップ]
+* ステート0: IOTLB [Hit]
+
+[VM Leaf Hitからのルックアップ]
+* ステート1: IOTLB [Miss] → VM Leaf [Hit] → G-L1 PWC@Final [Hit]
+* ステート2: IOTLB [Miss] → VM Leaf [Hit] → G-L1 PWC@Final [Miss] → G-L2 PWC@Final [Hit]
+* ステート3: IOTLB [Miss] → VM Leaf [Hit] → G-L1 PWC@Final [Miss] → G-L2 PWC@Final [Miss] → G-root
+
+[VM-L1 PWC Hitからのルックアップ]
+* ステート4: IOTLB [Miss] → VM Leaf [Miss] → VM-L1 PWC [Hit] → G-Leaf@VM-Leaf [Hit]
+* ステート5: IOTLB [Miss] → VM Leaf [Miss] → VM-L1 PWC [Hit] → G-Leaf@VM-Leaf [Miss] → G-L1 PWC@VM-Leaf [Hit]
+* ステート6: IOTLB [Miss] → VM Leaf [Miss] → VM-L1 PWC [Hit] → G-Leaf@VM-Leaf [Miss] → G-L1 PWC@VM-Leaf [Miss] → G-L2 PWC@VM-Leaf [Hit]
+* ステート7: IOTLB [Miss] → VM Leaf [Miss] → VM-L1 PWC [Hit] → G-Leaf@VM-Leaf [Miss] → G-L1 PWC@VM-Leaf [Miss] → G-L2 PWC@VM-Leaf [Miss] → G-root
+
+[VM-L2 PWC Hitからのルックアップ]
+* ステート8: IOTLB [Miss] → VM Leaf [Miss] → VM-L1 PWC [Miss] → VM-L2 PWC [Hit] → G-Leaf@VM-L1 [Hit]
+* ステート9: IOTLB [Miss] → VM Leaf [Miss] → VM-L1 PWC [Miss] → VM-L2 PWC [Hit] → G-Leaf@VM-L1 [Miss] → G-L1 PWC@VM-L1 [Hit]
+* ステート10: IOTLB [Miss] → VM Leaf [Miss] → VM-L1 PWC [Miss] → VM-L2 PWC [Hit] → G-Leaf@VM-L1 [Miss] → G-L1 PWC@VM-L1 [Miss] → G-L2 PWC@VM-L1 [Hit]
+* ステート11: IOTLB [Miss] → VM Leaf [Miss] → VM-L1 PWC [Miss] → VM-L2 PWC [Hit] → G-Leaf@VM-L1 [Miss] → G-L1 PWC@VM-L1 [Miss] → G-L2 PWC@VM-L1 [Miss] → G-root
+
+[VM-root Hitからのルックアップ]
+* ステート12: IOTLB [Miss] → VM Leaf [Miss] → VM-L1 PWC [Miss] → VM-L2 PWC [Miss] → VM-root [Hit] → G-Leaf@VM-L2 [Hit]
+* ステート13: IOTLB [Miss] → VM Leaf [Miss] → VM-L1 PWC [Miss] → VM-L2 PWC [Miss] → VM-root [Hit] → G-Leaf@VM-L2 [Miss] → G-L1 PWC@VM-L2 [Hit]
+* ステート14: IOTLB [Miss] → VM Leaf [Miss] → VM-L1 PWC [Miss] → VM-L2 PWC [Miss] → VM-root [Hit] → G-Leaf@VM-L2 [Miss] → G-L1 PWC@VM-L2 [Miss] → G-L2 PWC@VM-L2 [Hit]
+* ステート15: IOTLB [Miss] → VM Leaf [Miss] → VM-L1 PWC [Miss] → VM-L2 PWC [Miss] → VM-root [Hit] → G-Leaf@VM-L2 [Miss] → G-L1 PWC@VM-L2 [Miss] → G-L2 PWC@VM-L2 [Miss] → G-root
+
+State	VMヒット	G-walk終端	mem acc	latency (cyc)	latency (ns)
+0	IOTLB	—	0
+1	VM-Leaf	G-L1@Final	1
+2	VM-Leaf	G-L2@Final	2
+3	VM-Leaf	G-root	3
+4	VM-L1	G-Leaf@VM-Leaf	4
+5	VM-L1	G-L1@VM-Leaf	5
+6	VM-L1	G-L2@VM-Leaf	6
+7	VM-L1	G-root	7
+8	VM-L2	G-Leaf@VM-L1	8
+9	VM-L2	G-L1@VM-L1	9
+10	VM-L2	G-L2@VM-L1	10
+11	VM-L2	G-root	11
+12	VM-root	G-Leaf@VM-L2	12
+13	VM-root	G-L1@VM-L2	13
+14	VM-root	G-L2@VM-L2	14
+15	VM-root	G-root	15

@@ -25,20 +25,46 @@ class WalkPlan:
     total_accesses: int                            # total reads issued (bandwidth)
     miss_type: str
     fills: dict = field(default_factory=dict)      # cache attr name -> list[key]
+    iotlb_pages: list = field(default_factory=list)  # IOVA pages whose full IOVA->SPA
+    #   this walk resolves -> filled into the (per-page) IOTLB. Both leaf reads are
+    #   64 B = c PTEs, so when the guest-leaf line AND the data-leaf line both cover
+    #   the c-page line (contiguous IOVA + GPA=IOVA+const), all c are resolved at once.
 
 
 # structural worst-case cold-walk depth per mode (design_doc §6, CLAUDE.md).
 # Reported as the full_cold miss-penalty characteristic; the dynamic first walk
 # is usually cheaper because the G-stage root is a register.
-COLD_DEPTH = {"bare": 3, "s1_only": 3, "s2_only": 3, "nested": 15}
+COLD_DEPTH = {"bare": 0, "s1_only": 3, "s2_only": 3, "nested": 15}
 
 
 class WalkCostModel(ABC):
+    ddt_levels = 3                                      # device directory depth (host)
+    pdt_levels = 3                                      # process directory depth (guest)
+
     @abstractmethod
     def cost(self, vpn, data_page, ctx, sim) -> WalkPlan: ...
 
     def cold_depth(self):
         return 3
+
+    def context_accesses(self, ctx, sim):
+        """DDTW + PDTW host memory accesses to resolve the (device, process) context,
+        gated by DDTC/PDTC. A DISABLED directory cache walks on EVERY request (not just
+        cold). DDTW = ddt_levels host accesses; PDTW per ``_pdtw_accesses``."""
+        cs = sim.caches
+        acc = 0
+        if cs.ddtc.disabled or not cs.ddtc.lookup(("dev", ctx[0])):
+            acc += self.ddt_levels                     # device directory walk (host)
+            if not cs.ddtc.disabled:
+                cs.ddtc.insert(("dev", ctx[0]))
+        if cs.pdtc.disabled or not cs.pdtc.lookup(("pas", ctx[1])):
+            acc += self._pdtw_accesses(ctx, sim)
+            if not cs.pdtc.disabled:
+                cs.pdtc.insert(("pas", ctx[1]))
+        return acc
+
+    def _pdtw_accesses(self, ctx, sim):
+        return self.pdt_levels                         # single stage: guest PDT reads only
 
     def warm_hit(self, vpn, data_page, ctx, sim):
         """True iff the translation needs NO memory access -- fully resolvable from
@@ -49,6 +75,20 @@ class WalkCostModel(ABC):
 
     def warm_lookup(self, vpn, data_page, ctx, sim):
         """Count the PWC hits for a ``warm_hit`` page (called on the fast path)."""
+
+
+# --------------------------------------------------------------------------
+class PassthroughCost(WalkCostModel):
+    """RISC-V *Bare* mode: no address translation (IOVA = SPA). No page-table walk
+    and nothing to cache; the device/process context is still resolved (DDTW/PDTW
+    via ``context_accesses``) to learn that the context is Bare. So a request's only
+    possible memory cost is the context walk -- with DDTC/PDTC warm it is ~free."""
+
+    def cold_depth(self):
+        return 0
+
+    def cost(self, vpn, data_page, ctx, sim):
+        return WalkPlan(accesses=0, total_accesses=0, miss_type="passthrough")
 
 
 # --------------------------------------------------------------------------
@@ -94,8 +134,11 @@ class SingleStageCost(WalkCostModel):
             acc += 1                               # leaf line read (coalesced -> fills VM-L0)
             fills.setdefault("vm_l0", []).append(vm_l0_key)
 
+        # single stage: the one leaf line read resolves the SPA for all c pages.
+        iotlb_pages = [line + i for i in range(c)]
         miss_type = self._classify(miss_levels)
-        return WalkPlan(accesses=acc, total_accesses=acc, miss_type=miss_type, fills=fills)
+        return WalkPlan(accesses=acc, total_accesses=acc, miss_type=miss_type,
+                        fills=fills, iotlb_pages=iotlb_pages)
 
     def warm_hit(self, vpn, data_page, ctx, sim):
         c = sim.eff_coalesce
@@ -137,8 +180,31 @@ class NestedCost(WalkCostModel):
     With everything but DDT$/PDT$ disabled, a walk is the full (3+1)(3+1)-1 = 15
     -access 2D walk."""
 
+    def __init__(self, data_contiguous=True):
+        # GPA = IOVA + const: the c data GPAs of a line are contiguous, so the one
+        # data-leaf read resolves the SPA for all c pages -> the IOTLB coalesces to c.
+        # Random data GPA: only the requested page's SPA is resolved -> 1 entry.
+        self.data_contiguous = data_contiguous
+        self.g_levels = 3                              # G-stage (Sv39x4) depth
+        self._pdt_gwarm = set()                        # ctxs whose PDT G-stage is warm
+
     def cold_depth(self):
         return 15
+
+    def _pdtw_accesses(self, ctx, sim):
+        # PDT lives in GUEST memory: each of pdt_levels guest reads needs a G-stage
+        # translation. The G-stage tables warm only if a G-stage PWC exists to hold
+        # them (and only after the first walk per context); with the G-stage PWC
+        # disabled they are cold on every walk.
+        g_on = not sim.caches.g_l0_vml2.disabled       # representative G-stage cache
+        if g_on and ctx in self._pdt_gwarm:
+            return self.pdt_levels                     # G-stage warm: guest PDT reads only
+        if g_on:
+            self._pdt_gwarm.add(ctx)
+        # cold: pdt_levels guest reads, each preceded by a g_levels G-stage walk.
+        # Unlike the PTW there is NO final data-GPA translation -- the PDT leaf's GPA
+        # result is translated on the PTW side. So N(G+1), not (N+1)(G+1)-1.
+        return self.pdt_levels * (self.g_levels + 1)
 
     @staticmethod
     def _gwalk(gcaches, keybase, ctx, fills, attrs):
@@ -208,10 +274,13 @@ class NestedCost(WalkCostModel):
         # final data-GPA G-stage walk (G-final-L0 = the coalesced data leaf line)
         acc += gw((cs.gf_l0, cs.gf_l1, cs.gf_l2), (data_page // c) * c, ctx, fills, _GA_FINAL)
 
-        # IOTLB is filled per-PAGE by the engine on completion (one IOVA->SPA each);
-        # the coalescing benefit lives in the c-page VM-L0 / G-final fills above.
+        # Coalesced IOTLB fill: both leaf reads (guest-leaf line + data-leaf line)
+        # resolve all c pages of the line when the data GPA is contiguous; otherwise
+        # only the requested page's full IOVA->SPA is known.
+        iotlb_pages = [line + i for i in range(c)] if self.data_contiguous else [vpn]
         miss_type = "full_cold" if miss_levels >= 2 else ("pwc_partial" if miss_levels == 1 else "pwc_full_hit")
-        return WalkPlan(accesses=acc, total_accesses=acc, miss_type=miss_type, fills=fills)
+        return WalkPlan(accesses=acc, total_accesses=acc, miss_type=miss_type,
+                        fills=fills, iotlb_pages=iotlb_pages)
 
     def warm_hit(self, vpn, data_page, ctx, sim):
         c = sim.eff_coalesce
@@ -229,12 +298,19 @@ class NestedCost(WalkCostModel):
 
 def make_cost_model(cfg):
     mode = cfg.mode
-    if mode == "nested":
-        return NestedCost()
-    # superpage reduces walk depth: 2M -> 2 levels, 1G -> 1 level
-    levels = 3
-    if cfg.superpage == "2M":
-        levels = 2
-    elif cfg.superpage == "1G":
-        levels = 1
-    return SingleStageCost(levels=levels)
+    data_contiguous = (cfg.workload.data_gpa == "sequential")
+    if mode == "bare":
+        m = PassthroughCost()                          # RISC-V Bare: no translation
+    elif mode == "nested":
+        m = NestedCost(data_contiguous=data_contiguous)
+    else:                                              # s1_only / s2_only: single-stage walk
+        # superpage reduces walk depth: 2M -> 2 levels, 1G -> 1 level
+        levels = 3
+        if cfg.superpage == "2M":
+            levels = 2
+        elif cfg.superpage == "1G":
+            levels = 1
+        m = SingleStageCost(levels=levels)
+    m.ddt_levels = cfg.caches.ddt_levels
+    m.pdt_levels = cfg.caches.pdt_levels
+    return m

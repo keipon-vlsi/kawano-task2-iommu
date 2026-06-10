@@ -114,6 +114,12 @@ class SetAssocCache(CacheABC):
         self.misses = 0
         self.inserts = 0
         self.invalidations = 0
+        # demand vs prefetch split (origin read from the owning CacheSet at lookup)
+        self.dem_hits = 0
+        self.dem_misses = 0
+        self.pf_hits = 0
+        self.pf_misses = 0
+        self.owner = None
 
     # --- internal ---
     def _set(self, key):
@@ -130,13 +136,22 @@ class SetAssocCache(CacheABC):
         return key in s and s[key] == self._stamp(key)
 
     def lookup(self, key):
+        pf = self.owner is not None and self.owner.origin == "prefetch"
         if self.peek(key):
             self.hits += 1
+            if pf:
+                self.pf_hits += 1
+            else:
+                self.dem_hits += 1
             if not isinstance(self.policy, FIFO):    # FIFO keeps insertion order
                 s = self._set(key)
                 s.move_to_end(key)
             return True
         self.misses += 1
+        if pf:
+            self.pf_misses += 1
+        else:
+            self.dem_misses += 1
         return False
 
     def insert(self, key):
@@ -238,9 +253,11 @@ class CacheSet:
     def __init__(self, cfg):
         c = cfg.caches
         self._all = {}
+        self.origin = "demand"        # "demand" | "prefetch": tags each lookup's source
 
         def reg(name, obj):
             cache = make_level_cache(obj, name)   # honours enabled / entries / assoc
+            cache.owner = self                    # so lookup() can read self.origin
             self._all[name] = cache
             setattr(self, name, cache)
             return cache

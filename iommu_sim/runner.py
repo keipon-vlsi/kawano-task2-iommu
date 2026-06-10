@@ -33,14 +33,17 @@ def summarize(cfg, sim, m):
     caches = sim.caches
 
     def grp(names):
-        h = mi = 0
+        dh = dm = ph = pm = 0
         for n in names:
             c = caches.get(n)
             if c is not None:
-                h += c.hits
-                mi += c.misses
-        tot = h + mi
-        return (h, mi, h / tot if tot else 0.0)
+                dh += c.dem_hits
+                dm += c.dem_misses
+                ph += c.pf_hits
+                pm += c.pf_misses
+        dtot = dh + dm
+        # (demand_hit, demand_miss, demand_rate, prefetch_hit, prefetch_miss)
+        return (dh, dm, dh / dtot if dtot else 0.0, ph, pm)
 
     hit = {
         "iotlb":   grp(["iotlb"]),
