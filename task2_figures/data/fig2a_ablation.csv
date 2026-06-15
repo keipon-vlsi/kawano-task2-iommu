@@ -1,0 +1,7 @@
+config,mem_accesses_per_translation
+no-cache,3.0
++PWC,1.2
++coalescing,0.15
++combined,0.13
++superpage,0.02
++prefetch,0.02

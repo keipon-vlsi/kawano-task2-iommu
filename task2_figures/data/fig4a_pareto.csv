@@ -1,0 +1,6 @@
+arch,area_GE,energy_per_translation
+no-cache,120,3.0
++PWC,180,1.1
++coalescing,220,0.5
++combined+tags,300,0.4
+chosen 1proc1dev,270,0.35

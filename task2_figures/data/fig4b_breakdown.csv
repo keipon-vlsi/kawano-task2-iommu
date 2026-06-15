@@ -1,0 +1,4 @@
+arch,buffer,IOTLB,PWC,tags,walker,misc
+no-cache,80,0,0,0,30,10
+combined+tags,140,30,60,40,20,10
+chosen(1proc1dev),140,30,60,2,20,18

@@ -1,0 +1,3 @@
+group,combined,split,no-combine
+symmetric (Pv=Pg),1.0,1.6,2.2
+asymmetric (Pv!=Pg),3.0,1.2,2.0

@@ -1,0 +1,4 @@
+perturbation_to_resource,relative_stress
+contexts -> tags/area,0.8
+invalidation -> refill/re-walk,0.55
+IOVA_random -> buffer/working-set,1.0
