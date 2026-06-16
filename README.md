@@ -78,49 +78,51 @@ Per-module area, Fmax and the critical path (sky130_fd_sc_hd, tt 1v80, 2.5 ns ta
 |---|---|---|---|---|---|
 | 1 | nocache  | 10.82 | met  | 296 (=N, CO=1) | all correct |
 | 2 | pwc      | 17.33 | met* | 296 (=N, CO=1) | all correct |
-| 3 | iotlb    | 11.30 | met  | 37 (=N/8)      | all correct |
-| 4 | prefetch | 10.35 | met  | 38 (~N/8)      | all correct |
-| 5 | notag    | 10.35 | met  | 38 (~N/8)      | all correct |
+| 3 | iotlb    | 10.80 | met  | 37 (=N/8)      | all correct |
+| 4 | prefetch | 11.08 | met  | 38 (~N/8)      | all correct |
+| 5 | notag    | 11.08 | met  | 38 (~N/8)      | all correct |
 
 `*` cfg2 (5 walkers, two serial 100 ns reads) runs at ~94 % of the wire-rate budget at
 the cycle level — the known event-driven→cycle-level gap; the CLAUDE.md +1-walker margin
 (6 walkers) closes it. cfg4/cfg5 run with **1 walker and a 1-deep buffer**: prefetch is
 issued one line ahead, so steady-state demands are all IOTLB hits that never touch the
 walker (free for the prefetch walk) and each completes in ~2 cyc (1 buffer slot suffices).
+The memory bus is 8 B (1 PTE/beat); a coalesced 64 B leaf line arrives as an 8-beat burst.
 
 ## Results — synthesis (sky130_fd_sc_hd, tt 1v80, 2.5 ns target, switching activity 0.2)
 | # | config | area (µm²) | power (mW) | worst slack (ns) | Fmax (MHz) |
 |---|---|---|---|---|---|
-| 1 | nocache  | 564 070 | 254.3 | −53.54 | 17.8 |
-| 2 | pwc      | 103 447 | 48.0  | −15.53 | 55.5 |
-| 3 | iotlb    | 151 598 | 74.0  | −14.16 | 60.0 |
-| 4 | prefetch | 128 558 | 64.0  | −13.66 | 61.9 |
-| 5 | notag    |  89 178 | 44.4  | −11.25 | 72.7 |
+| 1 | nocache  | 535 709 | 250.2 | −58.24 | 16.5 |
+| 2 | pwc      |  98 004 | 46.7  | −12.76 | 65.5 |
+| 3 | iotlb    | 131 157 | 65.2  | −16.04 | 53.9 |
+| 4 | prefetch | 114 444 | 56.5  |  −8.58 | 90.3 |
+| 5 | notag    |  76 142 | 37.7  |  −6.35 | 113.0 |
 
-- cfg1 (37 walkers, no cache) = 37 parallel `pte_addr` adders + a 37-way arbiter ⇒ ~4–6×
-  the area / ~3–5× the power of the cached configs and the worst Fmax — brute-force
-  concurrency is the most expensive way to hit wire rate.
-- **cfg4 < cfg3** (128 558 < 151 598 µm²): adding prefetch lets cfg4 run at 1 walker /
-  1-deep buffer, so its control logic shrinks 60 890 → 34 667 µm² — the buffer/MSHR/
-  context savings outweigh the +1 810 µm² prefetch_ctrl. Prefetch *reduces* area here by
-  enabling a smaller buffer, and also improves Fmax (smaller arbiter/MSHR fanout).
-- cfg5 = cfg4 minus device_id/PASID in every cache tag ⇒ **−31 % area / −31 % power**
-  (128 558→89 178 µm², 64.0→44.4 mW): context tags are expensive in a FF-based CAM.
+- cfg1 (37 walkers, no cache) = 37 parallel `pte_addr` adders + a 37-way arbiter ⇒ ~5–7×
+  the area / ~4–7× the power of the cached configs and the worst Fmax (16.5 MHz) — brute-
+  force concurrency is the most expensive way to hit wire rate.
+- **cfg4 < cfg3** (114 444 < 131 157 µm²) **and 90 vs 54 MHz**: prefetch lets cfg4 run at
+  1 walker / 1-deep buffer, shrinking control 40 443 → 20 546 µm² and killing the MSHR
+  fanout on the critical path — prefetch *reduces* area and *improves* Fmax.
+- The 8 B-bus / per-beat IOTLB fill (B案) **removed the 512 b `fill_data_q`** and its
+  512→64 b extraction mux from the consume→issue cone: cfg4 Fmax 62 → 90 MHz, cfg5 73 →
+  113 MHz vs the old single-cycle-512 b model.
+- cfg5 = cfg4 minus device_id/PASID in every cache tag ⇒ **−33 % area / −33 % power**
+  (114 444→76 142 µm², 56.5→37.7 mW) and the best Fmax (113 MHz): narrower CAM tags shrink
+  both tag storage and the compare logic.
 - Power is ~71–86 % internal/sequential (FF-based CAMs + walker RF); leakage negligible.
-  Reported at the 2.5 ns clock with flat 0.2 activity (no VCD) — the switching share
-  scales ∝ freq; internal/leakage (~85 %) is ~frequency-independent, so at each config's
-  achievable Fmax with activity 0.1 the real operating power is ~5–9 mW.
+  Reported at the 2.5 ns clock with flat 0.2 activity (no VCD); at each config's achievable
+  Fmax with activity 0.1 the real operating power is ~5–9 mW.
 
-Per-module breakdown (µm², instance-corrected): see `results/area_breakdown.png`. cfg4:
-IOTLB CAM 69 115 (54 %) + control 34 667 (27 %) + PWCs 22 749 (18 %) + prefetch_ctrl
-1 810 + mem_master 216. Across the cached configs the IOTLB CAM (16×wide FF tags) is the
-single largest block; coalescing is the benefit that justifies it.
+Per-module and fine-grained breakdowns: `results/area_breakdown.png` (pie),
+`results/control_split.png` (Control split), and `syn/fine_breakdown.py` (caches split
+tag / data / lookup-logic). The IOTLB CAM and its lookup logic dominate the cached
+configs; the arbiter+adder cone dominates cfg1.
 
-**Critical path (all configs, Phase 1):** the **fused single-cycle memory-issue cone** —
-context FF → cache-hit / most-complete-hit shortcut → high-fanout MSHR/arbiter select →
-`pte_addr` address-composition adder → next-state FF (~16–18 ns). This single-cycle
-fusion was chosen to meet the wire-rate cycle budget at the minimal walker counts; it is
-the Phase-2 optimization target.
+**Critical path:** see `CRITICAL_PATH.md`. All configs share the fused consume→issue cone
+(cache-hit shortcut → arbiter → `pte_addr` adder → FF); its length scales with NUM_WALKERS
+(arbiter/mux), cache CAM width, and BUFFER_DEPTH (MSHR). cfg1 60.6 ns (37-way arbiter),
+cfg4 11.1 ns, cfg5 8.7 ns. RTL module-by-module detail: `RTL_DETAILS.md`.
 
 ## Phase status
 - **Phase 1 (done):** clean parameterized RTL; cocotb passing on all 5; **all 5

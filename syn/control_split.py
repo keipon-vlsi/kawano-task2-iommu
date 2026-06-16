@@ -41,16 +41,14 @@ def dff_count(cfg):
 
 def nominal_bits(nctx, buf, co, iotlb, pf):
     vpnline = 27 if co == 1 else 24
-    walker = (2+4+27+36+28+27+27+vpnline) * nctx           # ws,pc,vpn,ctx,base,gpn,dgvpn,line
+    walker = (2+4+27+36+28+27+27+vpnline+4) * nctx         # +wbeat; IOTLB filled per-beat
     buffer = (2+27+36+40) * buf                            # bs,bvpn,bctx,bspa
-    fill   = (512+36+24+4+1+1) if iotlb else 0             # fill_data + fill_ctx/line/cnt/busy
     misc   = (28+18+1 if pf else 0) + 56 + 64 + clog2(nctx) + clog2(buf)
-    return {"Walker RF": walker, "Buffer": buffer, "Coalesce-fill reg": fill, "Misc seq": misc}
+    return {"Walker RF": walker, "Buffer": buffer, "Misc seq": misc}
 
 rows, fig = [], None
-labels = ["Walker RF", "Buffer", "Coalesce-fill reg", "Misc seq",
-          "Arbiter+adders+MSHR (comb)"]
-colors = ["#4C78A8", "#E45756", "#72B7B2", "#9D755D", "#BAB0AC"]
+labels = ["Walker RF", "Buffer", "Misc seq", "Arbiter+adders+MSHR (comb)"]
+colors = ["#4C78A8", "#E45756", "#9D755D", "#BAB0AC"]
 data = []
 for disp, cfg, nctx, buf, co, iotlb, pf in CFGS:
     total = ctrl_area(cfg)

@@ -49,7 +49,7 @@ def cache_split(meas, entries, tagw):
     look=max(0.0, meas-tag-dv)
     return tag, dv, look
 
-ROWS=["Walker RF (FF)","Transaction buffer (FF)","Coalesce-fill reg (512b FF)",
+ROWS=["Walker RF (FF)","Transaction buffer (FF)",
       "Misc ctrl FF (roots/region/ctr)","Arbiter + pte_addr adders + MSHR (comb)",
       "PWC tag (FF)","PWC data+valid (FF)","PWC lookup logic (CAM+enc+mux)",
       "IOTLB tag (FF)","IOTLB data+valid (FF)","IOTLB lookup logic (CAM+enc+mux)",
@@ -60,14 +60,12 @@ for disp,cfg,nctx,buf,co,iot,pf,tc in CFGS:
     fa,mods=areas(cfg); nd=dff(cfg); tcw=36 if tc else 0
     seq=nd*A_FF; ctrl=mods["ctrl"]; comb_ctrl=max(0.0,ctrl-seq)
     vpnline=27 if co==1 else 24
-    wl=(2+4+27+36+28+27+27+vpnline)*nctx
+    wl=(2+4+27+36+28+27+27+vpnline+4)*nctx           # +4 = wbeat (leaf-burst beat ctr)
     bf=(2+27+36+40)*buf
-    fl=(512+36+24+4+1+1) if iot else 0
     ms=(28+18+1 if pf else 0)+56+64+clog2(nctx)+clog2(buf)
-    tot=wl+bf+fl+ms
+    tot=wl+bf+ms
     table["Walker RF (FF)"][disp]=seq*wl/tot
     table["Transaction buffer (FF)"][disp]=seq*bf/tot
-    table["Coalesce-fill reg (512b FF)"][disp]=seq*fl/tot
     table["Misc ctrl FF (roots/region/ctr)"][disp]=seq*ms/tot
     table["Arbiter + pte_addr adders + MSHR (comb)"][disp]=comb_ctrl
     # caches
