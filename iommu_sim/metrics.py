@@ -27,8 +27,10 @@ class Metrics:
     completion_log: list = field(default_factory=list)     # (complete_cycle, latency_cycles)
     # miss-penalty distribution by type: type -> [count, sum_cycles, max_cycles]
     miss_penalty: dict = field(default_factory=dict)
-    # parallelism (active-walk count) distribution: level -> cycles spent at it
-    walk_concurrency: dict = field(default_factory=dict)
+    # time-weighted occupancy distributions: level -> cycles spent at that level
+    walk_concurrency: dict = field(default_factory=dict)    # active walks
+    buffer_occupancy: dict = field(default_factory=dict)    # IOMMU request buffer
+    iobridge_occupancy: dict = field(default_factory=dict)  # I/O-bridge holders
 
     first_arrival: float = None
     last_complete: float = 0.0
@@ -101,13 +103,22 @@ class Metrics:
         sim_s = self.sim_cycles * cycle_ns * 1e-9
         return self.completed / sim_s / 1e6
 
-    def concurrency_distribution(self):
-        """Time-weighted active-walk distribution: list of (level, cycles, frac),
-        ascending by level. Level 0 (idle) is included."""
-        total = sum(self.walk_concurrency.values())
+    @staticmethod
+    def _dist(d):
+        """Time-weighted distribution -> list of (level, cycles, frac), level-ascending."""
+        total = sum(d.values())
         if total <= 0:
             return []
-        return [(lvl, cyc, cyc / total) for lvl, cyc in sorted(self.walk_concurrency.items())]
+        return [(lvl, cyc, cyc / total) for lvl, cyc in sorted(d.items())]
+
+    def concurrency_distribution(self):
+        return self._dist(self.walk_concurrency)        # active walks
+
+    def buffer_distribution(self):
+        return self._dist(self.buffer_occupancy)        # IOMMU request buffer
+
+    def iobridge_distribution(self):
+        return self._dist(self.iobridge_occupancy)      # I/O-bridge holders
 
     def miss_penalty_table(self, cycle_ns):
         """Return rows (type, count, avg_cycles, avg_ns, max_cycles)."""

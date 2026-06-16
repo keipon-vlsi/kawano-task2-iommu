@@ -32,6 +32,15 @@ Requires Python 3 + `numpy`, `pandas`, `matplotlib` only. Outputs:
 | **Fig 5** Sensitivity / robustness (2 panels) | `figures/fig5_sensitivity.png` | `data/fig5a_degradation.csv`, `data/fig5b_resource_stress.csv` | (A) throughput degradation under contexts (graceful), invalidation (moderate), IOVA-random (cliff); (B) which resource each perturbation stresses. |
 | **Fig 6** Prefetch lead D (grounded model) | `figures/fig6_prefetch_lead.png` | `data/fig6_prefetch_lead.csv` | 9-cell (Pv×Pg) heatmap of the just-in-time prefetch lead D (requests before the 1GB boundary), computed from the steady-rate / spare-bandwidth model; budget-bound for 4KB/4KB. |
 
+## Simulator structure diagrams
+
+`python generate_diagrams.py` (matplotlib only) produces two explanatory diagrams:
+
+| Diagram | PNG | Description |
+|---|---|---|
+| Module architecture | `figures/sim_architecture.png` | engine/policy split — `config.py` → `engine.py` event-driven core ← swappable policies (`workload/memory/caches/walker/prefetch`) → outputs (`run/estimator/sweep`). |
+| Request lifecycle | `figures/sim_request_flow.png` | event-driven path of one request: arrival → buffer/prefetch → `_translate` (IOTLB→MSHR→warm fast-path→walk) → cost model (deepest-first, n accesses) → memory/walker → fill caches → complete; with per-path latency (IOTLB 7.5 ns, PWC-hit 10 ns, walk 12.5+100·n ns) and the resource caps (walkers, MSHR, buffers, outstanding). |
+
 ## Notes
 
 - **Fig 6** is fully computed from the model in the task spec (steady-rate, spare

@@ -91,7 +91,7 @@ class Simulator:
         self.buffer = 0
         self.io_bridge = 0
         self.mshr = {}                 # line -> _MSHR
-        self._conc_last_t = 0.0        # last time the active-walk count changed
+        self._occ_last_t = 0.0         # last event time, for time-weighted occupancy
         self.walk_wait = []            # lines awaiting a walker / memory slot
         self.buf_wait = []             # arrivals awaiting a request-buffer slot
         self.iob_wait = []             # demand misses awaiting an I/O-bridge slot
@@ -101,14 +101,17 @@ class Simulator:
         heapq.heappush(self._q, (t, self._seq, kind, payload))
         self._seq += 1
 
-    def _account_concurrency(self, t):
-        """Accumulate elapsed cycles at the current active-walk level (post-warmup),
-        then advance the marker. Call just BEFORE active_walks changes."""
-        dt = t - self._conc_last_t
+    def _account_occupancy(self, t):
+        """Time-weighted occupancy: add the elapsed cycles since the previous event
+        to the CURRENT active-walk / request-buffer / I/O-bridge levels (post-warmup).
+        All three are constant between events, so sampling once per event is exact."""
+        dt = t - self._occ_last_t
         if dt > 0 and t >= self.warmup_cutoff:
-            wc = self.m.walk_concurrency
-            wc[self.active_walks] = wc.get(self.active_walks, 0.0) + dt
-        self._conc_last_t = t
+            for d, lvl in ((self.m.walk_concurrency, self.active_walks),
+                           (self.m.buffer_occupancy, self.buffer),
+                           (self.m.iobridge_occupancy, self.io_bridge)):
+                d[lvl] = d.get(lvl, 0.0) + dt
+        self._occ_last_t = t
 
     def line_of(self, vpn):
         return (vpn // self.eff_coalesce) * self.eff_coalesce
@@ -123,6 +126,7 @@ class Simulator:
             self._push(e.arrival, "event", e)
         while self._q:
             t, _, kind, p = heapq.heappop(self._q)
+            self._account_occupancy(t)          # time-weight the interval just ended
             getattr(self, "_on_" + kind)(t, p)
         self.m.invalidations = sum(c.invalidations for c in self.caches.named().values())
         return self.m
@@ -267,7 +271,6 @@ class Simulator:
 
         self.memory.enter()
         self.memory.account(total_acc)
-        self._account_concurrency(t)
         self.active_walks += 1
         self.m.walks_started += 1
         self.m.walker_busy_cycles += plan_acc * self.memory.latency
@@ -295,7 +298,6 @@ class Simulator:
     def _on_walk_done(self, t, payload):
         line, plan = payload
         ent = self.mshr.pop(line, None)
-        self._account_concurrency(t)
         self.active_walks -= 1
         self.memory.exit()
         for attr, keys in plan.fills.items():

@@ -1,9 +1,9 @@
 {
-  "completed": 70000,
+  "completed": 8000,
   "config": {
     "buffers": {
       "io_bridge_buffer": null,
-      "iommu_req_buffer": null
+      "iommu_req_buffer": 1
     },
     "caches": {
       "coalesce_factor": 8,
@@ -11,24 +11,24 @@
       "ddt_levels": 3,
       "ddtc": {
         "assoc": "full",
-        "enabled": false,
+        "enabled": true,
         "entries": 1
       },
       "g_final": {
         "l0": {
           "assoc": 4,
-          "enabled": false,
-          "entries": 64
+          "enabled": true,
+          "entries": 16
         },
         "l1": {
           "assoc": "full",
-          "enabled": false,
-          "entries": 8
+          "enabled": true,
+          "entries": 2
         },
         "l2": {
           "assoc": "full",
-          "enabled": false,
-          "entries": 8
+          "enabled": true,
+          "entries": 1
         }
       },
       "g_pwc": {
@@ -41,58 +41,58 @@
           "l0": {
             "assoc": "full",
             "enabled": true,
-            "entries": 16
+            "entries": 1
           },
           "l1": {
             "assoc": "full",
             "enabled": true,
-            "entries": 8
+            "entries": 1
           },
           "l2": {
             "assoc": "full",
-            "enabled": true,
-            "entries": 4
+            "enabled": false,
+            "entries": 1
           }
         },
         "vm_l1": {
           "l0": {
             "assoc": "full",
             "enabled": false,
-            "entries": 4
+            "entries": 1
           },
           "l1": {
             "assoc": "full",
             "enabled": false,
-            "entries": 4
+            "entries": 1
           },
           "l2": {
             "assoc": "full",
             "enabled": false,
-            "entries": 4
+            "entries": 1
           }
         },
         "vm_l2": {
           "l0": {
             "assoc": "full",
             "enabled": false,
-            "entries": 2
+            "entries": 1
           },
           "l1": {
             "assoc": "full",
             "enabled": false,
-            "entries": 2
+            "entries": 1
           },
           "l2": {
             "assoc": "full",
             "enabled": false,
-            "entries": 2
+            "entries": 1
           }
         }
       },
       "iotlb": {
         "assoc": 4,
         "enabled": true,
-        "entries": 64
+        "entries": 16
       },
       "lookup_mode": "hybrid",
       "msi": {
@@ -103,7 +103,7 @@
       "pdt_levels": 3,
       "pdtc": {
         "assoc": "full",
-        "enabled": false,
+        "enabled": true,
         "entries": 1
       },
       "vm_pwc": {
@@ -115,16 +115,16 @@
         "l1": {
           "assoc": "full",
           "enabled": true,
-          "entries": 16
+          "entries": 2
         },
         "l2": {
           "assoc": "full",
-          "enabled": false,
-          "entries": 8
+          "enabled": true,
+          "entries": 1
         },
         "root": {
           "assoc": "full",
-          "enabled": false,
+          "enabled": true,
           "entries": 1
         }
       }
@@ -141,7 +141,7 @@
       "scale_factor": null
     },
     "prefetch": {
-      "algo": "off",
+      "algo": "next_line",
       "confidence": 2,
       "distance": 16
     },
@@ -153,7 +153,7 @@
       "lookup_cycles": 2
     },
     "walkers": {
-      "num_walkers": null,
+      "num_walkers": 1,
       "pipeline_depth": 2
     },
     "workload": {
@@ -166,9 +166,9 @@
         "target": "s1"
       },
       "iova_pattern": "sequential",
-      "n_devices": 1,
-      "n_pasids": 1,
-      "n_requests": 70000,
+      "n_devices": 10,
+      "n_pasids": 10,
+      "n_requests": 8000,
       "page_bytes": 4096,
       "seed": 0,
       "span_pages": 1000000,
@@ -176,55 +176,79 @@
       "wire_gbs": 100.0
     }
   },
-  "config_hash": "2ada8b47d52f6f4d241ddcbb99850624aa37d0db5cb3fb2708aeede04436425f",
+  "config_hash": "5baf41c05f6fb3fbf755300582f62d8e988cbd0214ec74c90d1d81756c2ef8a0",
   "modules": [
     {
-      "accesses": 140000.0,
-      "area_ge": 1661.4400000000003,
+      "accesses": 24355.0,
+      "area_ge": 415.36000000000007,
       "cam_bits": 0,
-      "dyn": 0.2342455228133841,
+      "dyn": 0.3567964063010836,
       "ff_bits": 0,
-      "gates": 64,
+      "gates": 16,
       "name": "iotlb",
-      "sram_bits": 6144,
-      "stat": 0.06272000000000001,
-      "total_power": 0.2969655228133841
+      "sram_bits": 1536,
+      "stat": 0.015680000000000003,
+      "total_power": 0.37247640630108364
     },
     {
-      "accesses": 8887.0,
-      "area_ge": 1625.92,
-      "cam_bits": 848,
-      "dyn": 0.33270665452001386,
+      "accesses": 17.0,
+      "area_ge": 101.62,
+      "cam_bits": 53,
+      "dyn": 0.0004163753997264879,
       "ff_bits": 0,
-      "gates": 848,
-      "name": "vm_l1",
-      "sram_bits": 448,
-      "stat": 0.029920000000000002,
-      "total_power": 0.36262665452001386
+      "gates": 53,
+      "name": "vm_l2",
+      "sram_bits": 28,
+      "stat": 0.0018700000000000001,
+      "total_power": 0.0022863753997264882
     },
     {
-      "accesses": 17500.0,
+      "accesses": 1018.0,
+      "area_ge": 203.24,
+      "cam_bits": 106,
+      "dyn": 0.04551730107312386,
+      "ff_bits": 0,
+      "gates": 106,
+      "name": "vm_l1",
+      "sram_bits": 56,
+      "stat": 0.0037400000000000003,
+      "total_power": 0.04925730107312386
+    },
+    {
+      "accesses": 9341.0,
       "area_ge": 1625.92,
       "cam_bits": 848,
-      "dyn": 0.6551554466186837,
+      "dyn": 3.0618841428621315,
       "ff_bits": 0,
       "gates": 848,
       "name": "vm_l0",
       "sram_bits": 448,
       "stat": 0.029920000000000002,
-      "total_power": 0.6850754466186837
+      "total_power": 3.0918041428621317
     },
     {
-      "accesses": 10133.0,
-      "area_ge": 3293.92,
-      "cam_bits": 1736,
-      "dyn": 0.41588521790909366,
+      "accesses": 0.0,
+      "area_ge": 101.62,
+      "cam_bits": 53,
+      "dyn": 0.0,
       "ff_bits": 0,
-      "gates": 1736,
+      "gates": 53,
+      "name": "vm_root",
+      "sram_bits": 28,
+      "stat": 0.0018700000000000001,
+      "total_power": 0.0018700000000000001
+    },
+    {
+      "accesses": 1035.0,
+      "area_ge": 235.28,
+      "cam_bits": 124,
+      "dyn": 0.028903640309765593,
+      "ff_bits": 0,
+      "gates": 124,
       "name": "g@vm_l0",
-      "sram_bits": 784,
-      "stat": 0.05992,
-      "total_power": 0.4758052179090937
+      "sram_bits": 56,
+      "stat": 0.00428,
+      "total_power": 0.033183640309765595
     },
     {
       "accesses": 0.0,
@@ -239,66 +263,102 @@
       "total_power": 0.00214
     },
     {
-      "accesses": 8750,
-      "area_ge": 10720.0,
-      "cam_bits": 0,
-      "dyn": 6.942002711796279,
-      "ff_bits": 1120,
-      "gates": 4000,
-      "name": "walkers",
-      "sram_bits": 0,
-      "stat": 0.0912,
-      "total_power": 7.033202711796279
+      "accesses": 10376.0,
+      "area_ge": 743.32,
+      "cam_bits": 186,
+      "dyn": 0.18127399366102215,
+      "ff_bits": 0,
+      "gates": 202,
+      "name": "g_final",
+      "sram_bits": 1524,
+      "stat": 0.021140000000000003,
+      "total_power": 0.20241399366102214
     },
     {
-      "accesses": 70000,
-      "area_ge": 42624.0,
+      "accesses": 1003.0,
+      "area_ge": 41.7,
+      "cam_bits": 17,
+      "dyn": 0.01323970001560206,
+      "ff_bits": 0,
+      "gates": 17,
+      "name": "ddtc",
+      "sram_bits": 44,
+      "stat": 0.0009500000000000001,
+      "total_power": 0.014189700015602059
+    },
+    {
+      "accesses": 1003.0,
+      "area_ge": 48.82,
+      "cam_bits": 21,
+      "dyn": 0.014770301173475131,
+      "ff_bits": 0,
+      "gates": 21,
+      "name": "pdtc",
+      "sram_bits": 44,
+      "stat": 0.0010700000000000002,
+      "total_power": 0.01584030117347513
+    },
+    {
+      "accesses": 1002,
+      "area_ge": 1072.0,
       "cam_bits": 0,
-      "dyn": 71.1571227614067,
-      "ff_bits": 7104,
+      "dyn": 0.7424871441710923,
+      "ff_bits": 112,
+      "gates": 400,
+      "name": "walkers",
+      "sram_bits": 0,
+      "stat": 0.00912,
+      "total_power": 0.7516071441710923
+    },
+    {
+      "accesses": 8000,
+      "area_ge": 576.0,
+      "cam_bits": 0,
+      "dyn": 1.0771985732050366,
+      "ff_bits": 96,
       "gates": 0,
       "name": "buffer",
       "sram_bits": 0,
-      "stat": 0.07104,
-      "total_power": 71.2281627614067
+      "stat": 0.0009600000000000001,
+      "total_power": 1.0781585732050367
     },
     {
-      "accesses": 70000,
+      "accesses": 8000,
       "area_ge": 800,
       "cam_bits": 0,
-      "dyn": 0.04880115058612169,
+      "dyn": 0.04883273883543196,
       "ff_bits": 0,
       "gates": 800,
       "name": "arbiter",
       "sram_bits": 0,
       "stat": 0.016,
-      "total_power": 0.06480115058612168
+      "total_power": 0.06483273883543196
     },
     {
-      "accesses": 70000,
+      "accesses": 8000,
       "area_ge": 2000,
       "cam_bits": 0,
-      "dyn": 0.061001438232652104,
+      "dyn": 0.06104092354428995,
       "ff_bits": 0,
       "gates": 2000,
       "name": "control",
       "sram_bits": 0,
       "stat": 0.04,
-      "total_power": 0.1010014382326521
+      "total_power": 0.10104092354428995
     }
   ],
   "note": "Process-independent GE/normalized-energy estimate; relative comparison + calibration, NOT sign-off.",
   "scale_factor": null,
   "schema": "iommu-ppa-prediction/v2-normalized",
-  "sim_cycles": 1147513.928,
+  "sim_cycles": 131059.61600000001,
   "totals": {
-    "area_ge": 64468.840000000004,
-    "dram_accesses": 177376,
-    "dram_energy": 3547520.0,
-    "dyn_power": 79.84692090388293,
-    "energy_per_translation": 1315.5391615164872,
-    "stat_power": 0.40286000000000005,
-    "total_power": 80.24978090388294
+    "area_ge": 8082.52,
+    "dram_accesses": 2122,
+    "dram_energy": 42440.0,
+    "dyn_power": 5.632361240551782,
+    "energy_per_translation": 94.70861358048003,
+    "stat_power": 0.14874,
+    "total_power": 5.781101240551782
   },
   "weights": {
     "cam_bit_ge": 0.6,

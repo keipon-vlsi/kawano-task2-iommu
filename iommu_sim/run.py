@@ -40,20 +40,41 @@ def print_report(cfg, sim, m, s, m_steady=None):
     if m_steady is not None:
         # both columns: steady-state (warm) requirement vs cold-start-inclusive
         # (provision the cold-incl column to sustain wire rate from cold start).
-        print(f"  {'resource':<24}{'steady':>9}{'cold-incl':>11}")
-        print(f"  {'peak_walks (3c, N)':<24}{m_steady.peak_walks:>9}{m.peak_walks:>11}")
-        print(f"  {'peak_buffer (3d)':<24}{m_steady.peak_buffer:>9}{m.peak_buffer:>11}")
-        print(f"  {'io_bridge_buffer':<24}{m_steady.io_bridge_peak:>9}{m.io_bridge_peak:>11}")
-        print(f"  (steady = post-warm-up running requirement; cold-incl = from cold start.")
+        def _bmode(dist):
+            busy = [r for r in dist if r[0] >= 1]
+            return max(busy, key=lambda r: r[1])[0] if busy else 0
+        mode_w = _bmode(m_steady.concurrency_distribution())
+        mode_b = _bmode(m_steady.buffer_distribution())
+        mode_i = _bmode(m_steady.iobridge_distribution())
+        print(f"  {'resource':<22}{'mode':>7}{'peak(0-stall)':>15}{'cold-incl':>11}")
+        print(f"  {'walkers (3c, N)':<22}{mode_w:>7}{m_steady.peak_walks:>15}{m.peak_walks:>11}")
+        print(f"  {'request buffer (3d)':<22}{mode_b:>7}{m_steady.peak_buffer:>15}{m.peak_buffer:>11}")
+        print(f"  {'io_bridge buffer':<22}{mode_i:>7}{m_steady.io_bridge_peak:>15}{m.io_bridge_peak:>11}")
+        print(f"  (mode = typical steady (busy) level → sustains throughput (rare bursts buffered);")
+        print(f"   peak(0-stall) = steady peak (no back-pressure); cold-incl = also from cold start.")
         print(f"   measured @ unlimited resources.)")
-        dist = m_steady.concurrency_distribution()
-        if dist:
-            print(f"\n  parallel-walk distribution (steady, time-weighted):")
-            print(f"  {'active walks':>12}{'cycles':>12}{'fraction':>10}")
+
+        def _print_dist(title, unit, dist):
+            if not dist:
+                return
+            busy = [r for r in dist if r[0] >= 1] or dist     # ignore idle (level 0)
+            mode = max(busy, key=lambda r: r[1])[0]           # typical busy level
+            print(f"\n  {title} (steady, time-weighted):")
+            print(f"  {unit:>12}{'cycles':>12}{'fraction':>10}")
             for lvl, lvl_cyc, frac in dist:
                 bar = "#" * int(round(frac * 40))
-                print(f"  {lvl:>12}{lvl_cyc:>12.0f}{frac:>9.1%}  {bar}")
-            print(f"  (zero-stall peak provisions the tail; typical concurrency is the mode above.)")
+                mark = "  <- mode" if lvl == mode else ""
+                print(f"  {lvl:>12}{lvl_cyc:>12.0f}{frac:>9.1%}  {bar}{mark}")
+
+        _print_dist("parallel-walk distribution", "active walks",
+                    m_steady.concurrency_distribution())
+        _print_dist("request-buffer occupancy distribution", "buffer",
+                    m_steady.buffer_distribution())
+        _print_dist("I/O-bridge occupancy distribution", "io_bridge",
+                    m_steady.iobridge_distribution())
+        print(f"  (peak provisions the rare tail for ZERO stalls; the mode is the typical"
+              f" steady level.\n   throughput is sustained as long as bursts above the"
+              f" provisioned level are drained by buffering.)")
     else:
         print(f"  peak_walks (3c, N)     : {m.peak_walks}   [num_walkers fixed]")
         print(f"  peak_buffer (3d)       : {m.peak_buffer}   [iommu_req_buffer fixed]")
