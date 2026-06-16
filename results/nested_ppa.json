@@ -6,5 +6,37 @@
     "fmax_mhz": 17.84439685938615,
     "power_mw": 254.3243,
     "period_ns": 2.5
+  },
+  {
+    "cfg": "cfg2_pwc",
+    "total_area_um2": 103446.7136,
+    "wns_ns": -15.53,
+    "fmax_mhz": 55.46311702717692,
+    "power_mw": 47.952149999999996,
+    "period_ns": 2.5
+  },
+  {
+    "cfg": "cfg3_iotlb",
+    "total_area_um2": 151597.8944,
+    "wns_ns": -14.16,
+    "fmax_mhz": 60.024009603841534,
+    "power_mw": 73.98127,
+    "period_ns": 2.5
+  },
+  {
+    "cfg": "cfg4_prefetch",
+    "total_area_um2": 128558.2976,
+    "wns_ns": -13.66,
+    "fmax_mhz": 61.88118811881188,
+    "power_mw": 63.95149,
+    "period_ns": 2.5
+  },
+  {
+    "cfg": "cfg5_notag",
+    "total_area_um2": 89178.0288,
+    "wns_ns": -11.25,
+    "fmax_mhz": 72.72727272727273,
+    "power_mw": 44.41801,
+    "period_ns": 2.5
   }
 ]

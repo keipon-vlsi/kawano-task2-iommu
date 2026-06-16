@@ -1,0 +1,20 @@
+[cfg4_prefetch] synthesizing (cfg4_top) ...
+[cfg5_notag] synthesizing (cfg5_top) ...
+[
+  {
+    "cfg": "cfg4_prefetch",
+    "total_area_um2": 128558.2976,
+    "wns_ns": -13.66,
+    "fmax_mhz": 61.88118811881188,
+    "power_mw": 63.95149,
+    "period_ns": 2.5
+  },
+  {
+    "cfg": "cfg5_notag",
+    "total_area_um2": 89178.0288,
+    "wns_ns": -11.25,
+    "fmax_mhz": 72.72727272727273,
+    "power_mw": 44.41801,
+    "period_ns": 2.5
+  }
+]

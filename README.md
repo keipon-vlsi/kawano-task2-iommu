@@ -42,13 +42,15 @@ ASSUMPTIONS.md
 | 1 | cfg1_nocache  | 0 | 0 | 37 | 37 | 1 | 0 | 1 |
 | 2 | cfg2_pwc      | 1 | 0 | 5  | 5  | 1 | 0 | 1 |
 | 3 | cfg3_iotlb    | 1 | 1 | 1  | 5  | 8 | 0 | 1 |
-| 4 | cfg4_prefetch | 1 | 1 | 1  | 5  | 8 | 1 | 1 |
-| 5 | cfg5_notag    | 1 | 1 | 1  | 5  | 8 | 1 | 0 |
+| 4 | cfg4_prefetch | 1 | 1 | 1  | 1  | 8 | 1 | 1 |
+| 5 | cfg5_notag    | 1 | 1 | 1  | 1  | 8 | 1 | 0 |
 
 Walker/buffer counts come from the project simulator (`iommu_sim/`): cfg1 = 12-memory-
 access cold nested walk under Little's law (×1.25 → 37); cfg2 = PWC warm ⇒ 2 leaf reads
-= 200 ns ⇒ 5; cfg3/4/5 = one coalesced line-pair walk per 8 translations ⇒ 1 walker,
-the other 7 served by IOTLB / MSHR.
+= 200 ns ⇒ 5; cfg3 = one coalesced line-pair walk per 8 translations ⇒ 1 walker, buffer 5
+holds the riders waiting on the in-flight walk. cfg4/cfg5 add prefetch one line ahead, so
+demands hit the IOTLB and never wait ⇒ **1 walker + 1-deep buffer** (the walker is shared:
+demand-priority, idle for the prefetch walk in steady state).
 
 ## How to run
 
@@ -77,12 +79,14 @@ Per-module area, Fmax and the critical path (sky130_fd_sc_hd, tt 1v80, 2.5 ns ta
 | 1 | nocache  | 10.82 | met  | 296 (=N, CO=1) | all correct |
 | 2 | pwc      | 17.33 | met* | 296 (=N, CO=1) | all correct |
 | 3 | iotlb    | 11.30 | met  | 37 (=N/8)      | all correct |
-| 4 | prefetch | 10.32 | met  | 41 (~N/8)      | all correct |
-| 5 | notag    | 10.32 | met  | 41 (~N/8)      | all correct |
+| 4 | prefetch | 10.35 | met  | 38 (~N/8)      | all correct |
+| 5 | notag    | 10.35 | met  | 38 (~N/8)      | all correct |
 
 `*` cfg2 (5 walkers, two serial 100 ns reads) runs at ~94 % of the wire-rate budget at
 the cycle level — the known event-driven→cycle-level gap; the CLAUDE.md +1-walker margin
-(6 walkers) closes it. cfg4 < cfg3 confirms prefetch hides cold-start latency.
+(6 walkers) closes it. cfg4/cfg5 run with **1 walker and a 1-deep buffer**: prefetch is
+issued one line ahead, so steady-state demands are all IOTLB hits that never touch the
+walker (free for the prefetch walk) and each completes in ~2 cyc (1 buffer slot suffices).
 
 ## Results — synthesis (sky130_fd_sc_hd, tt 1v80, 2.5 ns target, switching activity 0.2)
 | # | config | area (µm²) | power (mW) | worst slack (ns) | Fmax (MHz) |
@@ -90,22 +94,27 @@ the cycle level — the known event-driven→cycle-level gap; the CLAUDE.md +1-w
 | 1 | nocache  | 564 070 | 254.3 | −53.54 | 17.8 |
 | 2 | pwc      | 103 447 | 48.0  | −15.53 | 55.5 |
 | 3 | iotlb    | 151 598 | 74.0  | −14.16 | 60.0 |
-| 4 | prefetch | 165 838 | 80.1  | −15.85 | 54.5 |
-| 5 | notag    | 127 397 | 60.7  | −16.78 | 51.9 |
+| 4 | prefetch | 128 558 | 64.0  | −13.66 | 61.9 |
+| 5 | notag    |  89 178 | 44.4  | −11.25 | 72.7 |
 
-- cfg1 (37 walkers, no cache) = 37 parallel `pte_addr` adders + a 37-way arbiter ⇒ ~5.5×
+- cfg1 (37 walkers, no cache) = 37 parallel `pte_addr` adders + a 37-way arbiter ⇒ ~4–6×
   the area / ~3–5× the power of the cached configs and the worst Fmax — brute-force
   concurrency is the most expensive way to hit wire rate.
-- cfg5 = cfg4 minus device_id/PASID in every cache tag ⇒ **−23 % area / −24 % power**
-  (165 838→127 397 µm², 80→61 mW): context tags are expensive in a FF-based CAM.
+- **cfg4 < cfg3** (128 558 < 151 598 µm²): adding prefetch lets cfg4 run at 1 walker /
+  1-deep buffer, so its control logic shrinks 60 890 → 34 667 µm² — the buffer/MSHR/
+  context savings outweigh the +1 810 µm² prefetch_ctrl. Prefetch *reduces* area here by
+  enabling a smaller buffer, and also improves Fmax (smaller arbiter/MSHR fanout).
+- cfg5 = cfg4 minus device_id/PASID in every cache tag ⇒ **−31 % area / −31 % power**
+  (128 558→89 178 µm², 64.0→44.4 mW): context tags are expensive in a FF-based CAM.
 - Power is ~71–86 % internal/sequential (FF-based CAMs + walker RF); leakage negligible.
   Reported at the 2.5 ns clock with flat 0.2 activity (no VCD) — the switching share
-  scales ∝ freq; internal/leakage (~85 %) is ~frequency-independent.
+  scales ∝ freq; internal/leakage (~85 %) is ~frequency-independent, so at each config's
+  achievable Fmax with activity 0.1 the real operating power is ~5–9 mW.
 
-cfg4 per-module area (µm²): IOTLB CAM **67 742** (16×63-bit FF tags) + iommu_top control
-**73 339** (walker RF, arbiter, MSHR, address adders) dominate; VM/G PWCs 3 498 / 7 876;
-prefetch_ctrl 1 790; mem_master 216. Area grows monotonically with caching
-(cfg2 < cfg3 < cfg4), as expected — caches are the cost, coalescing is the benefit.
+Per-module breakdown (µm², instance-corrected): see `results/area_breakdown.png`. cfg4:
+IOTLB CAM 69 115 (54 %) + control 34 667 (27 %) + PWCs 22 749 (18 %) + prefetch_ctrl
+1 810 + mem_master 216. Across the cached configs the IOTLB CAM (16×wide FF tags) is the
+single largest block; coalescing is the benefit that justifies it.
 
 **Critical path (all configs, Phase 1):** the **fused single-cycle memory-issue cone** —
 context FF → cache-hit / most-complete-hit shortcut → high-fanout MSHR/arbiter select →
