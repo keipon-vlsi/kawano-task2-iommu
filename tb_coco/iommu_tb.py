@@ -206,10 +206,14 @@ async def wire_rate(dut):
 
     # ---- coalescing (walker launches) ----
     walks = int(dut.walks_o.value)
+    PREFETCH = int(os.environ.get("PREFETCH", "0"))
     exp_lines = (N_REQS + CO - 1) // CO
     dut._log.info(f"{CFG}: walks={walks}, expected coalesced lines~={exp_lines} (CO={CO})")
     if CO > 1 and HAS_IOTLB:
-        assert walks <= exp_lines + 2, f"{CFG}: walks {walks} >> coalesced {exp_lines}"
+        # prefetch adds a few startup-transient walks before it gets ahead of demand
+        bound = exp_lines + (10 if PREFETCH else 2)
+        assert exp_lines - 2 <= walks <= bound, \
+            f"{CFG}: walks {walks} outside coalesced range ~{exp_lines} (CO={CO})"
 
     # ---- sustained wire rate (warmed window: 2nd half of the trace) ----
     half = N_REQS // 2

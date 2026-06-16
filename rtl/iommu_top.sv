@@ -27,6 +27,7 @@ module iommu_top #(
   parameter int BUFFER_DEPTH       = 5,
   parameter int COALESCE_FACTOR    = 8,   // 1 or 8
   parameter int PREFETCH_EN        = 0,
+  parameter int PREFETCH_LEAD      = 1,   // lead distance (1 = next line)
   parameter int TAG_CONTEXT_EN     = 1,
   parameter int MEM_LATENCY_CYCLES = 40,
   parameter int MEM_MAX_OUTSTANDING= 8,
@@ -59,7 +60,9 @@ module iommu_top #(
   output logic [31:0]         resp_o,
   output logic [31:0]         outstanding_o
 );
-  localparam int NCTX     = NUM_WALKERS;
+  localparam int NDEMAND  = NUM_WALKERS;
+  localparam int NCTX     = NUM_WALKERS + ((PREFETCH_EN!=0) ? 1 : 0);
+  localparam int PF_IDX   = NUM_WALKERS;            // prefetch walker context index
   localparam int TAGW     = (NCTX < 2) ? 1 : $clog2(NCTX);
   localparam int BW       = (BUFFER_DEPTH < 2) ? 1 : $clog2(BUFFER_DEPTH);
   localparam int CO       = COALESCE_FACTOR;
@@ -72,6 +75,8 @@ module iommu_top #(
   localparam int GL1_TW   = TCW + 2*IDX_W;
   localparam int IOTLB_TW = TCW + VPN_W;
   localparam int IOTLB_N  = (HAS_IOTLB != 0) ? (CO + CO) : 1;
+  localparam int LINE_IN_L0 = IDX_W - LINE_LSB;     // line-index bits within a VM-L0 table
+  localparam int REGID_W  = VPN_W - IDX_W;          // VM-L0-table region id = VPN[26:9]
   localparam logic [3:0] PC_DONE = 4'd12;
 
   typedef enum logic [1:0] {WFREE=2'd0, WRUN=2'd1, WWAIT=2'd2} wst_e;
@@ -109,6 +114,11 @@ module iommu_top #(
   logic [CTX_W-1:0] fill_ctx_q;
   logic [VPNLINE_W-1:0] fill_line_q;
   logic [LINE_W-1:0]fill_data_q;
+
+  // prefetch (next-line) region capture
+  logic [PPN_W-1:0]  region_vml0_q;
+  logic              region_valid_q;
+  logic [REGID_W-1:0]region_id_q;
 
   logic [TAGW-1:0]  arb_rr_q;
   logic [BW-1:0]    brr_q;
@@ -153,7 +163,7 @@ module iommu_top #(
   logic            wfree_v;  logic [TAGW-1:0] wfree_i;
   always_comb begin
     wfree_v=1'b0; wfree_i='0;
-    for (int i=NCTX-1;i>=0;i--) if (ws_q[i]==WFREE) begin wfree_v=1'b1; wfree_i=TAGW'(i); end
+    for (int i=NDEMAND-1;i>=0;i--) if (ws_q[i]==WFREE) begin wfree_v=1'b1; wfree_i=TAGW'(i); end
   end
 
   // ===================================================== cache lookups
@@ -280,6 +290,20 @@ module iommu_top #(
     else                             begin start_pc=4'd0; start_base=vs_root_spa_q; end
   end
 
+  // next-line prefetch trigger (cfg4/cfg5)
+  logic pf_free, pf_trig, pf_region_ok;  logic [VPNLINE_W-1:0] pf_line;
+  generate
+    if (PREFETCH_EN != 0) begin : g_pf
+      assign pf_free      = (ws_q[PF_IDX]==WFREE);
+      assign pf_region_ok = region_valid_q & (region_id_q == bvpn_q[bsel][VPN_W-1:IDX_W]);
+      prefetch_ctrl #(.VPNLINE_W(VPNLINE_W), .LINE_IN_L0(LINE_IN_L0), .LEAD(PREFETCH_LEAD)) u_pf (
+        .clk,.rst_n, .demand_service_v(bsel_v), .demand_line(bsel_line),
+        .region_valid(pf_region_ok), .pf_free(pf_free), .pf_trig(pf_trig), .pf_line(pf_line));
+    end else begin : g_nopf
+      assign pf_free=1'b0; assign pf_trig=1'b0; assign pf_line='0; assign pf_region_ok=1'b0;
+    end
+  endgenerate
+
   // ===================================================== consume next-state (comb)
   logic [3:0]        next_pc;   logic [PPN_W-1:0] next_base;
   logic [GPN_W-1:0]  next_gpn;  logic [GVPN_W-1:0] next_dg;
@@ -363,6 +387,7 @@ module iommu_top #(
       end
       for (int i=0;i<BUFFER_DEPTH;i++) begin bs_q[i]<=BFREE; bvpn_q[i]<='0; bctx_q[i]<='0; bspa_q[i]<='0; end
       arb_rr_q<='0; brr_q<='0; walks_q<='0; resp_q<='0;
+      region_vml0_q<='0; region_valid_q<=1'b0; region_id_q<='0;
       fill_busy_q<=1'b0; fill_busy_d_q<=1'b0; fill_cnt_q<=4'd0;
       fill_ctx_q<='0; fill_line_q<='0; fill_data_q<='0;
     end else begin
@@ -382,10 +407,21 @@ module iommu_top #(
         end else if (svc_launch) begin
           ws_q[wfree_i]<=WRUN; wpc_q[wfree_i]<=start_pc; wbase_q[wfree_i]<=start_base;
           wvpn_q[wfree_i]<=bvpn_q[bsel]; wctx_q[wfree_i]<=bctx_q[bsel];
-          wline_q[wfree_i]<=bsel_line; walks_q<=walks_q+32'd1;
+          wline_q[wfree_i]<=bsel_line;
+          if (PREFETCH_EN!=0 && start_pc==4'd8) begin     // capture this region's VM-L0 base
+            region_vml0_q<=start_base; region_valid_q<=1'b1; region_id_q<=bvpn_q[bsel][VPN_W-1:IDX_W];
+          end
         end
         brr_q <= (brr_q==BW'(BUFFER_DEPTH-1)) ? '0 : brr_q+BW'(1);
       end
+
+      // prefetch launch (own walker, starts warm at the VM-L0 leaf for line+LEAD)
+      if (PREFETCH_EN!=0 && pf_trig) begin
+        ws_q[PF_IDX]<=WRUN; wpc_q[PF_IDX]<=4'd8; wbase_q[PF_IDX]<=region_vml0_q;
+        wvpn_q[PF_IDX]<={pf_line, {LINE_LSB{1'b0}}}; wctx_q[PF_IDX]<=bctx_q[bsel];
+        wline_q[PF_IDX]<=pf_line;
+      end
+      walks_q <= walks_q + 32'(svc_launch) + 32'((PREFETCH_EN!=0) & pf_trig);
 
       // consume a tagged return: advance state (or complete), update PWC fills are comb
       if (do_consume) begin

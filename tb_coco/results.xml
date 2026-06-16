@@ -1,6 +1,6 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
-    <property name="random_seed" value="1781607822" />
-    <testcase name="wire_rate" classname="iommu_tb" file="/space/kawano-task2-iommu/tb_coco/iommu_tb.py" lineno="135" time="0.3672208786010742" sim_time_ns="9527.5" ratio_time="25944.875564523878" />
+    <property name="random_seed" value="1781608356" />
+    <testcase name="wire_rate" classname="iommu_tb" file="/space/kawano-task2-iommu/tb_coco/iommu_tb.py" lineno="135" time="0.3448352813720703" sim_time_ns="8827.5" ratio_time="25599.17872926496" />
   </testsuite>
 </testsuites>
