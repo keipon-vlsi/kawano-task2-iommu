@@ -108,28 +108,41 @@ def expected_spa(vpn):
 
 
 async def mem_stub(dut):
-    """Return the 64 B line (8 PTEs) for araddr after MEM_LAT cycles; 1 return/cycle."""
+    """8 B data bus. A read transaction waits MEM_LAT cycles (latency counts down
+    concurrently for all in-flight reads), then streams its beats one per cycle on the
+    single R channel (1 beat for a walk-step PTE, 8 beats for a coalesced 64 B leaf
+    line). rlast marks the final beat; beat j of a burst = PTE at line_base + j*8."""
     dut.arready.value = 1
     dut.rvalid.value = 0
-    pending = []
+    dut.rlast.value = 0
+    waiting = []     # [latency, addr, id, beats]
+    ready = []       # [addr, id, beats]
+    streaming = None # [addr, id, beats, sent]
     while True:
         await RisingEdge(dut.clk)
         if int(dut.arvalid.value) and int(dut.arready.value):
-            base = int(dut.araddr.value) & ~0x3F
-            line = 0
-            for k in range(8):
-                line |= (MEM.get(base + k * 8, 0) & ((1 << 64) - 1)) << (k * 64)
-            pending.append([MEM_LAT, line, int(dut.arid.value)])
-        for p in pending:
-            p[0] -= 1
+            beats = int(dut.arlen.value) + 1
+            waiting.append([MEM_LAT, int(dut.araddr.value), int(dut.arid.value), beats])
+        for w in waiting:
+            w[0] -= 1
+        still = []
+        for w in waiting:
+            (ready.append(w[1:]) if w[0] <= 0 else still.append(w))
+        waiting = still
         dut.rvalid.value = 0
-        for p in pending:
-            if p[0] <= 0:
-                dut.rvalid.value = 1
-                dut.rdata.value = p[1]
-                dut.rid.value = p[2]
-                pending.remove(p)
-                break
+        dut.rlast.value = 0
+        if streaming is None and ready:
+            a, i, b = ready.pop(0)
+            streaming = [a, i, b, 0]
+        if streaming is not None:
+            addr, id_, beats, sent = streaming
+            dut.rvalid.value = 1
+            dut.rdata.value = MEM.get(addr + sent * 8, 0) & ((1 << 64) - 1)
+            dut.rid.value = id_
+            dut.rlast.value = 1 if sent == beats - 1 else 0
+            streaming[3] += 1
+            if streaming[3] == beats:
+                streaming = None
 
 
 @cocotb.test()

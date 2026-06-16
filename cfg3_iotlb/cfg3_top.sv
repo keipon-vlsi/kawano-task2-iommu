@@ -10,9 +10,9 @@ module cfg3_top (
   output logic rsp_valid, input logic rsp_ready,
   output logic [VPN_W-1:0] rsp_vpn, output logic [SPA_W-1:0] rsp_spa,
   output logic arvalid, input logic arready, output logic [PA_W-1:0] araddr,
-  output logic [TAG_W_TOP-1:0] arid,
-  input  logic rvalid, output logic rready, input logic [LINE_W-1:0] rdata,
-  input  logic [TAG_W_TOP-1:0] rid,
+  output logic [TAG_W_TOP-1:0] arid, output logic [2:0] arlen,
+  input  logic rvalid, output logic rready, input logic [PTE_W-1:0] rdata,
+  input  logic [TAG_W_TOP-1:0] rid, input logic rlast,
   output logic [31:0] walks_o, resp_o, outstanding_o
 );
   iommu_top #(

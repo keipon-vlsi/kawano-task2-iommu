@@ -48,14 +48,18 @@ module iommu_top #(
   input  logic                rsp_ready,
   output logic [VPN_W-1:0]    rsp_vpn,
   output logic [SPA_W-1:0]    rsp_spa,
+  // AXI-like read: 8 B (1 PTE) data bus; a 64 B leaf line arrives as an 8-beat burst,
+  // a walk-step PTE as a single beat. arlen = beats-1 (0 or 7).
   output logic                arvalid,
   input  logic                arready,
   output logic [PA_W-1:0]     araddr,
   output logic [TAG_W_TOP-1:0] arid,
+  output logic [2:0]          arlen,
   input  logic                rvalid,
   output logic                rready,
-  input  logic [LINE_W-1:0]   rdata,
+  input  logic [PTE_W-1:0]    rdata,
   input  logic [TAG_W_TOP-1:0] rid,
+  input  logic                rlast,
   output logic [31:0]         walks_o,
   output logic [31:0]         resp_o,
   output logic [31:0]         outstanding_o
@@ -68,6 +72,7 @@ module iommu_top #(
   localparam int BW       = (BUFFER_DEPTH < 2) ? 1 : $clog2(BUFFER_DEPTH);
   localparam int CO       = COALESCE_FACTOR;
   localparam int LINE_LSB = (CO > 1) ? $clog2(CO) : 0;
+  localparam int LBW      = (LINE_LSB > 0) ? LINE_LSB : 1;   // safe slice width (CO==1)
   localparam int VPNLINE_W= VPN_W - LINE_LSB;
   localparam int TCW      = (TAG_CONTEXT_EN != 0) ? CTX_W : 0;
   localparam int VML2_TW  = TCW + IDX_W;
@@ -109,12 +114,8 @@ module iommu_top #(
   logic [CTX_W-1:0] bctx_q [BUFFER_DEPTH];
   logic [SPA_W-1:0] bspa_q [BUFFER_DEPTH];
 
-  // ---------------- IOTLB coalesced-fill FSM ----------------
-  logic             fill_busy_q, fill_busy_d_q;
-  logic [3:0]       fill_cnt_q;
-  logic [CTX_W-1:0] fill_ctx_q;
-  logic [VPNLINE_W-1:0] fill_line_q;
-  logic [LINE_W-1:0]fill_data_q;
+  // per-walker beat counter for the pc11 leaf burst (8B beats stream into the IOTLB)
+  logic [3:0]       wbeat_q[NCTX];
 
   // prefetch (next-line) region capture
   logic [PPN_W-1:0]  region_vml0_q;
@@ -127,9 +128,6 @@ module iommu_top #(
   assign walks_o=walks_q; assign resp_o=resp_q;
 
   // ---------------- helpers ----------------
-  function automatic logic [PTE_W-1:0] line_pte(input logic [LINE_W-1:0] ln, input logic [2:0] k);
-    return ln[k*PTE_W +: PTE_W];
-  endfunction
   function automatic logic [PPN_W-1:0] ppn28(input logic [PTE_W-1:0] p);
     logic [43:0] f; f = pte_ppn44(p); return f[PPN_W-1:0];
   endfunction
@@ -181,12 +179,12 @@ module iommu_top #(
   assign cons_ctx   = wctx_q[cons_w];
   assign cons_dgvpn = wdgvpn_q[cons_w];
   assign cons_pc    = wpc_q[cons_w];
-  logic        do_consume;
-  logic [IDX_W-1:0] cons_idx;
+  // a pc11 leaf read (CO>1) returns 8 beats -> burst path; everything else is 1 beat
+  logic        burst_beat, do_consume;
   logic [PTE_W-1:0] cons_pte;
-  assign do_consume = rvalid & rready & (ws_q[cons_w]==WWAIT);
-  assign cons_idx   = idx_of(cons_pc, cons_vpn, wgpn_q[cons_w], cons_dgvpn);
-  assign cons_pte   = line_pte(rdata, cons_idx[2:0]);
+  assign burst_beat = (CO>1) & rvalid & rready & (ws_q[cons_w]==WWAIT) & (cons_pc==4'd11);
+  assign do_consume = rvalid & rready & (ws_q[cons_w]==WWAIT) & ~burst_beat;
+  assign cons_pte   = rdata;            // 8 B data bus: rdata IS the PTE
   logic [GVPN_W-1:0] cons_newdg;        // data GVPN just produced at pc8 consume
   assign cons_newdg = gpn27(cons_pte);
 
@@ -194,12 +192,13 @@ module iommu_top #(
   logic [VML2_TW-1:0] vml2_lk;  logic [VML1_TW-1:0] vml1_lk;
   logic [GL2_TW-1:0]  gl2_lk;   logic [GL1_TW-1:0]  gl1_lk;
   logic [IOTLB_TW-1:0] iotlb_lk;
+  // IOTLB fill key VPN for the current burst beat = {line, beat-within-line}
   logic [VPN_W-1:0]   fill_vpn;
   generate
     if (CO>1) begin : g_fillvpn_co
-      assign fill_vpn = {fill_line_q, fill_cnt_q[LINE_LSB-1:0]};
+      assign fill_vpn = {wline_q[cons_w], wbeat_q[cons_w][LINE_LSB-1:0]};
     end else begin : g_fillvpn_1
-      assign fill_vpn = fill_line_q;
+      assign fill_vpn = wline_q[cons_w];
     end
   endgenerate
 
@@ -215,8 +214,9 @@ module iommu_top #(
   assign gl1_fe  = (HAS_PWC!=0) & do_consume & (cons_pc==4'd10);
   assign vml2_fd = ppn28(cons_pte); assign vml1_fd = ppn28(cons_pte);
   assign gl2_fd  = ppn28(cons_pte); assign gl1_fd  = ppn28(cons_pte);
-  assign iotlb_fe = fill_busy_q;
-  assign iotlb_fd = ppn28(line_pte(fill_data_q, fill_cnt_q[2:0]));
+  // IOTLB filled one entry per burst beat (beat j -> page j of the line)
+  assign iotlb_fe = (HAS_IOTLB!=0) & burst_beat;
+  assign iotlb_fd = ppn28(rdata);
 
   generate
     if (TAG_CONTEXT_EN != 0) begin : g_tag_ctx
@@ -229,7 +229,7 @@ module iommu_top #(
       assign vml1_fk  = {cons_ctx, cons_vpn[26:9]};
       assign gl2_fk   = {cons_ctx, cons_dgvpn[26:18]};
       assign gl1_fk   = {cons_ctx, cons_dgvpn[26:9]};
-      assign iotlb_fk = {fill_ctx_q, fill_vpn};
+      assign iotlb_fk = {cons_ctx, fill_vpn};
     end else begin : g_tag_noctx
       assign vml2_lk  = bvpn_q[bsel][26:18];
       assign vml1_lk  = bvpn_q[bsel][26:9];
@@ -281,11 +281,10 @@ module iommu_top #(
     bsel_line_busy=1'b0;
     for (int i=0;i<NCTX;i++)
       if (ws_q[i]!=WFREE && wline_q[i]==bsel_line && wctx_q[i]==bctx_q[bsel]) bsel_line_busy=1'b1;
-    if (fill_busy_q && fill_line_q==bsel_line && fill_ctx_q==bctx_q[bsel]) bsel_line_busy=1'b1;
   end
   logic svc_iotlb, svc_ride, svc_launch;
   assign svc_iotlb  = bsel_v & (HAS_IOTLB!=0) & iotlb_hit;
-  assign svc_ride   = bsel_v & ~svc_iotlb & (bsel_line_busy | fill_busy_q | fill_busy_d_q);
+  assign svc_ride   = bsel_v & ~svc_iotlb & bsel_line_busy;
   assign svc_launch = bsel_v & ~svc_iotlb & ~svc_ride & wfree_v;
   // VS-stage most-complete-hit shortcut for the launched walker
   logic [3:0]       start_pc;  logic [PPN_W-1:0] start_base;
@@ -342,19 +341,28 @@ module iommu_top #(
   // ===================================================== unified memory-issue arbiter
   // per-walker issue request this cycle (fused consume/launch + WRUN fallback)
   logic            iwant [NCTX];
+  logic            iburst[NCTX];          // this issue is an 8-beat leaf burst
   logic [PA_W-1:0] iaddr [NCTX];
   always_comb begin
     for (int w=0;w<NCTX;w++) begin
-      iwant[w]=1'b0; iaddr[w]='0;
+      logic [3:0] pc; logic [PPN_W-1:0] base; logic [VPN_W-1:0] vp;
+      logic [GPN_W-1:0] gp; logic [GVPN_W-1:0] dgv; logic sel;
+      logic [IDX_W-1:0] ix;
+      iwant[w]=1'b0; iaddr[w]='0; iburst[w]=1'b0;
+      pc='0; base='0; vp='0; gp='0; dgv='0; sel=1'b0; ix='0;
       if (do_consume && (w==int'(cons_w)) && next_pc!=PC_DONE) begin
-        iwant[w]=1'b1;
-        iaddr[w]=pte_addr(next_base, idx_of(next_pc, cons_vpn, next_gpn, next_dg));
+        pc=next_pc; base=next_base; vp=cons_vpn; gp=next_gpn; dgv=next_dg; sel=1'b1;
       end else if (svc_launch && (w==int'(wfree_i))) begin
-        iwant[w]=1'b1;
-        iaddr[w]=pte_addr(start_base, idx_of(start_pc, bvpn_q[bsel], '0, '0));
+        pc=start_pc; base=start_base; vp=bvpn_q[bsel]; sel=1'b1;
       end else if (ws_q[w]==WRUN) begin
+        pc=wpc_q[w]; base=wbase_q[w]; vp=wvpn_q[w]; gp=wgpn_q[w]; dgv=wdgvpn_q[w]; sel=1'b1;
+      end
+      if (sel) begin
         iwant[w]=1'b1;
-        iaddr[w]=pte_addr(wbase_q[w], idx_of(wpc_q[w], wvpn_q[w], wgpn_q[w], wdgvpn_q[w]));
+        ix = idx_of(pc, vp, gp, dgv);
+        iburst[w] = (CO>1) && (pc==4'd11);             // coalesced G-L0 leaf line
+        // burst start = 64 B line base (low 3 index bits cleared); else exact PTE addr
+        iaddr[w]  = iburst[w] ? pte_addr(base, {ix[IDX_W-1:3],3'd0}) : pte_addr(base, ix);
       end
     end
   end
@@ -368,13 +376,12 @@ module iommu_top #(
   end
 
   logic mreq_ready;
-  mem_master #(.ADDR_W(PA_W), .DATA_W(LINE_W), .TAG_W(TAG_W_TOP),
+  mem_master #(.ADDR_W(PA_W), .DATA_W(PTE_W), .TAG_W(TAG_W_TOP),
                .MEM_MAX_OUTSTANDING(MEM_MAX_OUTSTANDING)) u_mem (
     .clk,.rst_n,
     .req_valid(grant_v), .req_ready(mreq_ready),
-    .req_addr(iaddr[grant_w]), .req_tag(TAG_W_TOP'(grant_w)),
-    .rsp_valid(), .rsp_data(), .rsp_tag(),
-    .arvalid, .arready, .araddr, .arid, .rvalid, .rready, .rdata, .rid,
+    .req_addr(iaddr[grant_w]), .req_tag(TAG_W_TOP'(grant_w)), .req_burst(iburst[grant_w]),
+    .arvalid, .arready, .araddr, .arid, .arlen, .rvalid, .rready, .rdata, .rid, .rlast,
     .outstanding_o(outstanding_o));
   logic issue_ok;
   assign issue_ok = grant_v & mreq_ready;
@@ -390,16 +397,12 @@ module iommu_top #(
     if (!rst_n) begin
       for (int i=0;i<NCTX;i++) begin
         ws_q[i]<=WFREE; wpc_q[i]<=4'd0; wvpn_q[i]<='0; wctx_q[i]<='0; wbase_q[i]<='0;
-        wgpn_q[i]<='0; wdgvpn_q[i]<='0; wline_q[i]<='0;
+        wgpn_q[i]<='0; wdgvpn_q[i]<='0; wline_q[i]<='0; wbeat_q[i]<=4'd0;
       end
       for (int i=0;i<BUFFER_DEPTH;i++) begin bs_q[i]<=BFREE; bvpn_q[i]<='0; bctx_q[i]<='0; bspa_q[i]<='0; end
       arb_rr_q<='0; brr_q<='0; walks_q<='0; resp_q<='0;
       region_vml0_q<='0; region_valid_q<=1'b0; region_id_q<='0;
-      fill_busy_q<=1'b0; fill_busy_d_q<=1'b0; fill_cnt_q<=4'd0;
-      fill_ctx_q<='0; fill_line_q<='0; fill_data_q<='0;
     end else begin
-      fill_busy_d_q <= fill_busy_q;
-
       // accept request
       if (req_valid & req_ready) begin
         bs_q[bfree_i]<=BNEED; bvpn_q[bfree_i]<=req_vpn; bctx_q[bfree_i]<={req_device_id,req_pasid};
@@ -435,17 +438,14 @@ module iommu_top #(
         wgpn_q[cons_w]  <= next_gpn;
         wdgvpn_q[cons_w]<= next_dg;
         if (next_pc==PC_DONE) begin
-          // data SPA produced: broadcast-resolve riders, start IOTLB fill, free walker
+          // CO==1 leaf (single beat): resolve the demand entry directly. (CO>1 leaf
+          // completes via the burst path below, never here.)
           for (int b=0;b<BUFFER_DEPTH;b++)
             if (bs_q[b]==BNEED && bvpn_q[b][VPN_W-1:LINE_LSB]==wline_q[cons_w] &&
                 bctx_q[b]==wctx_q[cons_w]) begin
               bs_q[b]<=BRES;
-              bspa_q[b]<={ppn28(line_pte(rdata, bvpn_q[b][2:0])),{OFFSET_W{1'b0}}};
+              bspa_q[b]<={ppn28(rdata),{OFFSET_W{1'b0}}};
             end
-          if (HAS_IOTLB!=0) begin
-            fill_busy_q<=1'b1; fill_cnt_q<=4'd0;
-            fill_ctx_q<=wctx_q[cons_w]; fill_line_q<=wline_q[cons_w]; fill_data_q<=rdata;
-          end
           ws_q[cons_w]<=WFREE; wpc_q[cons_w]<=4'd0;
         end else begin
           ws_q[cons_w]<=WRUN;          // becomes eligible; arbiter may upgrade to WWAIT
@@ -459,16 +459,25 @@ module iommu_top #(
         end
       end
 
-      // arbiter grant: the issuing walker goes WWAIT (overrides WRUN set above)
-      if (issue_ok) begin
-        ws_q[grant_w]<=WWAIT;
-        arb_rr_q <= (arb_rr_q==TAGW'(NCTX-1)) ? '0 : arb_rr_q+TAGW'(1);
+      // pc11 leaf burst beat (CO>1): beat j carries page j's SPA. Fill IOTLB[j]
+      // (combinational fill port above), broadcast-resolve the rider on page j, count
+      // beats, free the walker on rlast.
+      if (burst_beat) begin
+        for (int b=0;b<BUFFER_DEPTH;b++)
+          if (bs_q[b]==BNEED && bvpn_q[b][VPN_W-1:LINE_LSB]==wline_q[cons_w] &&
+              bctx_q[b]==wctx_q[cons_w] &&
+              bvpn_q[b][LBW-1:0]==wbeat_q[cons_w][LBW-1:0]) begin
+            bs_q[b]<=BRES;
+            bspa_q[b]<={ppn28(rdata),{OFFSET_W{1'b0}}};
+          end
+        wbeat_q[cons_w] <= wbeat_q[cons_w] + 4'd1;
+        if (rlast) begin ws_q[cons_w]<=WFREE; wpc_q[cons_w]<=4'd0; wbeat_q[cons_w]<=4'd0; end
       end
 
-      // IOTLB coalesced fill (1 entry/cycle, combinational fill port)
-      if (fill_busy_q) begin
-        if (fill_cnt_q==4'(CO-1)) fill_busy_q<=1'b0;
-        fill_cnt_q<=fill_cnt_q+4'd1;
+      // arbiter grant: the issuing walker goes WWAIT (overrides WRUN set above)
+      if (issue_ok) begin
+        ws_q[grant_w]<=WWAIT; wbeat_q[grant_w]<=4'd0;
+        arb_rr_q <= (arb_rr_q==TAGW'(NCTX-1)) ? '0 : arb_rr_q+TAGW'(1);
       end
 
       // response handshake
