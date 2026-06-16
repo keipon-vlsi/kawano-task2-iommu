@@ -22,10 +22,13 @@ read_liberty /foss/pdks/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt
 read_verilog /foss/designs/cfg1_nocache/results/netlist.v
 link_design cfg1_top
 create_clock -name clk -period 2.5 [get_ports clk]
+set_power_activity -global -activity 0.2 -duty 0.5
 puts "=== CRITICAL PATH (reg2reg max) @ 2.5ns ==="
 report_checks -path_delay max -fields {slew cap fanout} -digits 4 -group_count 2
 puts "=== WORST SLACK ==="
 report_worst_slack -max
+puts "=== POWER (activity 0.2) ==="
+report_power -digits 6
 exit
 
 STAEOF
@@ -219,5 +222,17 @@ Fanout       Cap      Slew     Delay      Time   Description
 
 === WORST SLACK ===
 worst slack max -53.54
+=== POWER (activity 0.2) ===
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           1.657946e-01 1.471248e-02 1.068795e-07 1.805072e-01  71.0%
+Combinational        4.033437e-02 3.348203e-02 1.036730e-07 7.381651e-02  29.0%
+Clock                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                2.061298e-01 4.819438e-02 2.105533e-07 2.543243e-01 100.0%
+                            81.0%        18.9%         0.0%
 
 =STDERR=

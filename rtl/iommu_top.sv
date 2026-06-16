@@ -60,9 +60,10 @@ module iommu_top #(
   output logic [31:0]         resp_o,
   output logic [31:0]         outstanding_o
 );
-  localparam int NDEMAND  = NUM_WALKERS;
-  localparam int NCTX     = NUM_WALKERS + ((PREFETCH_EN!=0) ? 1 : 0);
-  localparam int PF_IDX   = NUM_WALKERS;            // prefetch walker context index
+  // ONE shared walker pool: prefetch reuses an idle demand walker (demand has
+  // priority). In steady state demands are IOTLB hits (never touch the walker), so
+  // the single walker is free to run the one-line-ahead prefetch walk.
+  localparam int NCTX     = NUM_WALKERS;
   localparam int TAGW     = (NCTX < 2) ? 1 : $clog2(NCTX);
   localparam int BW       = (BUFFER_DEPTH < 2) ? 1 : $clog2(BUFFER_DEPTH);
   localparam int CO       = COALESCE_FACTOR;
@@ -167,7 +168,7 @@ module iommu_top #(
   logic            wfree_v;  logic [TAGW-1:0] wfree_i;
   always_comb begin
     wfree_v=1'b0; wfree_i='0;
-    for (int i=NDEMAND-1;i>=0;i--) if (ws_q[i]==WFREE) begin wfree_v=1'b1; wfree_i=TAGW'(i); end
+    for (int i=NCTX-1;i>=0;i--) if (ws_q[i]==WFREE) begin wfree_v=1'b1; wfree_i=TAGW'(i); end
   end
 
   // ===================================================== cache lookups
@@ -295,10 +296,10 @@ module iommu_top #(
   end
 
   // next-line prefetch trigger (cfg4/cfg5)
-  logic pf_free, pf_trig, pf_region_ok;  logic [VPNLINE_W-1:0] pf_line;
+  logic pf_free, pf_trig, pf_region_ok, pf_launch;  logic [VPNLINE_W-1:0] pf_line;
   generate
     if (PREFETCH_EN != 0) begin : g_pf
-      assign pf_free      = (ws_q[PF_IDX]==WFREE);
+      assign pf_free      = wfree_v;     // the single shared walker is idle
       assign pf_region_ok = region_valid_q & (region_id_q == bvpn_q[bsel][VPN_W-1:IDX_W]);
       prefetch_ctrl #(.VPNLINE_W(VPNLINE_W), .LINE_IN_L0(LINE_IN_L0), .LEAD(PREFETCH_LEAD)) u_pf (
         .clk,.rst_n, .demand_service_v(bsel_v), .demand_line(bsel_line),
@@ -307,6 +308,8 @@ module iommu_top #(
       assign pf_free=1'b0; assign pf_trig=1'b0; assign pf_line='0; assign pf_region_ok=1'b0;
     end
   endgenerate
+  // prefetch may launch the shared walker only when a demand isn't taking it
+  assign pf_launch = (PREFETCH_EN!=0) & pf_trig & wfree_v & ~svc_launch;
 
   // ===================================================== consume next-state (comb)
   logic [3:0]        next_pc;   logic [PPN_W-1:0] next_base;
@@ -412,20 +415,18 @@ module iommu_top #(
           ws_q[wfree_i]<=WRUN; wpc_q[wfree_i]<=start_pc; wbase_q[wfree_i]<=start_base;
           wvpn_q[wfree_i]<=bvpn_q[bsel]; wctx_q[wfree_i]<=bctx_q[bsel];
           wline_q[wfree_i]<=bsel_line;
-          if (PREFETCH_EN!=0 && start_pc==4'd8) begin     // capture this region's VM-L0 base
-            region_vml0_q<=start_base; region_valid_q<=1'b1; region_id_q<=bvpn_q[bsel][VPN_W-1:IDX_W];
-          end
         end
         brr_q <= (brr_q==BW'(BUFFER_DEPTH-1)) ? '0 : brr_q+BW'(1);
       end
 
-      // prefetch launch (own walker, starts warm at the VM-L0 leaf for line+LEAD)
-      if (PREFETCH_EN!=0 && pf_trig) begin
-        ws_q[PF_IDX]<=WRUN; wpc_q[PF_IDX]<=4'd8; wbase_q[PF_IDX]<=region_vml0_q;
-        wvpn_q[PF_IDX]<={pf_line, {LINE_LSB{1'b0}}}; wctx_q[PF_IDX]<=bctx_q[bsel];
-        wline_q[PF_IDX]<=pf_line;
+      // prefetch launch: reuse the idle shared walker (only when demand isn't taking
+      // it), warm-start at the VM-L0 leaf for line+LEAD using the captured region base
+      if (pf_launch) begin
+        ws_q[wfree_i]<=WRUN; wpc_q[wfree_i]<=4'd8; wbase_q[wfree_i]<=region_vml0_q;
+        wvpn_q[wfree_i]<={pf_line, {LINE_LSB{1'b0}}}; wctx_q[wfree_i]<=bctx_q[bsel];
+        wline_q[wfree_i]<=pf_line;
       end
-      walks_q <= walks_q + 32'(svc_launch) + 32'((PREFETCH_EN!=0) & pf_trig);
+      walks_q <= walks_q + 32'(svc_launch) + 32'(pf_launch);
 
       // consume a tagged return: advance state (or complete), update PWC fills are comb
       if (do_consume) begin
@@ -448,6 +449,13 @@ module iommu_top #(
           ws_q[cons_w]<=WFREE; wpc_q[cons_w]<=4'd0;
         end else begin
           ws_q[cons_w]<=WRUN;          // becomes eligible; arbiter may upgrade to WWAIT
+        end
+        // capture the region's VM-L0 table base from the cold walk (pc7 -> pc8), so a
+        // shared-walker prefetch can warm-start at the leaf for the next line.
+        if (PREFETCH_EN!=0 && cons_pc==4'd7) begin
+          region_vml0_q  <= ppn28(cons_pte);
+          region_valid_q <= 1'b1;
+          region_id_q    <= cons_vpn[VPN_W-1:IDX_W];
         end
       end
 

@@ -17,7 +17,7 @@ module cfg5_top (
   output logic [31:0] walks_o, resp_o, outstanding_o
 );
   iommu_top #(
-    .HAS_PWC(1), .HAS_IOTLB(1), .NUM_WALKERS(1), .BUFFER_DEPTH(5),
+    .HAS_PWC(1), .HAS_IOTLB(1), .NUM_WALKERS(1), .BUFFER_DEPTH(1),
     .COALESCE_FACTOR(8), .PREFETCH_EN(1), .PREFETCH_LEAD(1), .TAG_CONTEXT_EN(0),
     .MEM_LATENCY_CYCLES(40), .MEM_MAX_OUTSTANDING(8), .PIPELINE_DEPTH(1)
   ) u_core (.*);

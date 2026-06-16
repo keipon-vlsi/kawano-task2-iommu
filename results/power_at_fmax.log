@@ -1,0 +1,70 @@
+[INFO] USER_ID: 1000, GROUP_ID: 1000
+[INFO] Final PATH variable: /foss/tools/bin:/foss/tools/sak:/usr/local/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/foss/tools/kactus2:/foss/tools/klayout:/foss/tools/osic-multitool
+[INFO] Final PYTHONPATH variable: /usr/lib/python312.zip:/usr/lib/python3.12:/usr/lib/python3.12/lib-dynload:/usr/local/lib/python3.12/dist-packages:/usr/lib/python3/dist-packages:/foss/tools/ngspyce/local/lib/python3.12/dist-packages:/foss/tools/openems/local/lib/python3.12/dist-packages:/foss/tools/pyopus/local/lib/python3.12/dist-packages:/foss/tools/yosys/share/yosys/python3:/foss/tools/klayout/pymod:/foss/tools/vacask/lib/vacask/python
+[INFO] SKIPPING UI STARTUP
+[INFO] Executing command: 'bash -lc 
+printf '##### %s @ %sns (Fmax) #####\n' cfg1_nocache 56.04
+cat > /tmp/cfg1_nocache.pw.tcl <<TCL
+read_liberty /foss/pdks/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+read_verilog /foss/designs/cfg1_nocache/results/netlist.v
+link_design cfg1_top
+create_clock -name clk -period 56.04 [get_ports clk]
+set_power_activity -global -activity 0.1 -duty 0.5
+report_power -digits 6
+exit
+TCL
+sta -no_init -exit /tmp/cfg1_nocache.pw.tcl 2>&1 | grep -E '^Total'
+printf '##### %s @ %sns (Fmax) #####\n' cfg2_pwc 18.03
+cat > /tmp/cfg2_pwc.pw.tcl <<TCL
+read_liberty /foss/pdks/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+read_verilog /foss/designs/cfg2_pwc/results/netlist.v
+link_design cfg2_top
+create_clock -name clk -period 18.03 [get_ports clk]
+set_power_activity -global -activity 0.1 -duty 0.5
+report_power -digits 6
+exit
+TCL
+sta -no_init -exit /tmp/cfg2_pwc.pw.tcl 2>&1 | grep -E '^Total'
+printf '##### %s @ %sns (Fmax) #####\n' cfg3_iotlb 16.66
+cat > /tmp/cfg3_iotlb.pw.tcl <<TCL
+read_liberty /foss/pdks/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+read_verilog /foss/designs/cfg3_iotlb/results/netlist.v
+link_design cfg3_top
+create_clock -name clk -period 16.66 [get_ports clk]
+set_power_activity -global -activity 0.1 -duty 0.5
+report_power -digits 6
+exit
+TCL
+sta -no_init -exit /tmp/cfg3_iotlb.pw.tcl 2>&1 | grep -E '^Total'
+printf '##### %s @ %sns (Fmax) #####\n' cfg4_prefetch 18.35
+cat > /tmp/cfg4_prefetch.pw.tcl <<TCL
+read_liberty /foss/pdks/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+read_verilog /foss/designs/cfg4_prefetch/results/netlist.v
+link_design cfg4_top
+create_clock -name clk -period 18.35 [get_ports clk]
+set_power_activity -global -activity 0.1 -duty 0.5
+report_power -digits 6
+exit
+TCL
+sta -no_init -exit /tmp/cfg4_prefetch.pw.tcl 2>&1 | grep -E '^Total'
+printf '##### %s @ %sns (Fmax) #####\n' cfg5_notag 19.28
+cat > /tmp/cfg5_notag.pw.tcl <<TCL
+read_liberty /foss/pdks/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+read_verilog /foss/designs/cfg5_notag/results/netlist.v
+link_design cfg5_top
+create_clock -name clk -period 19.28 [get_ports clk]
+set_power_activity -global -activity 0.1 -duty 0.5
+report_power -digits 6
+exit
+TCL
+sta -no_init -exit /tmp/cfg5_notag.pw.tcl 2>&1 | grep -E '^Total''
+##### cfg1_nocache @ 56.04ns (Fmax) #####
+Total                7.986218e-03 1.075033e-03 2.105533e-07 9.061461e-03 100.0%
+##### cfg2_pwc @ 18.03ns (Fmax) #####
+Total                4.884131e-03 5.495077e-04 4.013217e-08 5.433679e-03 100.0%
+##### cfg3_iotlb @ 16.66ns (Fmax) #####
+Total                8.590410e-03 7.486622e-04 6.047537e-08 9.339133e-03 100.0%
+##### cfg4_prefetch @ 18.35ns (Fmax) #####
+Total                8.369031e-03 7.762380e-04 6.655600e-08 9.145335e-03 100.0%
+##### cfg5_notag @ 19.28ns (Fmax) #####
+Total                5.965734e-03 5.887803e-04 5.139832e-08 6.554565e-03 100.0%

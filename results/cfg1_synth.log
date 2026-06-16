@@ -1,1 +1,11 @@
 [cfg1_nocache] synthesizing (cfg1_top) ...
+[
+  {
+    "cfg": "cfg1_nocache",
+    "total_area_um2": 564069.7376,
+    "wns_ns": -53.54,
+    "fmax_mhz": 17.84439685938615,
+    "power_mw": 254.3243,
+    "period_ns": 2.5
+  }
+]
