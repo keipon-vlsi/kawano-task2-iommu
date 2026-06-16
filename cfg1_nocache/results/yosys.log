@@ -1,0 +1,17 @@
+Warning: Replacing memory \data_q with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:62
+Warning: Replacing memory \tag_q with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:61
+Warning: Replacing memory \valid_q with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:60
+Warning: Replacing memory \bspa_q with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:913
+Warning: Replacing memory \bctx_q with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:912
+Warning: Replacing memory \bvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:911
+Warning: Replacing memory \bs_q with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:910
+Warning: Replacing memory \wline_q with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:903
+Warning: Replacing memory \wdgvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:902
+Warning: Replacing memory \wgpn_q with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:901
+Warning: Replacing memory \wbase_q with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:900
+Warning: Replacing memory \wctx_q with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:899
+Warning: Replacing memory \wvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:898
+Warning: Replacing memory \wpc_q with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:897
+Warning: Replacing memory \ws_q with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:896
+Warning: Replacing memory \iaddr with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:810
+Warning: Replacing memory \iwant with list of registers. See /foss/designs/syn/build_nested/cfg1_nocache/cfg1_nocache.v:809

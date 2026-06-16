@@ -129,8 +129,12 @@ module iommu_top #(
   function automatic logic [PTE_W-1:0] line_pte(input logic [LINE_W-1:0] ln, input logic [2:0] k);
     return ln[k*PTE_W +: PTE_W];
   endfunction
-  function automatic logic [PPN_W-1:0] ppn28(input logic [PTE_W-1:0] p); return pte_ppn44(p)[PPN_W-1:0]; endfunction
-  function automatic logic [GPN_W-1:0] gpn27(input logic [PTE_W-1:0] p); return pte_ppn44(p)[GPN_W-1:0]; endfunction
+  function automatic logic [PPN_W-1:0] ppn28(input logic [PTE_W-1:0] p);
+    logic [43:0] f; f = pte_ppn44(p); return f[PPN_W-1:0];
+  endfunction
+  function automatic logic [GPN_W-1:0] gpn27(input logic [PTE_W-1:0] p);
+    logic [43:0] f; f = pte_ppn44(p); return f[GPN_W-1:0];
+  endfunction
   function automatic logic [IDX_W-1:0] idx_of(input logic [3:0] pc, input logic [VPN_W-1:0] vpn,
                                               input logic [GPN_W-1:0] gpn, input logic [GVPN_W-1:0] dg);
     unique case (pc)

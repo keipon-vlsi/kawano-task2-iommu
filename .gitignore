@@ -26,3 +26,9 @@ results/*/layout_render.txt
 tb_coco/_vcd_run.py
 open_pdks/
 pdk_full/
+# nested-core build artifacts (keep synth_area.txt/sta.txt/*.log, drop heavy raw)
+cfg*/tb_coco/sim_build/
+cfg*/tb_coco/__pycache__/
+cfg*/results/netlist.v
+syn/build_nested/
+tb_coco/results.xml
