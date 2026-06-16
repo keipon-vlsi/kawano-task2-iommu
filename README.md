@@ -84,17 +84,23 @@ Per-module area, Fmax and the critical path (sky130_fd_sc_hd, tt 1v80, 2.5 ns ta
 the cycle level — the known event-driven→cycle-level gap; the CLAUDE.md +1-walker margin
 (6 walkers) closes it. cfg4 < cfg3 confirms prefetch hides cold-start latency.
 
-## Results — synthesis (sky130_fd_sc_hd, tt 1v80, 2.5 ns target)
-| # | config | total area (µm²) | worst slack (ns) | Fmax (MHz) |
-|---|---|---|---|---|
-| 1 | nocache  | _Phase 2 (37-walker, long abc run)_ | | |
-| 2 | pwc      | 103 447 | −15.53 | ~55 |
-| 3 | iotlb    | 151 598 | −14.16 | ~60 |
-| 4 | prefetch | 165 838 | −15.85 | ~55 |
-| 5 | notag    | 127 397 | −16.78 | ~52 |
+## Results — synthesis (sky130_fd_sc_hd, tt 1v80, 2.5 ns target, switching activity 0.2)
+| # | config | area (µm²) | power (mW) | worst slack (ns) | Fmax (MHz) |
+|---|---|---|---|---|---|
+| 1 | nocache  | 564 070 | 254.3 | −53.54 | 17.8 |
+| 2 | pwc      | 103 447 | 48.0  | −15.53 | 55.5 |
+| 3 | iotlb    | 151 598 | 74.0  | −14.16 | 60.0 |
+| 4 | prefetch | 165 838 | 80.1  | −15.85 | 54.5 |
+| 5 | notag    | 127 397 | 60.7  | −16.78 | 51.9 |
 
-cfg5 = cfg4 minus device_id/PASID in every cache tag ⇒ **−23 % area** (165 838 → 127 397
-µm²), the headline cfg4-vs-cfg5 result: context tags are expensive in a FF-based CAM.
+- cfg1 (37 walkers, no cache) = 37 parallel `pte_addr` adders + a 37-way arbiter ⇒ ~5.5×
+  the area / ~3–5× the power of the cached configs and the worst Fmax — brute-force
+  concurrency is the most expensive way to hit wire rate.
+- cfg5 = cfg4 minus device_id/PASID in every cache tag ⇒ **−23 % area / −24 % power**
+  (165 838→127 397 µm², 80→61 mW): context tags are expensive in a FF-based CAM.
+- Power is ~71–86 % internal/sequential (FF-based CAMs + walker RF); leakage negligible.
+  Reported at the 2.5 ns clock with flat 0.2 activity (no VCD) — the switching share
+  scales ∝ freq; internal/leakage (~85 %) is ~frequency-independent.
 
 cfg4 per-module area (µm²): IOTLB CAM **67 742** (16×63-bit FF tags) + iommu_top control
 **73 339** (walker RF, arbiter, MSHR, address adders) dominate; VM/G PWCs 3 498 / 7 876;
@@ -108,9 +114,9 @@ fusion was chosen to meet the wire-rate cycle budget at the minimal walker count
 the Phase-2 optimization target.
 
 ## Phase status
-- **Phase 1 (done):** clean parameterized RTL; cocotb passing on all 5; cfg4 (best)
-  synthesized with the critical path identified (plus cfg2/3/5 for context).
-- **Phase 2 (after review):** synthesize cfg1 (37-walker); take cfg4 and iterate the
+- **Phase 1 (done):** clean parameterized RTL; cocotb passing on all 5; **all 5
+  synthesized** (area/power/Fmax above) with the critical path identified.
+- **Phase 2 (after review):** take cfg4 and iterate the
   critical path — **register the issue address** (break the consume→adder→arbiter cone
   into ≥2 stages / add a lookup-mode + `PIPELINE_DEPTH` stage) and report before/after
   Fmax. Expected: large Fmax gain for +1 cycle/read latency (covered by the +1-walker

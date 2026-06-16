@@ -59,10 +59,13 @@ read_liberty {LIB}
 read_verilog {res}/netlist.v
 link_design {top}
 create_clock -name clk -period {PERIOD_NS} [get_ports clk]
+set_power_activity -global -activity 0.2 -duty 0.5
 puts "=== CRITICAL PATH (reg2reg max) @ {PERIOD_NS}ns ==="
 report_checks -path_delay max -fields {{slew cap fanout}} -digits 4 -group_count 2
 puts "=== WORST SLACK ==="
 report_worst_slack -max
+puts "=== POWER (activity 0.2) ==="
+report_power -digits 6
 exit
 """
     bash = (
@@ -95,8 +98,14 @@ def parse(cfg):
         achieved = PERIOD_NS - wns          # ns of the worst path
         if achieved > 0:
             fmax = 1000.0 / achieved        # MHz
+    # total power: last "Total" row of report_power, 4th col = total W
+    power_w = None
+    mp = re.search(r"^\s*Total\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)",
+                   sta_txt, re.M)
+    if mp:
+        power_w = float(mp.group(4))
     return {"cfg": cfg, "total_area_um2": total_area, "wns_ns": wns, "fmax_mhz": fmax,
-            "period_ns": PERIOD_NS}
+            "power_mw": (power_w*1000.0 if power_w is not None else None), "period_ns": PERIOD_NS}
 
 
 if __name__ == "__main__":

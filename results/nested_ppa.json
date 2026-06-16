@@ -1,9 +1,18 @@
 [
   {
+    "cfg": "cfg1_nocache",
+    "total_area_um2": 564069.7376,
+    "wns_ns": -53.54,
+    "fmax_mhz": 17.84439685938615,
+    "power_mw": 254.3243,
+    "period_ns": 2.5
+  },
+  {
     "cfg": "cfg2_pwc",
     "total_area_um2": 103446.7136,
     "wns_ns": -15.53,
     "fmax_mhz": 55.46311702717692,
+    "power_mw": 47.952149999999996,
     "period_ns": 2.5
   },
   {
@@ -11,6 +20,7 @@
     "total_area_um2": 151597.8944,
     "wns_ns": -14.16,
     "fmax_mhz": 60.024009603841534,
+    "power_mw": 73.98127,
     "period_ns": 2.5
   },
   {
@@ -18,6 +28,7 @@
     "total_area_um2": 165837.8016,
     "wns_ns": -15.85,
     "fmax_mhz": 54.49591280653951,
+    "power_mw": 80.12418000000001,
     "period_ns": 2.5
   },
   {
@@ -25,6 +36,7 @@
     "total_area_um2": 127397.184,
     "wns_ns": -16.78,
     "fmax_mhz": 51.86721991701245,
+    "power_mw": 60.66731,
     "period_ns": 2.5
   }
 ]

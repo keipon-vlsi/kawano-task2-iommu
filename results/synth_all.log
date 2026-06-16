@@ -1,1 +1,42 @@
 [cfg1_nocache] synthesizing (cfg1_top) ...
+[cfg2_pwc] synthesizing (cfg2_top) ...
+[cfg3_iotlb] synthesizing (cfg3_top) ...
+[cfg4_prefetch] synthesizing (cfg4_top) ...
+[cfg5_notag] synthesizing (cfg5_top) ...
+[
+  {
+    "cfg": "cfg1_nocache",
+    "total_area_um2": 564069.7376,
+    "wns_ns": -53.54,
+    "fmax_mhz": 17.84439685938615,
+    "period_ns": 2.5
+  },
+  {
+    "cfg": "cfg2_pwc",
+    "total_area_um2": 103446.7136,
+    "wns_ns": -15.53,
+    "fmax_mhz": 55.46311702717692,
+    "period_ns": 2.5
+  },
+  {
+    "cfg": "cfg3_iotlb",
+    "total_area_um2": 151597.8944,
+    "wns_ns": -14.16,
+    "fmax_mhz": 60.024009603841534,
+    "period_ns": 2.5
+  },
+  {
+    "cfg": "cfg4_prefetch",
+    "total_area_um2": 165837.8016,
+    "wns_ns": -15.85,
+    "fmax_mhz": 54.49591280653951,
+    "period_ns": 2.5
+  },
+  {
+    "cfg": "cfg5_notag",
+    "total_area_um2": 127397.184,
+    "wns_ns": -16.78,
+    "fmax_mhz": 51.86721991701245,
+    "period_ns": 2.5
+  }
+]
