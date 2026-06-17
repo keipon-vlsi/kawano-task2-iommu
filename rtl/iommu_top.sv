@@ -125,6 +125,21 @@ module iommu_top #(
   logic [PA_W-1:0]  wiaddr_q [NCTX];
   logic             wiburst_q[NCTX];
 
+  // PIPELINE_DEPTH>=2: servicer probe/commit pipeline. Cycle A probes the caches
+  // (IOTLB/PWC CAM compare on the demand VPN) and latches the result here; cycle B
+  // commits (resolve-on-hit or launch+precompute) from these registers. This takes the
+  // CAM-compare cone (and the die-crossing wire to the walker regs) OFF the launch arc
+  // bvpn_q -> CAM -> start -> {wbase_q,wiaddr_q} that limited Fmax after v4.
+  logic                  stg_v_q;       // a probe result is staged, awaiting commit
+  logic [BW-1:0]         stg_bsel_q;
+  logic [VPN_W-1:0]      stg_vpn_q;
+  logic [CTX_W-1:0]      stg_ctx_q;
+  logic [VPNLINE_W-1:0]  stg_line_q;
+  logic                  stg_iotlb_hit_q;
+  logic [CDW-1:0]        stg_iotlb_d_q;
+  logic [3:0]            stg_start_pc_q;
+  logic [PPN_W-1:0]      stg_start_base_q;
+
   // prefetch (next-line) region capture
   logic [PPN_W-1:0]  region_vml0_q;
   logic              region_valid_q;
@@ -321,21 +336,56 @@ module iommu_top #(
     else                             begin start_pc=4'd0; start_base=vs_root_spa_q; end
   end
 
+  // ---- effective servicer signals: probe-phase (PD<2) or staged probe result (PD>=2).
+  // For PD<2 these alias the combinational probe values exactly (no behavior change).
+  localparam int SVC_PIPE = (PIPELINE_DEPTH>=2) ? 1 : 0;
+  logic                 e_v;       logic [BW-1:0]   e_bsel;
+  logic [VPN_W-1:0]     e_vpn;     logic [CTX_W-1:0]e_ctx;
+  logic [VPNLINE_W-1:0] e_line;
+  logic                 e_iotlb_hit; logic [CDW-1:0] e_iotlb_d;
+  logic [3:0]           e_start_pc;  logic [PPN_W-1:0] e_start_base;
+  always_comb begin
+    if (SVC_PIPE) begin
+      e_v=stg_v_q; e_bsel=stg_bsel_q; e_vpn=stg_vpn_q; e_ctx=stg_ctx_q; e_line=stg_line_q;
+      e_iotlb_hit=stg_iotlb_hit_q; e_iotlb_d=stg_iotlb_d_q;
+      e_start_pc=stg_start_pc_q;   e_start_base=stg_start_base_q;
+    end else begin
+      e_v=bsel_v; e_bsel=bsel; e_vpn=bvpn_q[bsel]; e_ctx=bctx_q[bsel]; e_line=bsel_line;
+      e_iotlb_hit=iotlb_hit; e_iotlb_d=iotlb_d;
+      e_start_pc=start_pc;   e_start_base=start_base;
+    end
+  end
+  // commit-time busy re-check (against the CURRENT walker occupancy) + decision
+  logic e_busy;
+  always_comb begin
+    e_busy=1'b0;
+    for (int i=0;i<NCTX;i++)
+      if (ws_q[i]!=WFREE && wline_q[i]==e_line && wctx_q[i]==e_ctx) e_busy=1'b1;
+  end
+  logic e_svc_iotlb, e_svc_ride, e_svc_launch;
+  assign e_svc_iotlb  = e_v & (HAS_IOTLB!=0) & e_iotlb_hit;
+  assign e_svc_ride   = e_v & ~e_svc_iotlb & e_busy;
+  assign e_svc_launch = e_v & ~e_svc_iotlb & ~e_svc_ride & wfree_v;
+
   // next-line prefetch trigger (cfg4/cfg5)
   logic pf_free, pf_trig, pf_region_ok, pf_launch;  logic [VPNLINE_W-1:0] pf_line;
   generate
     if (PREFETCH_EN != 0) begin : g_pf
       assign pf_free      = wfree_v;     // the single shared walker is idle
-      assign pf_region_ok = region_valid_q & (region_id_q == bvpn_q[bsel][VPN_W-1:IDX_W]);
+      // piped: trigger off the COMMITTED demand service (e_*), one cycle later than probe
+      assign pf_region_ok = region_valid_q &
+        (region_id_q == (SVC_PIPE ? e_vpn[VPN_W-1:IDX_W] : bvpn_q[bsel][VPN_W-1:IDX_W]));
       prefetch_ctrl #(.VPNLINE_W(VPNLINE_W), .LINE_IN_L0(LINE_IN_L0), .LEAD(PREFETCH_LEAD)) u_pf (
-        .clk,.rst_n, .demand_service_v(bsel_v), .demand_line(bsel_line),
+        .clk,.rst_n,
+        .demand_service_v(SVC_PIPE ? (e_svc_iotlb | e_svc_launch) : bsel_v),
+        .demand_line(SVC_PIPE ? e_line : bsel_line),
         .region_valid(pf_region_ok), .pf_free(pf_free), .pf_trig(pf_trig), .pf_line(pf_line));
     end else begin : g_nopf
       assign pf_free=1'b0; assign pf_trig=1'b0; assign pf_line='0; assign pf_region_ok=1'b0;
     end
   endgenerate
   // prefetch may launch the shared walker only when a demand isn't taking it
-  assign pf_launch = (PREFETCH_EN!=0) & pf_trig & wfree_v & ~svc_launch;
+  assign pf_launch = (PREFETCH_EN!=0) & pf_trig & wfree_v & ~e_svc_launch;
 
   // ===================================================== consume next-state (comb)
   logic [3:0]        next_pc;   logic [PPN_W-1:0] next_base;
@@ -440,28 +490,54 @@ module iommu_top #(
       arb_rr_q<='0; brr_q<='0; walks_q<='0; resp_q<='0;
       walk_inc_q<=1'b0; pf_inc_q<=1'b0; resp_inc_q<=1'b0;
       region_vml0_q<='0; region_valid_q<=1'b0; region_id_q<='0;
+      stg_v_q<=1'b0; stg_bsel_q<='0; stg_vpn_q<='0; stg_ctx_q<='0; stg_line_q<='0;
+      stg_iotlb_hit_q<=1'b0; stg_iotlb_d_q<='0; stg_start_pc_q<=4'd0; stg_start_base_q<='0;
     end else begin
       // accept request
       if (req_valid & req_ready) begin
         bs_q[bfree_i]<=BNEED; bvpn_q[bfree_i]<=req_vpn; bctx_q[bfree_i]<={req_device_id,req_pasid};
       end
 
-      // buffer servicer
-      if (bsel_v) begin
-        if (svc_iotlb) begin
-          bs_q[bsel]<=BRES; bspa_q[bsel]<={ppn28s(iotlb_d),{OFFSET_W{1'b0}}};
-        end else if (svc_ride) begin
-          // wait for the in-flight / just-filled line
-        end else if (svc_launch) begin
-          ws_q[wfree_i]<=WRUN; wpc_q[wfree_i]<=start_pc; wbase_q[wfree_i]<=start_base;
-          wvpn_q[wfree_i]<=bvpn_q[bsel]; wctx_q[wfree_i]<=bctx_q[bsel];
-          wline_q[wfree_i]<=bsel_line;
-          if (PIPELINE_DEPTH>=2) begin   // precompute first read addr (start_pc in {0,4,8})
-            wiaddr_q[wfree_i] <= iaddr_of(start_pc, start_base, bvpn_q[bsel], '0, '0);
-            wiburst_q[wfree_i]<= (CO>1) && (start_pc==4'd11);
+      // buffer servicer.
+      if (SVC_PIPE) begin
+        // PD>=2: probe/commit pipeline. PROBE latches the cache-lookup result of the
+        // selected BNEED entry (puts the CAM-compare cone in this cycle, ending at the
+        // staging FFs). COMMIT (next cycle) resolves-on-hit or launches from the staged
+        // values, so the launch arc is reg->start mux->{wbase_q,wiaddr_q} (no CAM). The
+        // staging is 1-shot (cleared every commit), so a stale probe re-probes, no deadlock.
+        if (bsel_v & ~stg_v_q) begin                       // probe: latch lookup result
+          stg_v_q<=1'b1; stg_bsel_q<=bsel; stg_vpn_q<=bvpn_q[bsel]; stg_ctx_q<=bctx_q[bsel];
+          stg_line_q<=bsel_line; stg_iotlb_hit_q<=(HAS_IOTLB!=0)&iotlb_hit;
+          stg_iotlb_d_q<=iotlb_d; stg_start_pc_q<=start_pc; stg_start_base_q<=start_base;
+          brr_q <= (brr_q==BW'(BUFFER_DEPTH-1)) ? '0 : brr_q+BW'(1);
+        end
+        if (stg_v_q) begin                                 // commit: act on staged probe
+          stg_v_q<=1'b0;
+          if (e_svc_iotlb) begin
+            bs_q[e_bsel]<=BRES; bspa_q[e_bsel]<={ppn28s(e_iotlb_d),{OFFSET_W{1'b0}}};
+          end else if (e_svc_ride) begin
+            // line busy/in-flight: wait (re-probe next cycle)
+          end else if (e_svc_launch) begin
+            ws_q[wfree_i]<=WRUN; wpc_q[wfree_i]<=e_start_pc; wbase_q[wfree_i]<=e_start_base;
+            wvpn_q[wfree_i]<=e_vpn; wctx_q[wfree_i]<=e_ctx; wline_q[wfree_i]<=e_line;
+            wiaddr_q[wfree_i] <= iaddr_of(e_start_pc, e_start_base, e_vpn, '0, '0);
+            wiburst_q[wfree_i]<= (CO>1) && (e_start_pc==4'd11);
           end
         end
-        brr_q <= (brr_q==BW'(BUFFER_DEPTH-1)) ? '0 : brr_q+BW'(1);
+      end else begin
+        // PD<2: single-cycle combinational servicer
+        if (bsel_v) begin
+          if (svc_iotlb) begin
+            bs_q[bsel]<=BRES; bspa_q[bsel]<={ppn28s(iotlb_d),{OFFSET_W{1'b0}}};
+          end else if (svc_ride) begin
+            // wait for the in-flight / just-filled line
+          end else if (svc_launch) begin
+            ws_q[wfree_i]<=WRUN; wpc_q[wfree_i]<=start_pc; wbase_q[wfree_i]<=start_base;
+            wvpn_q[wfree_i]<=bvpn_q[bsel]; wctx_q[wfree_i]<=bctx_q[bsel];
+            wline_q[wfree_i]<=bsel_line;
+          end
+          brr_q <= (brr_q==BW'(BUFFER_DEPTH-1)) ? '0 : brr_q+BW'(1);
+        end
       end
 
       // prefetch launch: reuse the idle shared walker (only when demand isn't taking
@@ -477,7 +553,7 @@ module iommu_top #(
       end
       // register the increment enables; counters add from the registered versions so the
       // IOTLB-lookup-derived svc_launch no longer feeds the 32b counter carry chain.
-      walk_inc_q <= svc_launch; pf_inc_q <= pf_launch; resp_inc_q <= (rsel_v & rsp_ready);
+      walk_inc_q <= e_svc_launch; pf_inc_q <= pf_launch; resp_inc_q <= (rsel_v & rsp_ready);
       walks_q <= walks_q + 32'(walk_inc_q) + 32'(pf_inc_q);
 
       // consume a tagged return: advance state (or complete), update PWC fills are comb

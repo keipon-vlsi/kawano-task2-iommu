@@ -10,16 +10,19 @@ PPA を測る。sky130_fd_sc_hd, tt 1v80。
 
 ## PPA 履歴（全版サマリ）
 
-| 版 | 変更点 | cocotb cyc/trans | walks | area_synth µm² | Fmax_synth MHz | area_postopt µm² | **Fmax_postopt MHz** | Δ vs v0 | power@400 mW | 結果 |
-|---|---|---|---|---|---|---|---|---|---|---|
-| v0 | baseline（フラット 12 状態 pc） | 11.08 | 38 | 95,374 | 99.5 | 110,465 | **160.8** | — | 37.9 | 基準 |
-| v1 | G-walk factoring（{kind,lev,ret}） | 11.08 | 38 | 95,195 | 87.3 | 111,489 | **155.0** | −3.6% | 40.7 | 外れ・破棄 |
-| v2 | issue パイプ化（PIPELINE_DEPTH=2） | 11.20 | 38 | 93,705 | 87.3 | 108,537 | **158.2** | −1.6% | 40.4 | 外れ・破棄 |
-| v3 | 観測カウンタ脱結合 | 11.08 | 38 | 94,900 | 86.4 | 110,291 | **189.0** | **+17.5%** | 40.6 | 採用 |
-| v4 | 発行アドレス事前計算（wiaddr_q, PD=2） | 11.20 | 38 | 95,463 | 80.1 | 111,447 | **207.0** | **+28.7%** | 41.2 | 採用 |
+| 版 | 変更点 | cocotb cyc/trans | walks | area_synth µm² | Fmax_synth MHz | area_postopt µm² | **Fmax_postopt MHz** | Δ vs v0 | power@400 mW | energy/trans nJ | 結果 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| v0 | baseline（フラット 12 状態 pc） | 11.08 | 38 | 95,374 | 99.5 | 110,465 | **160.8** | — | 37.9 | 1.05 | 基準 |
+| v1 | G-walk factoring（{kind,lev,ret}） | 11.08 | 38 | 95,195 | 87.3 | 111,489 | **155.0** | −3.6% | 40.7 | 1.13 | 外れ・破棄 |
+| v2 | issue パイプ化（PIPELINE_DEPTH=2） | 11.20 | 38 | 93,705 | 87.3 | 108,537 | **158.2** | −1.6% | 40.4 | 1.13 | 外れ・破棄 |
+| v3 | 観測カウンタ脱結合 | 11.08 | 38 | 94,900 | 86.4 | 110,291 | **189.0** | **+17.5%** | 40.6 | 1.12 | 採用 |
+| v4 | 発行アドレス事前計算（wiaddr_q, PD=2） | 11.20 | 38 | 95,463 | 80.1 | 111,447 | **207.0** | **+28.7%** | 41.2 | 1.15 | 採用 |
+| v5 | servicer probe/commit パイプ化 | 11.10 | 38 | 99,911 | 115.2 | 115,611 | **241.5** | **+50.2%** | 43.5 | 1.21 | 採用 |
 
-注: v3/v4 は累積（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
+注: v3/v4/v5 は累積（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
 v3 は汎用改善として常時適用、v4 は cfg5 で PIPELINE_DEPTH=2。詳細な分析は各版の節を参照。
+energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-work 指標）。Fmax を稼ぐ過程で
+バッファ挿入により power がやや増え、energy/trans は 1.05→1.15 nJ と微増（性能と引き換えのコスト）。
 
 ## 版ごとの記録（時系列・分析付き）
 
@@ -64,6 +67,13 @@ v3 は汎用改善として常時適用、v4 は cfg5 で PIPELINE_DEPTH=2。詳
 - **新ボトルネック**（ネットリスト FF 確認）：startpoint=`bvpn_q[0]`（demand VPN）、endpoint=`wbase_q[0][14]`（slack −2.33）と `wiaddr_q[0][35]`（−2.32、ほぼ同値）。= **buffer-servicer の launch コーン**：`bvpn_q → IOTLB/PWC ルックアップ(CAM compare: nor4b→nand4→and4b) → start_base/svc 判定 → {wbase_q, wiaddr_q} へ書込み`。address-gen はもう載っておらず、**キャッシュ・ルックアップ→start アドレス計算→状態書込み**が律速。
 - **学び**：レジスタ化は「終点を FF にする」だけでは無意味で、**コーン自体を別サイクルに分割**して初めて効く。v4 は launch サイクルにコーンを移し、それでも全体が短くなった＝旧（issue+arbiter+IO）より新（consume/launch+precompute）の方が浅い。
 - **次の方針**：**v5 = buffer-servicer のパイプ化**。demand VPN のキャッシュ・ルックアップ結果（PWC/IOTLB probe）を 1 段レジスタ化してから start_base/start アドレスを計算・launch する（cycle A=probe、cycle B=launch+precompute）。今 wiaddr_q/wbase_q を律速している `bvpn_q → CAM → start` の段を割る。
+
+### v5 結果：**+16.7%（207.0→241.5 MHz）／v0 比 +50.2%** — CAM コーンの分離に成功
+- **実装**：servicer を probe / commit の 2 サイクルに分割（`SVC_PIPE=(PIPELINE_DEPTH>=2)`）。**probe**＝選択 BNEED エントリの IOTLB/PWC ルックアップ結果（hit / data / start_pc / start_base / vpn / ctx / line）を staging レジスタ（`stg_*_q`）に格納。**commit**（翌サイクル）＝staging から resolve-on-hit（bspa 書込み）または launch+precompute（wbase_q/wiaddr_q 書込み）。staging は 1-shot（commit 毎にクリア、未処理なら再 probe）でデッドロック無し。`e_*`/`e_svc_*` で PD<2 は従来コンビ servicer と完全等価（cfg1-4 不変、cocotb で確認: cfg4 11.08/walks38）。
+- **効果**：synth 見積 80.1→**115.2 MHz**、post-opt 207.0→**241.5 MHz**。cocotb 全 PASS、walks=38 不変、cyc/trans 11.20→**11.10**（probe/commit で +1 だが IOTLB-hit 解決経路の取り回しで実質同等、wire rate 16.4cyc に余裕）。area 111,447→115,611（staging FF ~160bit ぶん +4,164µm²）。
+- **新ボトルネック**（ネットリスト FF 確認）：startpoint=`bvpn_q[0]`（demand VPN）、endpoint=`stg_iotlb_d_q`（=`e_iotlb_d`、staged IOTLB data）。slack −1.64。= **IOTLB 16 エントリ CAM ルックアップそのもの**：`bvpn_q → IOTLB CAM 比較(16-way, tag=VPN27) → 優先+データ mux → stg_iotlb_d_q`。狙い通り CAM コンペアが probe サイクルに分離され、commit 側（reg→start→wbase/wiaddr）は非律速化。
+- **学び**：v3/v4 で「カウンタ」「発行アドレス」を順に除去し、v5 でついに**本丸の IOTLB CAM 比較**が露出。ここからは「キャッシュ・ルックアップ構造」そのものの最適化（CAM のパイプ化／連想度・タグ幅削減／set-assoc 化）が効く領域。
+- **次の方針 v6 候補**：(a) IOTLB CAM のパイプ化（tag 比較を 1 段、data mux を次段）、(b) IOTLB を full-assoc → set-assoc/直接マップ化して比較器段数を削減（coalesce 済みストリームなら命中率影響は小）、(c) タグ幅短縮。まず (a) か (b) を測る。
 
 ## v0 baseline（現状）の critical path
 融合 consume→次状態→発行コーン: walker 状態 FF → cache 最完全ヒット短絡 → `unique
