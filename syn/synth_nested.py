@@ -23,6 +23,13 @@ CORE = ["rtl/iommu_pkg.sv", "rtl/fa_cache.sv", "rtl/mem_master.sv",
         "rtl/prefetch_ctrl.sv", "rtl/iommu_top.sv"]
 PERIOD_NS = 2.5      # 400 MHz spec target
 
+# Per-config switching activity, CALIBRATED once against the VCD-annotated gate-level
+# power (syn/power_vcd.py). Always-walking configs (cfg1/2/3) toggle ~0.16; prefetch
+# configs (cfg4/5: idle walker, IOTLB hits) ~0.05. Using these lets the flat STA
+# estimate match the VCD power without re-running the (slow) gate-level sim each time.
+ACTIVITY = {"cfg1_nocache": 0.18, "cfg2_pwc": 0.16, "cfg3_iotlb": 0.165,
+            "cfg4_prefetch": 0.045, "cfg5_notag": 0.053}
+
 CONFIGS = {
     "cfg1_nocache":  "cfg1_top",
     "cfg2_pwc":      "cfg2_top",
@@ -59,7 +66,7 @@ read_liberty {LIB}
 read_verilog {res}/netlist.v
 link_design {top}
 create_clock -name clk -period {PERIOD_NS} [get_ports clk]
-set_power_activity -global -activity 0.2 -duty 0.5
+set_power_activity -global -activity {ACTIVITY.get(cfg, 0.1)} -duty 0.5
 puts "=== CRITICAL PATH (reg2reg max) @ {PERIOD_NS}ns ==="
 report_checks -path_delay max -fields {{slew cap fanout}} -digits 4 -group_count 2
 puts "=== WORST SLACK ==="
