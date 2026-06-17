@@ -19,8 +19,9 @@ PPA を測る。sky130_fd_sc_hd, tt 1v80。
 | v4 | 発行アドレス事前計算（wiaddr_q, PD=2） | 11.20 | 38 | 95,463 | 80.1 | 111,447 | **207.0** | **+28.7%** | 41.2 | 1.15 | 採用 |
 | v5 | servicer probe/commit パイプ化 | 11.10 | 38 | 99,911 | 115.2 | 115,611 | **241.5** | **+50.2%** | 43.5 | 1.21 | 採用 |
 | v6 | ライン枠 IOTLB（2枠×8, CAM→tag比較+offset index） | 11.10 | 38 | 81,049 | 121.4 | 92,845 | **234.7** | **+46.0%** | 35.8 | 0.99 | 採用 |
+| v7 | メモリ R チャネル 1 段レジスタ化 | 11.35 | 38 | 82,452 | 108.0 | 92,773 | **229.9** | +43.0% | 36.6 | 1.04 | 外れ・破棄 |
 
-注: v3/v4/v5/v6 は累積（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
+注: v3/v4/v5/v6 は累積（v7 は破棄＝v6 が現状）（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
 v3 は汎用改善として常時適用、v4 は cfg5 で PIPELINE_DEPTH=2。詳細な分析は各版の節を参照。
 energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-work 指標）。Fmax を稼ぐ過程で
 バッファ挿入により power がやや増え、energy/trans は 1.05→1.15 nJ と微増（性能と引き換えのコスト）。
@@ -82,6 +83,13 @@ energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-
 - **新ボトルネック**（ネットリスト FF 確認）：startpoint=`rdata[35]`（メモリ返却データ入力）、endpoint=`wbase_q[0]`(slack −1.76)/`wiaddr_q[0]`。= **consume 経路**：`rdata → ppn28(cons_pte) → next_base(unique case cons_pc) → wbase_q`、および wiaddr 事前計算。**IOTLB CAM はもはや律速ではない**（狙い達成）。律速はメモリ返却→次状態計算のコーン（startpoint が入力ポートなので input_delay も乗る）。
 - **学び**：ワークロード特化のライン枠化は **Fmax よりむしろ面積・電力で効く**（CAM の比較器/タグが支配的だった）。Fmax は v5 でリサイザが既に IOTLB パスを十分バッファ化していたため横ばいだが、**律速が consume 側に移った**＝IOTLB はもう問題でない。energy/trans が v0 以下に戻ったのも収穫。
 - **次の方針 v7 候補**：consume 経路の短縮。(a) mem_master の R データ入力を 1 段レジスタ化（input_delay 経路を内部 reg2reg 化＝実機の R チャネルレジスタスライス相当）、(b) consume の next-state 計算と wbase/wiaddr 事前計算を分割（launch 側 v4/v5 の consume 版）。まず (a)（軽量・実機妥当）を測る。
+
+### v7 結果：**改善せず（234.7→229.9, −2.0% ノイズ域）＋レイテンシ +0.25cyc** — 外れ、破棄。ただし真因が判明
+- **実装**：R チャネル（rvalid/rdata/rid/rlast）を `PIPELINE_DEPTH>=2` で 1 段レジスタ化し、consume を `r_*`（登録版）で駆動。input_delay 経路（startpoint=`rdata`）を内部 reg2reg 化する狙い。cocotb 全 PASS、walks=38 不変、cyc/trans 11.10→**11.35**（+1 cycle/return）。
+- **結果**：post-opt 234.7→**229.9 MHz**（ノイズ域の微減）、synth 見積は 121.4→**108.0** とむしろ悪化。**Fmax 利得ゼロ＋レイテンシ増**。
+- **真因（ネットリスト FF 確認）**：v7 後の startpoint=`stg_line_q`(=`e_line`)、endpoint=`wbase_q[0]`(slack −1.85)/`wiaddr_q[0]`。= **commit（launch）経路**：`stg_line_q → e_busy 比較(walker line と照合) → e_svc_launch → wbase_q / iaddr_of→wiaddr_q`。つまり R 登録で **consume 経路（rdata→wbase）は確かに非律速化**したが、**commit 経路が同水準（~230–235MHz）で待ち構えていた**ため総合 Fmax は不変。
+- **学び**：v6 後、**consume 経路と commit 経路が ~230–235MHz で“同着のクリティカル”**だった。片方（consume）だけ直しても、もう片方（commit）が即座に律速になり総合は動かない。**両方を同時に下げない限り Fmax は上がらない**。R 登録は単独では純コスト（レイテンシ増）なので破棄。
+- **次の方針 v8**：露出した **commit（launch）経路**を短縮。具体的には `e_busy`（staging line と walker wline の比較）と launch 時の `iaddr_of`（idx_of+pte_addr）を commit クリティカルから外す。案：(a) launch 用 start アドレスを probe サイクルで事前計算し staging に積む（`stg_start_addr_q`）＝commit は reg→reg 書込みのみ、(b) e_busy を probe 側で算出して staging 化。これで commit を下げ、必要なら consume 側（v7 の R 登録）と**セットで**再投入して両クリティカルを同時に解消する。
 
 ## v0 baseline（現状）の critical path
 融合 consume→次状態→発行コーン: walker 状態 FF → cache 最完全ヒット短絡 → `unique
