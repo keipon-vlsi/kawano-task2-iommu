@@ -29,7 +29,18 @@ PPA を測る。sky130_fd_sc_hd, tt 1v80。
   という **CAM 比較＋優先エンコーダ＋mux＋reduction の深い FF→FF コーン（~26 段, 6.18ns）**。
 - このパターン（並列 XNOR 比較 → and4 reduction → 優先/nand-nor 鎖 → mux）は **IOTLB 16-way ルックアップ**そのもの。経路は **buffer servicer の probe→resolve**（`bvpn_q[bsel] → IOTLB CAM 比較+優先+データ mux → bspa_q[bsel]`）で、walker FSM / 発行経路ではない。
 - **学び**：cfg5 の律速は walker の状態数でも consume→発行融合でもなく、**IOTLB（16 エントリ CAM）ルックアップの compare+priority+mux 深さ**。v1/v2 はどちらもこの経路に触れていなかった。
-- **対応方針**：v2 破棄（cfg5 を PD=1 に戻す。PIPELINE_DEPTH ガードは RTL に capability として残置）。次は **v3 = IOTLB ルックアップのパイプ化（hit/data をレジスタ化 = lookup-mode 1 サイクル）** で `bvpn→CAM→bspa` を段分割。
+- **対応方針**：v2 破棄。次は v3。ただしネットリストで実 FF を確認したら真因が想定と違った（下記）。
+
+| v3 観測カウンタ脱結合 | walks_q/resp_q の increment enable をレジスタ化 | 11.08, 38 | 94,900 | 86.4 MHz | 110,291 | **189.0 MHz** | 40.6 mW |
+
+### v3 結果：**+18%（160.8→189.0 MHz）大勝ち** — 真因は「観測カウンタ」だった
+- **ネットリストで critical path の実 FF を確認**したのが決定打：startpoint=`bvpn_q[0]`、**endpoint=`walks_q[31]`（walk 起動の 32bit 統計カウンタ MSB）**。真の律速は
+  `bvpn_q → IOTLB CAM 比較+MSHR/region 比較 → svc_launch → walks_q 32bit インクリメント桁上げ → walks_q[31]`。
+  v2 で見た後段の「nand4/nor4 鎖→xnor2」は **32bit カウンタの桁上げ連鎖**で、遅い svc_launch(IOTLB 由来) に gate されていた。**統計カウンタが Fmax を律速していた。**
+- **対策**：walks_q/resp_q は観測専用 → increment enable をレジスタ化（統計が 1 サイクル遅れるだけ、最終カウント不変）。IOTLB→カウンタ桁上げ経路が切れ **160.8→189.0 MHz**。cocotb 全 config の walks/resp 不変・全 PASS。汎用改善（RTL に常時適用）。
+- **学び**：v1/v2 が外れたのは、この**観測カウンタ経路が全てをマスク**していたから。**合成後ネットリストで実 FF を確認**するまで真因に届かなかった。
+- **新ボトルネック**：worst path は `_07668_(walker base/dgvpn) → idx + pte_addr → araddr[3]`（**発行アドレス生成**）、次点 `bspa_q → rsp_spa`（demand 応答）。= v2 が狙っていた発行経路が、カウンタ除去で**ようやく露出**。
+- **次の方針**：**v4 = 発行アドレス(araddr)のレジスタ化**（mem_master 入口で AR を 1 段レジスタ化）。v2 の意図を、真のボトルネックが見えた今こそ適用。
 
 ## v0 baseline（現状）の critical path
 融合 consume→次状態→発行コーン: walker 状態 FF → cache 最完全ヒット短絡 → `unique

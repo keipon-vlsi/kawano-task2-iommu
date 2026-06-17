@@ -126,6 +126,9 @@ module iommu_top #(
   logic [TAGW-1:0]  arb_rr_q;
   logic [BW-1:0]    brr_q;
   logic [31:0]      walks_q, resp_q;
+  // observability counters only -> keep their 32b carry chains OFF the critical path by
+  // incrementing from REGISTERED enables (the stats land 1 cycle later; final count same).
+  logic             walk_inc_q, pf_inc_q, resp_inc_q;
   assign walks_o=walks_q; assign resp_o=resp_q;
 
   // ---------------- helpers ----------------
@@ -413,6 +416,7 @@ module iommu_top #(
       end
       for (int i=0;i<BUFFER_DEPTH;i++) begin bs_q[i]<=BFREE; bvpn_q[i]<='0; bctx_q[i]<='0; bspa_q[i]<='0; end
       arb_rr_q<='0; brr_q<='0; walks_q<='0; resp_q<='0;
+      walk_inc_q<=1'b0; pf_inc_q<=1'b0; resp_inc_q<=1'b0;
       region_vml0_q<='0; region_valid_q<=1'b0; region_id_q<='0;
     end else begin
       // accept request
@@ -441,7 +445,10 @@ module iommu_top #(
         wvpn_q[wfree_i]<={pf_line, {LINE_LSB{1'b0}}}; wctx_q[wfree_i]<=bctx_q[bsel];
         wline_q[wfree_i]<=pf_line;
       end
-      walks_q <= walks_q + 32'(svc_launch) + 32'(pf_launch);
+      // register the increment enables; counters add from the registered versions so the
+      // IOTLB-lookup-derived svc_launch no longer feeds the 32b counter carry chain.
+      walk_inc_q <= svc_launch; pf_inc_q <= pf_launch; resp_inc_q <= (rsel_v & rsp_ready);
+      walks_q <= walks_q + 32'(walk_inc_q) + 32'(pf_inc_q);
 
       // consume a tagged return: advance state (or complete), update PWC fills are comb
       if (do_consume) begin
@@ -493,7 +500,8 @@ module iommu_top #(
       end
 
       // response handshake
-      if (rsel_v & rsp_ready) begin bs_q[rsel]<=BFREE; resp_q<=resp_q+32'd1; end
+      if (rsel_v & rsp_ready) bs_q[rsel]<=BFREE;   // functional free (combinational decide)
+      resp_q <= resp_q + 32'(resp_inc_q);          // stats: registered enable, off crit path
     end
   end
 endmodule
