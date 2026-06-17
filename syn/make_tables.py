@@ -80,18 +80,29 @@ def write_csv(path, header, rows):
     with open(ROOT/"results"/path,"w",newline="") as f:
         w=csv.writer(f); w.writerow(header); w.writerows(rows)
 
+# post-opt (constraints+sizing P&R) results, keyed by short cfg name
+po = {}
+pof = ROOT/"results/fmax_opt/postopt.json"
+if pof.exists():
+    po = {r["cfg"].split("_")[0]: r for r in json.loads(pof.read_text())}
+def poget(cn,k):
+    v = po.get(cn,{}).get(k); return v
+
 # 1) PPA compare
 ppa_hdr=["metric"]+NAMES
 ppa_rows=[]
 def pget(cn,k,d=0.0): return ppa.get(cn,{}).get(k,d)
 def pvget(cn,k,d=None):
     r=pv.get(cn,{}); return r.get(k,d)
-ppa_rows.append(["area_um2"]+[f"{area_total[c]:,.0f}" for c in NAMES])
-ppa_rows.append(["Fmax_MHz"]+[f"{pget(c,'fmax_mhz'):.1f}" for c in NAMES])
-ppa_rows.append(["worst_slack_ns"]+[f"{pget(c,'wns_ns'):.2f}" for c in NAMES])
-ppa_rows.append(["power_est_mW@400(calib)"]+[f"{pget(c,'power_mw'):.1f}" for c in NAMES])
-ppa_rows.append(["power_VCD_mW(28b ref)"]+[("%.1f"%pvget(c,'total_mW') if pvget(c,'total_mW') is not None else "n/a") for c in NAMES])
-print(md_table("PPA 比較 (sky130_fd_sc_hd tt 1v80, 2.5ns target)", ppa_hdr, ppa_rows))
+def fmt(v,f="{:.1f}"): return f.format(v) if v is not None else "n/a"
+ppa_rows.append(["area_synth_um2"]+[f"{area_total[c]:,.0f}" for c in NAMES])
+ppa_rows.append(["area_postopt_um2"]+[fmt(poget(c,'area_um2'),"{:,.0f}") for c in NAMES])
+ppa_rows.append(["Fmax_synth_MHz"]+[f"{pget(c,'fmax_mhz'):.1f}" for c in NAMES])
+ppa_rows.append(["Fmax_postopt_MHz"]+[fmt(poget(c,'fmax_mhz')) for c in NAMES])
+ppa_rows.append(["power_synth_mW@400"]+[f"{pget(c,'power_mw'):.1f}" for c in NAMES])
+ppa_rows.append(["power_postopt_mW@400"]+[fmt(poget(c,'power_mW')) for c in NAMES])
+print(md_table("PPA 比較 (sky130_fd_sc_hd tt 1v80, 2.5ns target; synth=ideal-wireload "
+               "estimate, postopt=P&R+resize 制約サイジング後)", ppa_hdr, ppa_rows))
 write_csv("ppa_compare.csv", ppa_hdr, ppa_rows)
 
 # 2) area breakdown

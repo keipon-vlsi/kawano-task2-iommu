@@ -1,0 +1,155 @@
+[
+  {
+    "run": "k0_postplace",
+    "period_ns": 2.5,
+    "pre_slack_ns": -16.89,
+    "post_slack_ns": -16.81,
+    "fmax_mhz": 51.8,
+    "path_max_fanout": 50,
+    "path_max_slew_ns": 0.2443,
+    "area_um2": 95374.0,
+    "knobs": {
+      "SDC": 0,
+      "RDES": 0,
+      "RTIM": 0,
+      "MAXTRANS": 0.75,
+      "MAXFO": 16
+    }
+  },
+  {
+    "run": "k1_repair_drc",
+    "period_ns": 2.5,
+    "pre_slack_ns": -16.89,
+    "post_slack_ns": -9.35,
+    "fmax_mhz": 84.4,
+    "path_max_fanout": 16,
+    "path_max_slew_ns": 0.0882,
+    "area_um2": 102000.0,
+    "knobs": {
+      "SDC": 0,
+      "RDES": 1,
+      "RTIM": 0,
+      "MAXTRANS": 0.75,
+      "MAXFO": 16
+    }
+  },
+  {
+    "run": "k2_repair_tim",
+    "period_ns": 2.5,
+    "pre_slack_ns": -16.89,
+    "post_slack_ns": -3.34,
+    "fmax_mhz": 171.2,
+    "path_max_fanout": 5,
+    "path_max_slew_ns": 0.0407,
+    "area_um2": 104279.0,
+    "knobs": {
+      "SDC": 0,
+      "RDES": 1,
+      "RTIM": 1,
+      "MAXTRANS": 0.75,
+      "MAXFO": 16
+    }
+  },
+  {
+    "run": "k3_sdc_tight",
+    "period_ns": 2.5,
+    "pre_slack_ns": -38.63,
+    "post_slack_ns": -3.72,
+    "fmax_mhz": 160.8,
+    "path_max_fanout": 9,
+    "path_max_slew_ns": 0.0526,
+    "area_um2": 110465.0,
+    "knobs": {
+      "SDC": 1,
+      "RDES": 1,
+      "RTIM": 1,
+      "MAXTRANS": 0.5,
+      "MAXFO": 12
+    }
+  },
+  {
+    "run": "p5_0",
+    "period_ns": 5.0,
+    "pre_slack_ns": -36.88,
+    "post_slack_ns": -1.81,
+    "fmax_mhz": 146.8,
+    "path_max_fanout": 8,
+    "path_max_slew_ns": 0.0463,
+    "area_um2": 111272.0,
+    "knobs": {
+      "SDC": 1,
+      "RDES": 1,
+      "RTIM": 1,
+      "MAXTRANS": 0.5,
+      "MAXFO": 12
+    }
+  },
+  {
+    "run": "p4_0",
+    "period_ns": 4.0,
+    "pre_slack_ns": -37.58,
+    "post_slack_ns": -2.25,
+    "fmax_mhz": 160.0,
+    "path_max_fanout": 7,
+    "path_max_slew_ns": 0.1066,
+    "area_um2": 111899.0,
+    "knobs": {
+      "SDC": 1,
+      "RDES": 1,
+      "RTIM": 1,
+      "MAXTRANS": 0.5,
+      "MAXFO": 12
+    }
+  },
+  {
+    "run": "p3_5",
+    "period_ns": 3.5,
+    "pre_slack_ns": -37.93,
+    "post_slack_ns": -2.72,
+    "fmax_mhz": 160.8,
+    "path_max_fanout": 7,
+    "path_max_slew_ns": 0.0463,
+    "area_um2": 110655.0,
+    "knobs": {
+      "SDC": 1,
+      "RDES": 1,
+      "RTIM": 1,
+      "MAXTRANS": 0.5,
+      "MAXFO": 12
+    }
+  },
+  {
+    "run": "p3_0",
+    "period_ns": 3.0,
+    "pre_slack_ns": -38.28,
+    "post_slack_ns": -3.23,
+    "fmax_mhz": 160.5,
+    "path_max_fanout": 9,
+    "path_max_slew_ns": 0.0526,
+    "area_um2": 110975.0,
+    "knobs": {
+      "SDC": 1,
+      "RDES": 1,
+      "RTIM": 1,
+      "MAXTRANS": 0.5,
+      "MAXFO": 12
+    }
+  },
+  {
+    "run": "p2_5",
+    "period_ns": 2.5,
+    "pre_slack_ns": -38.63,
+    "post_slack_ns": -3.72,
+    "fmax_mhz": 160.8,
+    "path_max_fanout": 9,
+    "path_max_slew_ns": 0.0526,
+    "area_um2": 110465.0,
+    "knobs": {
+      "SDC": 1,
+      "RDES": 1,
+      "RTIM": 1,
+      "MAXTRANS": 0.5,
+      "MAXFO": 12
+    }
+  }
+]

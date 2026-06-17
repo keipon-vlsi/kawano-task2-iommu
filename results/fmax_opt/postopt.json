@@ -1,0 +1,42 @@
+[
+  {
+    "cfg": "cfg2_pwc",
+    "post_slack_ns": -6.99,
+    "fmax_mhz": 105.4,
+    "area_um2": 126420.0,
+    "util_pct": 41,
+    "seq_mW": 39.420280000000005,
+    "comb_mW": 19.702569999999998,
+    "power_mW": 59.122969999999995
+  },
+  {
+    "cfg": "cfg3_iotlb",
+    "post_slack_ns": -7.21,
+    "fmax_mhz": 103.0,
+    "area_um2": 186325.0,
+    "util_pct": 41,
+    "seq_mW": 63.96729,
+    "comb_mW": 27.77653,
+    "power_mW": 91.74338999999999
+  },
+  {
+    "cfg": "cfg4_prefetch",
+    "post_slack_ns": -4.26,
+    "fmax_mhz": 147.9,
+    "area_um2": 164742.0,
+    "util_pct": 41,
+    "seq_mW": 52.01261,
+    "comb_mW": 6.6638649999999995,
+    "power_mW": 58.67681
+  },
+  {
+    "cfg": "cfg5_notag",
+    "post_slack_ns": -3.72,
+    "fmax_mhz": 160.8,
+    "area_um2": 110465.0,
+    "util_pct": 41,
+    "seq_mW": 35.66749,
+    "comb_mW": 4.916131,
+    "power_mW": 40.58346
+  }
+]
