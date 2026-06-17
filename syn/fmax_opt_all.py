@@ -68,7 +68,7 @@ if __name__ == "__main__":
     (OUT / "postopt.json").write_text(json.dumps(res, indent=2))
     print(f"\n{'cfg':<15}{'Fmax':>7}{'area_um2':>11}{'power_mW':>9}{'seq':>8}{'comb':>7}")
     for r in res:
-        print(f"{r['cfg']:<15}{str(r['fmax_mhz']):>7}{str(round(r['area_um2']) if r['area_um2'] else None):>11}"
-              f"{str(round(r['power_mW'],1) if r['power_mW'] else None):>9}"
-              f"{str(round(r['seq_mW'],1) if r['seq_mW'] else None):>8}"
-              f"{str(round(r['comb_mW'],1) if r['comb_mW'] else None):>7}")
+        g = lambda k: (round(r[k], 1) if r.get(k) is not None else None)
+        print(f"{r['cfg']:<15}{str(r.get('fmax_mhz')):>7}"
+              f"{str(round(r['area_um2']) if r.get('area_um2') else None):>11}"
+              f"{str(g('power_mW')):>9}{str(g('seq_mW')):>8}{str(g('comb_mW')):>7}")

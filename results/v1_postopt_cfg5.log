@@ -1,0 +1,8 @@
+[cfg5_notag] constrained P&R + resize ...
+
+cfg               Fmax   area_um2 power_mW     seq   comb
+Traceback (most recent call last):
+  File "/space/kawano-task2-iommu/syn/fmax_opt_all.py", line 73, in <module>
+    f"{str(round(r['seq_mW'],1) if r['seq_mW'] else None):>8}"
+                                   ~^^^^^^^^^^
+KeyError: 'seq_mW'
