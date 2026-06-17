@@ -124,6 +124,11 @@ module iommu_top #(
   // issue->AR critical path (the bottleneck exposed after v3).
   logic [PA_W-1:0]  wiaddr_q [NCTX];
   logic             wiburst_q[NCTX];
+  // v10: address-ready bit. wiaddr_q is computed in a dedicated addr-gen stage from the
+  // REGISTERED walker state (one cycle after a consume updates wpc/wbase/wdgvpn), so the
+  // consume cone is just next-state (no iaddr_of). Launch precomputes the addr at probe,
+  // so it is ready immediately. The issue waits for wia_rdy_q. PD>=2 only.
+  logic             wia_rdy_q[NCTX];
 
   // PIPELINE_DEPTH>=2: servicer probe/commit pipeline. Cycle A probes the caches
   // (IOTLB/PWC CAM compare on the demand VPN) and latches the result here; cycle B
@@ -475,7 +480,8 @@ module iommu_top #(
         pc=start_pc; base=start_base; vp=bvpn_q[bsel]; sel=1'b1;
       end else if (ws_q[w]==WRUN) begin
         if (PIPELINE_DEPTH>=2) begin
-          iwant[w]=1'b1; iaddr[w]=wiaddr_q[w]; iburst[w]=wiburst_q[w];  // precomputed
+          // issue only once the addr-gen stage has produced wiaddr_q for the current wpc
+          if (wia_rdy_q[w]) begin iwant[w]=1'b1; iaddr[w]=wiaddr_q[w]; iburst[w]=wiburst_q[w]; end
         end else begin
           pc=wpc_q[w]; base=wbase_q[w]; vp=wvpn_q[w]; gp=wgpn_q[w]; dgv=wdgvpn_q[w]; sel=1'b1;
         end
@@ -521,7 +527,7 @@ module iommu_top #(
       for (int i=0;i<NCTX;i++) begin
         ws_q[i]<=WFREE; wpc_q[i]<=4'd0; wvpn_q[i]<='0; wctx_q[i]<='0; wbase_q[i]<='0;
         wgpn_q[i]<='0; wdgvpn_q[i]<='0; wline_q[i]<='0; wbeat_q[i]<=4'd0;
-        wiaddr_q[i]<='0; wiburst_q[i]<=1'b0;
+        wiaddr_q[i]<='0; wiburst_q[i]<=1'b0; wia_rdy_q[i]<=1'b0;
       end
       for (int i=0;i<BUFFER_DEPTH;i++) begin bs_q[i]<=BFREE; bvpn_q[i]<='0; bctx_q[i]<='0; bspa_q[i]<='0; end
       arb_rr_q<='0; brr_q<='0; walks_q<='0; resp_q<='0;
@@ -580,6 +586,7 @@ module iommu_top #(
             wvpn_q[wfree_i]<=e_vpn; wctx_q[wfree_i]<=e_ctx; wline_q[wfree_i]<=e_line;
             wiaddr_q[wfree_i] <= stg_start_addr_q;
             wiburst_q[wfree_i]<= stg_start_burst_q;
+            wia_rdy_q[wfree_i]<= 1'b1;                      // addr precomputed at probe
           end
           // else (ride / no free walker): wait, re-probe next cycle
         end
@@ -607,12 +614,27 @@ module iommu_top #(
           wvpn_q[wfree_i]<={stg_pf_line_q, {LINE_LSB{1'b0}}}; wctx_q[wfree_i]<=stg_ctx_q;
           wline_q[wfree_i]<=stg_pf_line_q;
           wiaddr_q[wfree_i]<=stg_pf_addr_q; wiburst_q[wfree_i]<=1'b0;
+          wia_rdy_q[wfree_i]<=1'b1;      // addr precomputed at probe
           pf_last_q <= stg_pf_line_q;   // dedup
         end else begin                  // PD<2: combinational prefetch_ctrl path
           ws_q[wfree_i]<=WRUN; wpc_q[wfree_i]<=4'd8; wbase_q[wfree_i]<=region_vml0_q;
           wvpn_q[wfree_i]<={pf_line, {LINE_LSB{1'b0}}}; wctx_q[wfree_i]<=bctx_q[bsel];
           wline_q[wfree_i]<=pf_line;
         end
+      end
+
+      // v10 addr-gen stage: for a WRUN walker whose address isn't ready (just set by a
+      // consume), compute the next read address from the REGISTERED walker state. This
+      // moves idx_of+pte_addr out of the consume next-state cone into its own cycle. The
+      // walker just-consumed this cycle is still WWAIT here, so it is picked up next cycle;
+      // launch/prefetch precompute the addr (wia_rdy=1), so only mid-walk steps pay +1cyc.
+      if (PIPELINE_DEPTH>=2) begin
+        for (int w=0;w<NCTX;w++)
+          if (ws_q[w]==WRUN && !wia_rdy_q[w]) begin
+            wiaddr_q[w]  <= iaddr_of(wpc_q[w], wbase_q[w], wvpn_q[w], wgpn_q[w], wdgvpn_q[w]);
+            wiburst_q[w] <= (CO>1) && (wpc_q[w]==4'd11);
+            wia_rdy_q[w] <= 1'b1;
+          end
       end
       // register the increment enables; counters add from the registered versions so the
       // IOTLB-lookup-derived svc_launch no longer feeds the 32b counter carry chain.
@@ -625,10 +647,10 @@ module iommu_top #(
         wbase_q[cons_w] <= next_base;
         wgpn_q[cons_w]  <= next_gpn;
         wdgvpn_q[cons_w]<= next_dg;
-        if (PIPELINE_DEPTH>=2 && next_pc!=PC_DONE) begin   // precompute next read addr
-          wiaddr_q[cons_w] <= iaddr_of(next_pc, next_base, cons_vpn, next_gpn, next_dg);
-          wiburst_q[cons_w]<= (CO>1) && (next_pc==4'd11);
-        end
+        // v10: do NOT compute the address here (that fused next-state + iaddr_of into one
+        // cone). Mark it stale; the addr-gen stage computes it next cycle from the
+        // registered walker state. The WRUN issue waits for wia_rdy_q.
+        if (PIPELINE_DEPTH>=2 && next_pc!=PC_DONE) wia_rdy_q[cons_w] <= 1'b0;
         if (next_pc==PC_DONE) begin
           // CO==1 leaf (single beat): resolve the demand entry directly. (CO>1 leaf
           // completes via the burst path below, never here.)

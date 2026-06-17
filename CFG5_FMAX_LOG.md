@@ -21,9 +21,10 @@ PPA を測る。sky130_fd_sc_hd, tt 1v80。
 | v6 | ライン枠 IOTLB（2枠×8, CAM→tag比較+offset index） | 11.10 | 38 | 81,049 | 121.4 | 92,845 | **234.7** | **+46.0%** | 35.8 | 0.99 | 採用 |
 | v7 | メモリ R チャネル 1 段レジスタ化 | 11.35 | 38 | 82,452 | 108.0 | 92,773 | **229.9** | +43.0% | 36.6 | 1.04 | 外れ・破棄 |
 | v8 | (a)launch addr事前計算+(b)e_busy除外+R登録（commit/consume 同時短縮） | 11.35 | 38 | 82,615 | 118.1 | 93,376 | **213.7** | +32.9% | 36.8 | 1.04 | 外れ・破棄（回帰） |
-| v9 | v8 + (c)prefetch line/addr の probe 事前計算（3経路同時解消） | 11.35 | 38 | 83,986 | 94.1 | 98,517 | **261.8** | **+62.8%** | 38.1 | 1.08 | **採用（ベスト）** |
+| v9 | v8 + (c)prefetch line/addr の probe 事前計算（3経路同時解消） | 11.35 | 38 | 83,986 | 94.1 | 98,517 | **261.8** | +62.8% | 38.1 | 1.08 | 採用 |
+| v10 | consume の addr-gen 段分割（wia_rdy_q, iaddr_of を別サイクル化） | 11.47 | 38 | 84,222 | 74.8 | 96,616 | **287.4** | **+78.7%** | 38.0 | 1.09 | **採用（ベスト）** |
 
-注: v3/v4/v5/v6/v9 は採用。v9 が現状ベスト（261.8MHz）。v6 は rollback タグ `cfg5-v6-best`。v7/v8 は破棄。（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
+注: v3/v4/v5/v6/v9/v10 は採用。v10 が現状ベスト（287.4MHz）。rollback タグ `cfg5-v6-best`/`cfg5-v9-best`/`cfg5-v10-best`。v7/v8 は破棄。（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
 v3 は汎用改善として常時適用、v4 は cfg5 で PIPELINE_DEPTH=2。詳細な分析は各版の節を参照。
 energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-work 指標）。Fmax を稼ぐ過程で
 バッファ挿入により power がやや増え、energy/trans は 1.05→1.15 nJ と微増（性能と引き換えのコスト）。
@@ -107,6 +108,14 @@ energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-
 - **学び（核心）**：v7（consume 単独）= null、v8（commit+consume 2 本）= 第 3 経路露出で回帰、**v9（demand-commit + consume + prefetch-launch の 3 本同時）= 突破**。**co-critical なパス群は「全部まとめて下げる」必要がある**ことを実証。1〜2 本ずつでは最長経路が残って効かない（むしろ表面化で悪化し得る）。
 - **新ボトルネック**（ネットリスト FF 確認）：startpoint=`rdata_q`（登録 R データ）、endpoint=`wiaddr_q[0]`（slack −1.32）。= **consume 側のアドレス事前計算**：`rdata_q → gpn27/next-state(next_dg/next_base) → iaddr_of → wiaddr_q`。3 本を潰した結果、**第 4 の経路（consume の iaddr_of 事前計算）**が露出。これは v4 の consume 版を「もう一段 probe 化」する話で、さらに逓減。
 - **判断**：v9 を**新ベストとして採用**（261.8MHz, area 98,517, power 38.1, energy 1.08）。rollback タグ `cfg5-v6-best` は維持。これ以上は consume 側 iaddr_of の段分割（v10）になるが、+62.8% 達成済みで費用対効果は更に低下。
+
+### v10 結果：**+9.8%（261.8→287.4 MHz）／v0 比 +78.7%** — consume addr-gen 段分割で突破、現状ベスト
+- **実装**：consume の「next-state + iaddr_of」融合を分割。consume では walker 状態（wpc/wbase/wgpn/wdgvpn）だけ更新し `wia_rdy_q[w]<=0`（アドレス未生成）。**専用 addr-gen 段**が registered walker 状態から `iaddr_of` を計算して `wiaddr_q[w]` に格納し `wia_rdy_q[w]<=1`。発行は `wia_rdy_q` を待つ。launch/prefetch は probe で事前計算済み（wia_rdy=1）なので**初回発行は遅延なし**、walk 中間ステップだけ +1cyc。PD≥2 専用。
+- **効果**：post-opt 261.8→**287.4 MHz**。cocotb 全 PASS、walks=38 不変、cyc/trans 11.35→11.47（walk ステップの +1cyc、wire rate 16.4 に余裕）。area 98,517→96,616（むしろ微減：consume の iaddr_of が addr-gen に集約され重複が消えた）、power 38.0mW、energy 1.09nJ。
+- **新ボトルネック**（ネットリスト FF 確認）：startpoint=`walks_o[0]`、endpoint=`walks_o[31]`（slack −0.98）。= **32bit 観測カウンタ `walks_q` の桁上げ連鎖**が再浮上。ただし v3 と違い enable は既にレジスタ化済みで、今度は**純粋に 32bit リップル加算そのもの**（`walks_q + walk_inc_q + pf_inc_q`、最大 +2/cyc）。翻訳データパスは全てこのデバッグカウンタより速くなった。
+- **学び**：v9 で第 4 経路（consume addr）を割ったら、ついに**律速が「観測専用カウンタ」に戻った**＝**実機能パスの最適化はほぼ底**。ここから先は「カウンタを timing から外す」話（機能ではなく計装の問題）。
+- **判断**：v10 を**新ベスト採用**（287.4MHz, area 96,616, power 38.0, energy 1.09）。rollback タグ `cfg5-v9-best`/`cfg5-v10-best` 維持。
+- **次の方針（任意）v11**：観測カウンタ `walks_q`/`resp_q` の桁上げを timing から外す。(a) ビット幅縮小（32→16bit で連鎖半減）、(b) 下位/上位分割＋registered 桁上げ（最終値不変）、(c) SDC で `set_false_path`/`set_multicycle_path`（観測専用・ソフトが非同期サンプルするので妥当）。**実機能の最適化はここで打ち止め**＝以降は計装の扱いの問題。
 
 ## v0 baseline（現状）の critical path
 融合 consume→次状態→発行コーン: walker 状態 FF → cache 最完全ヒット短絡 → `unique

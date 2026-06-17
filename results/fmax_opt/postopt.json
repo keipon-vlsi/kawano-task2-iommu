@@ -39,12 +39,12 @@
   },
   {
     "cfg": "cfg5_notag",
-    "post_slack_ns": -1.32,
-    "fmax_mhz": 261.8,
-    "area_um2": 98517.0,
-    "util_pct": 41,
-    "seq_mW": 33.93102,
-    "comb_mW": 4.1887039999999995,
-    "power_mW": 38.11968
+    "post_slack_ns": -0.98,
+    "fmax_mhz": 287.4,
+    "area_um2": 96616.0,
+    "util_pct": 40,
+    "seq_mW": 34.06774,
+    "comb_mW": 3.921686,
+    "power_mW": 37.98949
   }
 ]
