@@ -1,0 +1,20 @@
+OpenSTA 3.1.0 76c4d6df35 Copyright (c) 2026, Parallax Software, Inc.
+License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
+
+This is free software, and you are free to change and redistribute it
+under certain conditions; type `show_copying' for details. 
+This program comes with ABSOLUTELY NO WARRANTY; for details type `show_warranty'.
+=== WORST SLACK ===
+worst slack max -5.18
+=== POWER ===
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           4.284674e-02 5.670240e-04 1.232857e-06 4.341500e-02  86.5%
+Combinational        5.780614e-03 1.003323e-03 3.486581e-07 6.784285e-03  13.5%
+Clock                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                4.862741e-02 1.570387e-03 1.581540e-06 5.019939e-02 100.0%
+                            96.9%         3.1%         0.0%

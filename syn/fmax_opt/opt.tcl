@@ -22,7 +22,7 @@ set DOUT [get_ports {req_ready rsp_valid rsp_vpn rsp_spa arvalid araddr arid arl
 
 # ---- SDC: driving cell, loads, IO delays (only affects IO paths, not reg2reg) ----
 if {[ev SDC 0]} {
-  set_driving_cell -lib_cell sky130_fd_sc_hd__buf_2 $DIN
+  set_driving_cell -lib_cell [ev DRVCELL sky130_fd_sc_hd__buf_2] $DIN
   set_load 0.02 $DOUT
   set_input_delay  [expr {0.3*$P}] -clock clk $DIN
   set_output_delay [expr {0.3*$P}] -clock clk $DOUT

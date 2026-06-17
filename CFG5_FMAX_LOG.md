@@ -25,9 +25,11 @@ PPA を測る。sky130_fd_sc_hd, tt 1v80。
 | v10 | consume の addr-gen 段分割（wia_rdy_q, iaddr_of を別サイクル化） | 11.47 | 38 | 84,222 | 74.8 | 96,616 | **287.4** | +78.7% | 38.0 | 1.09 | 採用 |
 | v11 | 観測カウンタ walks_q/resp_q を合成から除外（`ifndef SYNTHESIS`） | 11.47 | 38† | 81,608 | 71.2 | 94,091 | **266.7** | +65.9% | 36.7 | 1.05 | **採用（最終・機能クリーン）** |
 
+| v12 | **ライブラリ hd→hs（高速セル）**で再合成・配置最適化（RTL は v11 と同一） | 11.47 | 38† | 115,673 | 130.2 | 131,926 | **347.2** | **+115.9%** | 50.5 | 1.45 | 採用（hs 版） |
+
 †walks=38 はシミュレーション値（カウンタは sim のみ存在）。合成では walks_o/resp_o は 0 固定。
-注: v3/v4/v5/v6/v9/v10/v11 は採用。**v11 が最終の機能クリーン版**（デバッグカウンタを silicon から除去）。
-v10 は計測 Fmax 最高だが律速は除去予定のデバッグカウンタ。rollback タグ `cfg5-v6/v9/v10-best`。v7/v8 破棄。（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
+注: v3/v4/v5/v6/v9/v10/v11 は採用（hd）。**v11 が hd の最終機能クリーン版**。**v12 は同一 RTL を高速ライブラリ hs で合成**（spec 400MHz の 87%）。
+Δ vs v0 は同一 hd baseline(160.8) 比。v10 は計測 Fmax 最高だが律速は除去予定のデバッグカウンタ。rollback タグ `cfg5-v6/v9/v10-best`/`cfg5-v11-clean`。v7/v8 破棄。（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
 v3 は汎用改善として常時適用、v4 は cfg5 で PIPELINE_DEPTH=2。詳細な分析は各版の節を参照。
 energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-work 指標）。Fmax を稼ぐ過程で
 バッファ挿入により power がやや増え、energy/trans は 1.05→1.15 nJ と微増（性能と引き換えのコスト）。
@@ -128,6 +130,21 @@ energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-
 - **学び**：v10 の 287.4 は「除去予定のデバッグカウンタが timed path」だった＝製品では出ない数字。**v11（カウンタ除去）が実機能設計の正味**で、real datapath Fmax は ~267–287MHz クラス。観測カウンタは sim 専用に確定（機能・検証の両立）。
 - **判断**：**v11 を最終の機能クリーン版として採用**。計測 Fmax 最高は v10 だが、それはデバッグ計装由来なので「最終設計」は v11。tag `cfg5-v10-best`（カウンタ込み計測上限）と `cfg5-v9/v6-best` は rollback 用に維持。
 - 注：`-D SYNTHESIS` は全 config に効く（cfg1-4 も合成時カウンタ除去）。canonical な cfg1-4 の表を更新するには再合成が必要（別途）。
+
+### v12 結果：高速ライブラリ sky130_fd_sc_hs で **266.7→347.2 MHz（+30%、spec 400MHz の 87%）** — RTL 不変、面積/電力と引き換え
+- **内容**：v11 と**同一 RTL**（カウンタ除外含む）を、**high-density `sky130_fd_sc_hd` → high-speed `sky130_fd_sc_hs`** に差し替えて合成（yosys, `sv2v -D SYNTHESIS`）＋ 同一 opt.tcl で配置最適化。hs は速いが大きい/漏れるセル。結果は `cfg5_notag/results_hs/`（hd の v11 結果 `results/` は非破壊）。flow 変更点：`opt.tcl` の driving cell を `DRVCELL` env でパラメタ化（hd 固定 `buf_2` をやめ、hs では `sky130_fd_sc_hs__buf_2`）。site は hs=`unit`（hd=`unithd`）。
+- **PPA（cfg5, post-opt）**：
+
+  | | v11 (hd) | v12 (hs) | 差 |
+  |---|---|---|---|
+  | Fmax | 266.7 MHz | **347.2 MHz** | **+30.2%** |
+  | area | 94,091 µm² | 131,926 µm² | +40% |
+  | power@400 | 36.7 mW | 50.5 mW | +38% |
+  | energy/trans | 1.05 nJ | 1.45 nJ | +38% |
+
+- **新ボトルネック**（hs ネットリスト FF 確認）：startpoint=`pf_last_q[14]`（prefetch dedup レジスタ）、endpoint=`wiaddr_q[0]`、slack −0.38。= **v9 の prefetch dedup 比較 → prefetch launch → wiaddr_q**（`stg_pf_line_q != pf_last_q`）。実機能パスで、2.5ns まであと −0.38ns。
+- **学び**：同一 RTL/同一フローでライブラリだけ hs にすると **+30% Fmax**、ただし面積 +40%・電力 +38%。**spec 400MHz の 87% まで到達**（hd では 67%）。CLAUDE.md の「sky130 で 400MHz は標準セル/オープンフローには攻めすぎ（快適なのは ~100–250MHz）」に対し、アーキ最適化（v3-v11）＋高速ライブラリ（v12）で 347MHz まで来た。残り 13% は CTS/route 後に削られる余裕分とほぼ拮抗。
+- **判断**：v12 を **hs 版として採用**（用途次第：Fmax 最優先なら hs、面積/電力優先なら hd の v11）。RTL は v11 と完全同一なので **どちらのライブラリでも同じ設計**。
 
 ## v0 baseline（現状）の critical path
 融合 consume→次状態→発行コーン: walker 状態 FF → cache 最完全ヒット短絡 → `unique

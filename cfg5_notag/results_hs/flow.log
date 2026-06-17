@@ -1,0 +1,81 @@
+[INFO] USER_ID: 1000, GROUP_ID: 1000
+[INFO] Final PATH variable: /foss/tools/bin:/foss/tools/sak:/usr/local/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/foss/tools/kactus2:/foss/tools/klayout:/foss/tools/osic-multitool
+[INFO] Final PYTHONPATH variable: /usr/lib/python312.zip:/usr/lib/python3.12:/usr/lib/python3.12/lib-dynload:/usr/local/lib/python3.12/dist-packages:/usr/lib/python3/dist-packages:/foss/tools/ngspyce/local/lib/python3.12/dist-packages:/foss/tools/openems/local/lib/python3.12/dist-packages:/foss/tools/pyopus/local/lib/python3.12/dist-packages:/foss/tools/yosys/share/yosys/python3:/foss/tools/klayout/pymod:/foss/tools/vacask/lib/vacask/python
+[INFO] SKIPPING UI STARTUP
+[INFO] Executing command: 'bash -lc mkdir -p /foss/designs/syn/build_hs /foss/designs/cfg5_notag/results_hs && sv2v -D SYNTHESIS /foss/designs/rtl/iommu_pkg.sv /foss/designs/rtl/fa_cache.sv /foss/designs/rtl/line_iotlb.sv /foss/designs/rtl/mem_master.sv /foss/designs/rtl/prefetch_ctrl.sv /foss/designs/rtl/iommu_top.sv /foss/designs/cfg5_notag/cfg5_top.sv > /foss/designs/syn/build_hs/cfg5_notag.v 2>/foss/designs/syn/build_hs/sv2v.log && cat > /foss/designs/syn/build_hs/synth.ys <<'YE'
+
+read_verilog /foss/designs/syn/build_hs/cfg5_notag.v
+hierarchy -top cfg5_top -check
+synth -top cfg5_top
+dfflibmap -liberty /foss/designs/open_pdks/sky130/sky130A/libs.ref/sky130_fd_sc_hs/lib/sky130_fd_sc_hs__tt_025C_1v80.lib
+abc -liberty /foss/designs/open_pdks/sky130/sky130A/libs.ref/sky130_fd_sc_hs/lib/sky130_fd_sc_hs__tt_025C_1v80.lib -D 2500
+clean -purge
+tee -o /foss/designs/cfg5_notag/results_hs/synth_area.txt stat -liberty /foss/designs/open_pdks/sky130/sky130A/libs.ref/sky130_fd_sc_hs/lib/sky130_fd_sc_hs__tt_025C_1v80.lib
+flatten
+clean -purge
+write_verilog -noattr /foss/designs/cfg5_notag/results_hs/netlist.v
+
+YE
+cat > /foss/designs/syn/build_hs/sta.tcl <<'SE'
+
+read_liberty /foss/designs/open_pdks/sky130/sky130A/libs.ref/sky130_fd_sc_hs/lib/sky130_fd_sc_hs__tt_025C_1v80.lib
+read_verilog /foss/designs/cfg5_notag/results_hs/netlist.v
+link_design cfg5_top
+create_clock -name clk -period 2.5 [get_ports clk]
+set_power_activity -global -activity 0.053 -duty 0.5
+puts "=== WORST SLACK ==="
+report_worst_slack -max
+puts "=== POWER ==="
+report_power -digits 6
+exit
+
+SE
+yosys -q /foss/designs/syn/build_hs/synth.ys 2>&1 | tee /foss/designs/cfg5_notag/results_hs/yosys.log ; sta -no_init -exit /foss/designs/syn/build_hs/sta.tcl 2>&1 | tee /foss/designs/cfg5_notag/results_hs/sta.txt'
+Warning: Replacing memory \data_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:62
+Warning: Replacing memory \tag_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:61
+Warning: Replacing memory \valid_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:60
+Warning: Replacing memory \data_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:172
+Warning: Replacing memory \subv_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:168
+Warning: Replacing memory \ltag_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:167
+Warning: Replacing memory \lvalid_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:166
+Warning: Replacing memory \bspa_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1177
+Warning: Replacing memory \bctx_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1176
+Warning: Replacing memory \bvpn_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1175
+Warning: Replacing memory \bs_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1174
+Warning: Replacing memory \wia_rdy_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1167
+Warning: Replacing memory \wiburst_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1166
+Warning: Replacing memory \wiaddr_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1165
+Warning: Replacing memory \wbeat_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1164
+Warning: Replacing memory \wline_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1163
+Warning: Replacing memory \wdgvpn_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1162
+Warning: Replacing memory \wgpn_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1161
+Warning: Replacing memory \wbase_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1160
+Warning: Replacing memory \wctx_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1159
+Warning: Replacing memory \wvpn_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1158
+Warning: Replacing memory \wpc_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1157
+Warning: Replacing memory \ws_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1156
+Warning: Replacing memory \iburst with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1085, /foss/designs/syn/build_hs/cfg5_notag.v:1042
+Warning: Replacing memory \iaddr with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1041
+Warning: Replacing memory \iwant with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1040
+OpenSTA 3.1.0 76c4d6df35 Copyright (c) 2026, Parallax Software, Inc.
+License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
+
+This is free software, and you are free to change and redistribute it
+under certain conditions; type `show_copying' for details. 
+This program comes with ABSOLUTELY NO WARRANTY; for details type `show_warranty'.
+=== WORST SLACK ===
+worst slack max -5.18
+=== POWER ===
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           4.284674e-02 5.670240e-04 1.232857e-06 4.341500e-02  86.5%
+Combinational        5.780614e-03 1.003323e-03 3.486581e-07 6.784285e-03  13.5%
+Clock                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                4.862741e-02 1.570387e-03 1.581540e-06 5.019939e-02 100.0%
+                            96.9%         3.1%         0.0%
+
+=ERR=
