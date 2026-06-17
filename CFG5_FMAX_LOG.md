@@ -32,6 +32,7 @@ PPA を測る。sky130_fd_sc_hd, tt 1v80。
 - **対応方針**：v2 破棄。次は v3。ただしネットリストで実 FF を確認したら真因が想定と違った（下記）。
 
 | v3 観測カウンタ脱結合 | walks_q/resp_q の increment enable をレジスタ化 | 11.08, 38 | 94,900 | 86.4 MHz | 110,291 | **189.0 MHz** | 40.6 mW |
+| v4 発行アドレス事前計算 | idx_of+pte_addr を状態書込時に計算→wiaddr_q にレジスタ化（PIPELINE_DEPTH=2） | 11.20, 38 | 95,463 | 80.1 MHz | 111,447 | **207.0 MHz** | 41.2 mW |
 
 ### v3 結果：**+18%（160.8→189.0 MHz）大勝ち** — 真因は「観測カウンタ」だった
 - **ネットリストで critical path の実 FF を確認**したのが決定打：startpoint=`bvpn_q[0]`、**endpoint=`walks_q[31]`（walk 起動の 32bit 統計カウンタ MSB）**。真の律速は
@@ -41,6 +42,13 @@ PPA を測る。sky130_fd_sc_hd, tt 1v80。
 - **学び**：v1/v2 が外れたのは、この**観測カウンタ経路が全てをマスク**していたから。**合成後ネットリストで実 FF を確認**するまで真因に届かなかった。
 - **新ボトルネック**：worst path は `_07668_(walker base/dgvpn) → idx + pte_addr → araddr[3]`（**発行アドレス生成**）、次点 `bspa_q → rsp_spa`（demand 応答）。= v2 が狙っていた発行経路が、カウンタ除去で**ようやく露出**。
 - **次の方針**：**v4 = 発行アドレス(araddr)のレジスタ化**（mem_master 入口で AR を 1 段レジスタ化）。v2 の意図を、真のボトルネックが見えた今こそ適用。
+
+### v4 結果：**+9.5%（189.0→207.0 MHz）／v0 比 +28.7%** — コーン分割が効いた
+- **方針の修正**：mem_master 出口だけのレジスタ化では `walker reg → idx_of → pte_addr → arbiter mux → AR` の**コンビ段数は不変**（終点が FF になるだけ）。本命は**発行アドレスの事前計算レジスタ化**：`idx_of+pte_addr` を walker 状態書込みサイクル（launch/consume）で計算し `wiaddr_q` に格納、発行サイクルは**レジスタ読み出し＋アービタ mux のみ**。PIPELINE_DEPTH=2 のパイプ段に address-gen コーンを載せ替えた（v2 が外したのは cycle B に同じコーンが残っていたため）。
+- **効果**：post-opt 189.0→**207.0 MHz**。発行→AR から idx_of+pte_addr が消え、コーンが短縮。cocotb 全 PASS、walks=38 不変、cyc/trans は 11.08→11.20（+1 cycle/read のパイプ段ぶん、wire rate=16.4cyc に対し十分余裕）。
+- **新ボトルネック**（ネットリスト FF 確認）：startpoint=`bvpn_q[0]`（demand VPN）、endpoint=`wbase_q[0][14]`（slack −2.33）と `wiaddr_q[0][35]`（−2.32、ほぼ同値）。= **buffer-servicer の launch コーン**：`bvpn_q → IOTLB/PWC ルックアップ(CAM compare: nor4b→nand4→and4b) → start_base/svc 判定 → {wbase_q, wiaddr_q} へ書込み`。address-gen はもう載っておらず、**キャッシュ・ルックアップ→start アドレス計算→状態書込み**が律速。
+- **学び**：レジスタ化は「終点を FF にする」だけでは無意味で、**コーン自体を別サイクルに分割**して初めて効く。v4 は launch サイクルにコーンを移し、それでも全体が短くなった＝旧（issue+arbiter+IO）より新（consume/launch+precompute）の方が浅い。
+- **次の方針**：**v5 = buffer-servicer のパイプ化**。demand VPN のキャッシュ・ルックアップ結果（PWC/IOTLB probe）を 1 段レジスタ化してから start_base/start アドレスを計算・launch する（cycle A=probe、cycle B=launch+precompute）。今 wiaddr_q/wbase_q を律速している `bvpn_q → CAM → start` の段を割る。
 
 ## v0 baseline（現状）の critical path
 融合 consume→次状態→発行コーン: walker 状態 FF → cache 最完全ヒット短絡 → `unique

@@ -118,6 +118,13 @@ module iommu_top #(
   // per-walker beat counter for the pc11 leaf burst (8B beats stream into the IOTLB)
   logic [3:0]       wbeat_q[NCTX];
 
+  // PIPELINE_DEPTH>=2: precomputed next read address + burst flag per walker. Written
+  // when the walker state is set (launch/consume); the issue path reads these registers
+  // instead of recomputing idx_of+pte_addr, splitting the address-gen cone off the
+  // issue->AR critical path (the bottleneck exposed after v3).
+  logic [PA_W-1:0]  wiaddr_q [NCTX];
+  logic             wiburst_q[NCTX];
+
   // prefetch (next-line) region capture
   logic [PPN_W-1:0]  region_vml0_q;
   logic              region_valid_q;
@@ -151,6 +158,15 @@ module iommu_top #(
       4'd9: idx_of=gidx(dg,2);  4'd10: idx_of=gidx(dg,1);  4'd11: idx_of=gidx(dg,0);
       default: idx_of='0;
     endcase
+  endfunction
+  // full issue-address compose (idx_of + pte_addr + burst alignment). Used to PRECOMPUTE
+  // the next read address at walker-state write time, so the issue->AR path is a register
+  // read + arbiter mux only (the idx_of+pte_addr cone leaves the issue critical path).
+  function automatic logic [PA_W-1:0] iaddr_of(input logic [3:0] pc, input logic [PPN_W-1:0] base,
+        input logic [VPN_W-1:0] vpn, input logic [GPN_W-1:0] gpn, input logic [GVPN_W-1:0] dg);
+    logic [IDX_W-1:0] ix; ix = idx_of(pc, vpn, gpn, dg);
+    iaddr_of = ((CO>1) && (pc==4'd11)) ? pte_addr(base, {ix[IDX_W-1:3],3'd0})
+                                       : pte_addr(base, ix);
   endfunction
 
   // ===================================================== buffer selection
@@ -362,15 +378,20 @@ module iommu_top #(
       iwant[w]=1'b0; iaddr[w]='0; iburst[w]=1'b0;
       pc='0; base='0; vp='0; gp='0; dgv='0; sel=1'b0; ix='0;
       // PIPELINE_DEPTH<2: fuse consume->issue and launch->issue (1-cycle/read, long cone).
-      // PIPELINE_DEPTH>=2: only issue from the REGISTERED walker state (WRUN) -> the
-      // consume/launch next-state registers in cycle A and address-gen+arbiter+AR run in
-      // cycle B, splitting the critical cone (+1 cycle/read latency).
+      // PIPELINE_DEPTH>=2: issue ONLY from a WRUN walker, and read the PRECOMPUTED address
+      // register (wiaddr_q/wiburst_q). The idx_of+pte_addr cone runs in the state-write
+      // cycle (parallel to next-state), so the issue->AR path is just register+arbiter mux
+      // (+1 cycle/read latency). This is the v4 split of the cone exposed after v3.
       if ((PIPELINE_DEPTH<2) && do_consume && (w==int'(cons_w)) && next_pc!=PC_DONE) begin
         pc=next_pc; base=next_base; vp=cons_vpn; gp=next_gpn; dgv=next_dg; sel=1'b1;
       end else if ((PIPELINE_DEPTH<2) && svc_launch && (w==int'(wfree_i))) begin
         pc=start_pc; base=start_base; vp=bvpn_q[bsel]; sel=1'b1;
       end else if (ws_q[w]==WRUN) begin
-        pc=wpc_q[w]; base=wbase_q[w]; vp=wvpn_q[w]; gp=wgpn_q[w]; dgv=wdgvpn_q[w]; sel=1'b1;
+        if (PIPELINE_DEPTH>=2) begin
+          iwant[w]=1'b1; iaddr[w]=wiaddr_q[w]; iburst[w]=wiburst_q[w];  // precomputed
+        end else begin
+          pc=wpc_q[w]; base=wbase_q[w]; vp=wvpn_q[w]; gp=wgpn_q[w]; dgv=wdgvpn_q[w]; sel=1'b1;
+        end
       end
       if (sel) begin
         iwant[w]=1'b1;
@@ -413,6 +434,7 @@ module iommu_top #(
       for (int i=0;i<NCTX;i++) begin
         ws_q[i]<=WFREE; wpc_q[i]<=4'd0; wvpn_q[i]<='0; wctx_q[i]<='0; wbase_q[i]<='0;
         wgpn_q[i]<='0; wdgvpn_q[i]<='0; wline_q[i]<='0; wbeat_q[i]<=4'd0;
+        wiaddr_q[i]<='0; wiburst_q[i]<=1'b0;
       end
       for (int i=0;i<BUFFER_DEPTH;i++) begin bs_q[i]<=BFREE; bvpn_q[i]<='0; bctx_q[i]<='0; bspa_q[i]<='0; end
       arb_rr_q<='0; brr_q<='0; walks_q<='0; resp_q<='0;
@@ -434,6 +456,10 @@ module iommu_top #(
           ws_q[wfree_i]<=WRUN; wpc_q[wfree_i]<=start_pc; wbase_q[wfree_i]<=start_base;
           wvpn_q[wfree_i]<=bvpn_q[bsel]; wctx_q[wfree_i]<=bctx_q[bsel];
           wline_q[wfree_i]<=bsel_line;
+          if (PIPELINE_DEPTH>=2) begin   // precompute first read addr (start_pc in {0,4,8})
+            wiaddr_q[wfree_i] <= iaddr_of(start_pc, start_base, bvpn_q[bsel], '0, '0);
+            wiburst_q[wfree_i]<= (CO>1) && (start_pc==4'd11);
+          end
         end
         brr_q <= (brr_q==BW'(BUFFER_DEPTH-1)) ? '0 : brr_q+BW'(1);
       end
@@ -444,6 +470,10 @@ module iommu_top #(
         ws_q[wfree_i]<=WRUN; wpc_q[wfree_i]<=4'd8; wbase_q[wfree_i]<=region_vml0_q;
         wvpn_q[wfree_i]<={pf_line, {LINE_LSB{1'b0}}}; wctx_q[wfree_i]<=bctx_q[bsel];
         wline_q[wfree_i]<=pf_line;
+        if (PIPELINE_DEPTH>=2) begin    // prefetch warm-starts at VM-L0 leaf (pc8)
+          wiaddr_q[wfree_i] <= iaddr_of(4'd8, region_vml0_q, {pf_line,{LINE_LSB{1'b0}}}, '0, '0);
+          wiburst_q[wfree_i]<= 1'b0;
+        end
       end
       // register the increment enables; counters add from the registered versions so the
       // IOTLB-lookup-derived svc_launch no longer feeds the 32b counter carry chain.
@@ -456,6 +486,10 @@ module iommu_top #(
         wbase_q[cons_w] <= next_base;
         wgpn_q[cons_w]  <= next_gpn;
         wdgvpn_q[cons_w]<= next_dg;
+        if (PIPELINE_DEPTH>=2 && next_pc!=PC_DONE) begin   // precompute next read addr
+          wiaddr_q[cons_w] <= iaddr_of(next_pc, next_base, cons_vpn, next_gpn, next_dg);
+          wiburst_q[cons_w]<= (CO>1) && (next_pc==4'd11);
+        end
         if (next_pc==PC_DONE) begin
           // CO==1 leaf (single beat): resolve the demand entry directly. (CO>1 leaf
           // completes via the burst path below, never here.)
