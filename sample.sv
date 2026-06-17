@@ -72,3 +72,13 @@ typedef struct packed {
   logic [PA_W-1:12]     next_gtbl_spa; // !leaf: 次G表のSPA
   logic [PA_W-1:12]     spa_base;      // leaf : data SPA base(Gスーパーページ)
 } g_pwc_e #(parameter int GPREFIX_W);
+
+
+
+
+| | G L2 | G L1 | G L0 |
+|---|---|---|---|
+| **VM root** | No cache | No cache | VM-root PWC<br>1<br>To: base SPA of VM-L2<br>Tag: always hit |
+| **VM L2** | No cache | No cache | VM-L2 PWC<br>1<br>To: base SPA of VM-L1<br>Tag: VPN[2] |
+| **VM L1** | No cache | No cache | VM-L1 PWC<br>2<br>base SPA of VM-L0<br>Tag: VPN[2:1] |
+| **VM L0** | G-L2@VM-L0 PWC<br>1<br>To: base SPA of G-L1@VM-L0<br>Tag: GVPN[2] | G-L1@VM-L0 PWC<br>2<br>To: base SPA of G-L0@VM-L0<br>Tag: GVPN[2:1] | IOTLB<br>8+8<br>To: base SPA of data<br>Tag: VPN[2:0] |

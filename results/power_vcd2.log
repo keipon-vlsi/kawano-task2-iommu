@@ -1,0 +1,50 @@
+[cfg2_pwc] gate-level sim ...
+[cfg2_pwc] STA VCD power ...
+[cfg3_iotlb] gate-level sim ...
+[cfg3_iotlb] STA VCD power ...
+[cfg4_prefetch] gate-level sim ...
+[cfg4_prefetch] STA VCD power ...
+[cfg5_notag] gate-level sim ...
+[cfg5_notag] STA VCD power ...
+[
+  {
+    "cfg": "cfg2_pwc",
+    "per_module_mW": {
+      "IOTLB": 0.0,
+      "PWC(x4)": 1.0658011040000001e-05,
+      "prefetch_ctrl": 0.0,
+      "mem_master": 8.08348805e-08,
+      "Control": 0.0
+    }
+  },
+  {
+    "cfg": "cfg3_iotlb",
+    "per_module_mW": {
+      "IOTLB": 3.18702753e-05,
+      "PWC(x4)": 1.0586977850000001e-05,
+      "prefetch_ctrl": 0.0,
+      "mem_master": 7.9680082e-08,
+      "Control": 0.0
+    }
+  },
+  {
+    "cfg": "cfg4_prefetch",
+    "per_module_mW": {
+      "IOTLB": 3.40072148e-05,
+      "PWC(x4)": 1.067583767e-05,
+      "prefetch_ctrl": 9.22199039e-07,
+      "mem_master": 7.96972349e-08,
+      "Control": 0.0
+    }
+  },
+  {
+    "cfg": "cfg5_notag",
+    "per_module_mW": {
+      "IOTLB": 2.0072009799999998e-05,
+      "PWC(x4)": 5.548287216e-06,
+      "prefetch_ctrl": 9.2208452e-07,
+      "mem_master": 7.96863686e-08,
+      "Control": 0.0
+    }
+  }
+]

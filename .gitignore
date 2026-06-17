@@ -32,3 +32,8 @@ cfg*/tb_coco/__pycache__/
 cfg*/results/netlist.v
 syn/build_nested/
 tb_coco/results.xml
+# VCD power flow artifacts (keep JSON/CSV; drop heavy VCD/netlist/sim dirs)
+cfg*/results/gl.vcd
+cfg*/results/gl_sim/
+cfg*/results/gl_build/
+syn/build_nested/

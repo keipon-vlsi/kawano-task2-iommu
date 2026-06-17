@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+"""Generate the three deliverable tables (PPA / area breakdown / power breakdown) as
+markdown AND CSV. Sources: results/nested_ppa.json (area, Fmax, slack), the per-config
+Yosys stat (fine area breakdown), and results/power_vcd.json (VCD-annotated power).
+
+Run after syn/synth_nested.py and syn/power_vcd.py. Writes:
+  results/ppa_compare.csv, results/area_breakdown.csv, results/power_breakdown.csv
+"""
+import csv, json, math, re
+from pathlib import Path
+ROOT = Path(__file__).resolve().parent.parent
+A_FF, DATA_W = 25.02, 28
+def clog2(n): return 1 if n < 2 else math.ceil(math.log2(n))
+
+# cfg, dir, NCTX, BUF, CO, has_iotlb, has_pf, tag_ctx
+CFGS = [("cfg1","cfg1_nocache",37,37,1,0,0,1),("cfg2","cfg2_pwc",5,5,1,0,0,1),
+        ("cfg3","cfg3_iotlb",1,5,8,1,0,1),("cfg4","cfg4_prefetch",1,1,8,1,1,1),
+        ("cfg5","cfg5_notag",1,1,8,1,1,0)]
+DIRS = {c[0]: c[1] for c in CFGS}
+NAMES = [c[0] for c in CFGS]
+
+ppa = {r["cfg"].split("_")[0]: r for r in json.loads((ROOT/"results/nested_ppa.json").read_text())}
+pv = {}
+pvf = ROOT/"results/power_vcd.json"
+if pvf.exists():
+    pv = {r["cfg"].split("_")[0]: r for r in json.loads(pvf.read_text())}
+
+def fa_and_dff(d):
+    txt=(ROOT/d/"results/synth_area.txt").read_text(); fa=[]; mods={}
+    for n,a in re.findall(r"Chip area for module '([^']+)': *([\d.]+)", txt):
+        a=float(a)
+        if "fa_cache" in n: fa.append(a)
+        elif "iommu_top" in n: mods["ctrl"]=a
+        elif "mem_master" in n: mods["mem"]=a
+        elif "prefetch_ctrl" in n: mods["pf"]=a
+    on=[]; f=False
+    for ln in txt.splitlines():
+        if "iommu_top ===" in ln: f=True
+        if f and "Chip area for module" in ln and "iommu_top" in ln: break
+        if f: on.append(ln)
+    nd=sum(int(l.split()[0]) for l in on if re.search(r"__df(rtp|stp)",l))
+    return sorted(fa,reverse=True), mods, nd
+
+def csplit(meas,entries,tagw):
+    tag=entries*tagw*A_FF; dv=(entries*(DATA_W+1)+clog2(entries))*A_FF
+    return tag,dv,max(0.0,meas-tag-dv)
+
+# ---------------- area breakdown ----------------
+AREA_ROWS=["Walker RF","Transaction buffer","Misc ctrl FF","Arbiter+adders+MSHR (comb)",
+           "PWC tag","PWC data+valid","PWC lookup logic","IOTLB tag","IOTLB data+valid",
+           "IOTLB lookup logic","prefetch_ctrl","mem_master"]
+area={r:{} for r in AREA_ROWS}; area_total={}
+for cn,d,nctx,buf,co,iot,pf,tc in CFGS:
+    fa,mods,nd=fa_and_dff(d); tcw=36 if tc else 0
+    seq=nd*A_FF; comb=max(0.0,mods["ctrl"]-seq); vpnline=27 if co==1 else 24
+    wl=(2+4+27+36+28+27+27+vpnline+4)*nctx; bf=(2+27+36+40)*buf
+    ms=(28+18+1 if pf else 0)+56+64+clog2(nctx)+clog2(buf); tot=wl+bf+ms
+    area["Walker RF"][cn]=seq*wl/tot; area["Transaction buffer"][cn]=seq*bf/tot
+    area["Misc ctrl FF"][cn]=seq*ms/tot; area["Arbiter+adders+MSHR (comb)"][cn]=comb
+    pt=pd=pl=it=idv=il=0.0
+    if iot and len(fa)>=3:
+        it,idv,il=csplit(fa[0],2*co,tcw+27)
+        a,b,c=csplit(fa[1],2,tcw+18); pt+=2*a;pd+=2*b;pl+=2*c
+        a,b,c=csplit(fa[2],1,tcw+9);  pt+=2*a;pd+=2*b;pl+=2*c
+    elif (not iot) and len(fa)>=2:
+        a,b,c=csplit(fa[0],2,tcw+18); pt+=2*a;pd+=2*b;pl+=2*c
+        a,b,c=csplit(fa[1],1,tcw+9);  pt+=2*a;pd+=2*b;pl+=2*c
+    area["PWC tag"][cn]=pt; area["PWC data+valid"][cn]=pd; area["PWC lookup logic"][cn]=pl
+    area["IOTLB tag"][cn]=it; area["IOTLB data+valid"][cn]=idv; area["IOTLB lookup logic"][cn]=il
+    area["prefetch_ctrl"][cn]=mods.get("pf",0.0); area["mem_master"][cn]=mods.get("mem",0.0)
+    area_total[cn]=ppa[cn]["total_area_um2"]
+
+# ---------------- tables + CSV ----------------
+def md_table(title, header, rows):
+    out=[f"\n## {title}\n", "| "+" | ".join(header)+" |", "|"+"---|"*len(header)]
+    for r in rows: out.append("| "+" | ".join(r)+" |")
+    return "\n".join(out)
+
+def write_csv(path, header, rows):
+    with open(ROOT/"results"/path,"w",newline="") as f:
+        w=csv.writer(f); w.writerow(header); w.writerows(rows)
+
+# 1) PPA compare
+ppa_hdr=["metric"]+NAMES
+ppa_rows=[]
+def pget(cn,k,d=0.0): return ppa.get(cn,{}).get(k,d)
+def pvget(cn,k,d=None):
+    r=pv.get(cn,{}); return r.get(k,d)
+ppa_rows.append(["area_um2"]+[f"{area_total[c]:,.0f}" for c in NAMES])
+ppa_rows.append(["Fmax_MHz"]+[f"{pget(c,'fmax_mhz'):.1f}" for c in NAMES])
+ppa_rows.append(["worst_slack_ns"]+[f"{pget(c,'wns_ns'):.2f}" for c in NAMES])
+ppa_rows.append(["power_VCD_mW@400"]+[("%.2f"%pvget(c,'total_mW') if pvget(c,'total_mW') is not None else "n/a") for c in NAMES])
+ppa_rows.append(["power_flat0.2_mW@400"]+[f"{pget(c,'power_mw'):.1f}" for c in NAMES])
+print(md_table("PPA 比較 (sky130_fd_sc_hd tt 1v80, 2.5ns target)", ppa_hdr, ppa_rows))
+write_csv("ppa_compare.csv", ppa_hdr, ppa_rows)
+
+# 2) area breakdown
+area_hdr=["component_um2"]+NAMES
+area_rows=[[r]+[f"{area[r][c]:,.0f}" if area[r].get(c,0)>0.5 else "0" for c in NAMES] for r in AREA_ROWS]
+area_rows.append(["TOTAL"]+[f"{area_total[c]:,.0f}" for c in NAMES])
+print(md_table("詳細 面積内訳 (µm²; cache=tag/data/lookup)", area_hdr, area_rows))
+write_csv("area_breakdown.csv", area_hdr, area_rows)
+
+# 3) power breakdown (VCD-annotated)
+pw_hdr=["power_mW@400(VCD)"]+NAMES
+pw_rows=[]
+for k,lab in [("dynamic_mW","dynamic"),("leakage_uW","leakage_uW"),
+              ("sequential_mW","sequential"),("combinational_mW","combinational"),
+              ("total_mW","TOTAL")]:
+    pw_rows.append([lab]+[("%.3f"%pvget(c,k) if pvget(c,k) is not None else "n/a") for c in NAMES])
+for mod in ["IOTLB","PWC(x4)","Control","prefetch_ctrl","mem_master"]:
+    pw_rows.append(["  "+mod]+[("%.2f"%pv.get(c,{}).get("per_module_mW",{}).get(mod,0.0) if c in pv else "n/a") for c in NAMES])
+print(md_table("詳細 電力内訳 (VCD-annotated, 実トグル率)", pw_hdr, pw_rows))
+write_csv("power_breakdown.csv", pw_hdr, pw_rows)
+print("\nCSV: results/ppa_compare.csv, area_breakdown.csv, power_breakdown.csv")

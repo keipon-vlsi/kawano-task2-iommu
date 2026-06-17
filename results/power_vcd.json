@@ -1,0 +1,78 @@
+[
+  {
+    "cfg": "cfg1_nocache",
+    "method": "flat-activity 0.2 (GL sim impractical)",
+    "sequential_mW": 177.18,
+    "combinational_mW": 73.0,
+    "dynamic_mW": 250.18,
+    "leakage_uW": 0.2,
+    "total_mW": 250.18,
+    "per_module_mW": {
+      "IOTLB": 0.0,
+      "PWC(x4)": 0.0,
+      "Control": 250.1,
+      "prefetch_ctrl": 0.0,
+      "mem_master": 0.08
+    }
+  },
+  {
+    "cfg": "cfg2_pwc",
+    "sequential_mW": 32.030791,
+    "combinational_mW": 11.1735146,
+    "dynamic_mW": 43.20433127,
+    "leakage_uW": 0.0432647091,
+    "total_mW": 43.2043746,
+    "per_module_mW": {
+      "IOTLB": 0.0,
+      "PWC(x4)": 8.34587985,
+      "prefetch_ctrl": 0.0,
+      "mem_master": 0.348726142,
+      "Control": 34.509768608
+    }
+  },
+  {
+    "cfg": "cfg3_iotlb",
+    "sequential_mW": 48.8869958,
+    "combinational_mW": 12.9916798,
+    "dynamic_mW": 61.87889913,
+    "leakage_uW": 0.061258383300000004,
+    "total_mW": 61.8789569,
+    "per_module_mW": {
+      "IOTLB": 29.0671885,
+      "PWC(x4)": 9.53925331,
+      "prefetch_ctrl": 0.0,
+      "mem_master": 0.24967812400000003,
+      "Control": 23.022836966
+    }
+  },
+  {
+    "cfg": "cfg4_prefetch",
+    "sequential_mW": 41.1561653,
+    "combinational_mW": 2.2967504300000003,
+    "dynamic_mW": 43.45278151,
+    "leakage_uW": 0.0546288987,
+    "total_mW": 43.452836600000005,
+    "per_module_mW": {
+      "IOTLB": 24.4465414,
+      "PWC(x4)": 8.47114587,
+      "prefetch_ctrl": 0.404832303,
+      "mem_master": 0.247312739,
+      "Control": 9.883004288000002
+    }
+  },
+  {
+    "cfg": "cfg5_notag",
+    "sequential_mW": 27.616996299999997,
+    "combinational_mW": 1.98237039,
+    "dynamic_mW": 29.599329689999998,
+    "leakage_uW": 0.0364141677,
+    "total_mW": 29.5993667,
+    "per_module_mW": {
+      "IOTLB": 14.895738099999999,
+      "PWC(x4)": 4.728899805,
+      "prefetch_ctrl": 0.398389588,
+      "mem_master": 0.247032382,
+      "Control": 9.329306825
+    }
+  }
+]
