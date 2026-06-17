@@ -1,0 +1,8 @@
+[cfg5_notag] constrained P&R + resize ...
+
+cfg               Fmax   area_um2 power_mW     seq   comb
+cfg1_nocache      None       None     None    None   None
+cfg2_pwc         105.4     126420     59.1    39.4   19.7
+cfg3_iotlb       103.0     186325     91.7    64.0   27.8
+cfg4_prefetch    147.9     164742     58.7    52.0    6.7
+cfg5_notag       158.2     108537     40.4    35.6    4.8

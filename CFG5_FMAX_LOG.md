@@ -20,6 +20,17 @@ PPA を測る。sky130_fd_sc_hd, tt 1v80。
 - **学び**：critical path の主因は pc デコードではなく、**融合 consume→発行コーン全体（キャッシュ最完全ヒット短絡＋アドレス生成＋アービタ）の論理深さ**。状態数削減では効かない。→ パスを**段分割（パイプライン化）**する方が効く見込み。
 - **対応方針**：v1 は破棄（v0 にリバート）し、v2 として**発行アドレスのレジスタ化（PIPELINE_DEPTH=2）**を試す。
 
+| v2 issue パイプライン化 | PIPELINE_DEPTH=2（consume→発行を脱融合） | 11.20, 38 | 93,705 | 87.3 MHz | 108,537 | **158.2 MHz** | 40.4 mW |
+
+### v2 結果：**改善せず（≈v0, P&R ノイズ域）** — また外れ、ただし真の律速が判明
+- post-opt 160.8→**158.2 MHz**（reg2reg slack −3.82, async recovery −1.61 は非律速）。+1 サイクル/read のレイテンシだけ増えて Fmax 利得なし。
+- **理由**：consume→発行の融合境界を脱融合したが、critical path はその境界を**跨いでいない**。実パスは
+  `FF _07218_ → buf12 → and4_4 ×7 → xnor3 → nand4 → … → nand4/nor4 鎖 → xnor2 → FF _06959_`
+  という **CAM 比較＋優先エンコーダ＋mux＋reduction の深い FF→FF コーン（~26 段, 6.18ns）**。
+- このパターン（並列 XNOR 比較 → and4 reduction → 優先/nand-nor 鎖 → mux）は **IOTLB 16-way ルックアップ**そのもの。経路は **buffer servicer の probe→resolve**（`bvpn_q[bsel] → IOTLB CAM 比較+優先+データ mux → bspa_q[bsel]`）で、walker FSM / 発行経路ではない。
+- **学び**：cfg5 の律速は walker の状態数でも consume→発行融合でもなく、**IOTLB（16 エントリ CAM）ルックアップの compare+priority+mux 深さ**。v1/v2 はどちらもこの経路に触れていなかった。
+- **対応方針**：v2 破棄（cfg5 を PD=1 に戻す。PIPELINE_DEPTH ガードは RTL に capability として残置）。次は **v3 = IOTLB ルックアップのパイプ化（hit/data をレジスタ化 = lookup-mode 1 サイクル）** で `bvpn→CAM→bspa` を段分割。
+
 ## v0 baseline（現状）の critical path
 融合 consume→次状態→発行コーン: walker 状態 FF → cache 最完全ヒット短絡 → `unique
 case(cons_pc)`（12-way）+ `idx_of(next_pc)`（12-way）→ pte_addr 連結 → 次状態 FF。

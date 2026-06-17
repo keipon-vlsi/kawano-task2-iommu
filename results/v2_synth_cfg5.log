@@ -1,0 +1,11 @@
+[cfg5_notag] synthesizing (cfg5_top) ...
+[
+  {
+    "cfg": "cfg5_notag",
+    "total_area_um2": 93704.8704,
+    "wns_ns": -8.95,
+    "fmax_mhz": 87.33624454148472,
+    "power_mw": 37.78306,
+    "period_ns": 2.5
+  }
+]

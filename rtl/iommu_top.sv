@@ -358,9 +358,13 @@ module iommu_top #(
       logic [IDX_W-1:0] ix;
       iwant[w]=1'b0; iaddr[w]='0; iburst[w]=1'b0;
       pc='0; base='0; vp='0; gp='0; dgv='0; sel=1'b0; ix='0;
-      if (do_consume && (w==int'(cons_w)) && next_pc!=PC_DONE) begin
+      // PIPELINE_DEPTH<2: fuse consume->issue and launch->issue (1-cycle/read, long cone).
+      // PIPELINE_DEPTH>=2: only issue from the REGISTERED walker state (WRUN) -> the
+      // consume/launch next-state registers in cycle A and address-gen+arbiter+AR run in
+      // cycle B, splitting the critical cone (+1 cycle/read latency).
+      if ((PIPELINE_DEPTH<2) && do_consume && (w==int'(cons_w)) && next_pc!=PC_DONE) begin
         pc=next_pc; base=next_base; vp=cons_vpn; gp=next_gpn; dgv=next_dg; sel=1'b1;
-      end else if (svc_launch && (w==int'(wfree_i))) begin
+      end else if ((PIPELINE_DEPTH<2) && svc_launch && (w==int'(wfree_i))) begin
         pc=start_pc; base=start_base; vp=bvpn_q[bsel]; sel=1'b1;
       end else if (ws_q[w]==WRUN) begin
         pc=wpc_q[w]; base=wbase_q[w]; vp=wvpn_q[w]; gp=wgpn_q[w]; dgv=wdgvpn_q[w]; sel=1'b1;
