@@ -1,19 +1,19 @@
 Warning: Replacing memory \data_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:62
 Warning: Replacing memory \tag_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:61
 Warning: Replacing memory \valid_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:60
-Warning: Replacing memory \bspa_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:931
-Warning: Replacing memory \bctx_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:930
-Warning: Replacing memory \bvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:929
-Warning: Replacing memory \bs_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:928
-Warning: Replacing memory \wbeat_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:921
-Warning: Replacing memory \wline_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:920
-Warning: Replacing memory \wdgvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:919
-Warning: Replacing memory \wgpn_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:918
-Warning: Replacing memory \wbase_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:917
-Warning: Replacing memory \wctx_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:916
-Warning: Replacing memory \wvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:915
-Warning: Replacing memory \wpc_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:914
-Warning: Replacing memory \ws_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:913
-Warning: Replacing memory \iburst with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:842, /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:808
-Warning: Replacing memory \iaddr with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:807
-Warning: Replacing memory \iwant with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:806
+Warning: Replacing memory \bspa_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:936
+Warning: Replacing memory \bctx_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:935
+Warning: Replacing memory \bvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:934
+Warning: Replacing memory \bs_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:933
+Warning: Replacing memory \wbeat_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:926
+Warning: Replacing memory \wline_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:925
+Warning: Replacing memory \wdgvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:924
+Warning: Replacing memory \wgpn_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:923
+Warning: Replacing memory \wbase_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:922
+Warning: Replacing memory \wctx_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:921
+Warning: Replacing memory \wvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:920
+Warning: Replacing memory \wpc_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:919
+Warning: Replacing memory \ws_q with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:918
+Warning: Replacing memory \iburst with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:847, /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:813
+Warning: Replacing memory \iaddr with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:812
+Warning: Replacing memory \iwant with list of registers. See /foss/designs/syn/build_nested/cfg5_notag/cfg5_notag.v:811

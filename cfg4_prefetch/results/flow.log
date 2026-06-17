@@ -22,7 +22,7 @@ read_liberty /foss/pdks/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt
 read_verilog /foss/designs/cfg4_prefetch/results/netlist.v
 link_design cfg4_top
 create_clock -name clk -period 2.5 [get_ports clk]
-set_power_activity -global -activity 0.2 -duty 0.5
+set_power_activity -global -activity 0.045 -duty 0.5
 puts "=== CRITICAL PATH (reg2reg max) @ 2.5ns ==="
 report_checks -path_delay max -fields {slew cap fanout} -digits 4 -group_count 2
 puts "=== WORST SLACK ==="
@@ -36,22 +36,22 @@ yosys -q /foss/designs/syn/build_nested/cfg4_prefetch/synth.ys 2>&1 | tee /foss/
 Warning: Replacing memory \data_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:62
 Warning: Replacing memory \tag_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:61
 Warning: Replacing memory \valid_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:60
-Warning: Replacing memory \bspa_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:931
-Warning: Replacing memory \bctx_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:930
-Warning: Replacing memory \bvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:929
-Warning: Replacing memory \bs_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:928
-Warning: Replacing memory \wbeat_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:921
-Warning: Replacing memory \wline_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:920
-Warning: Replacing memory \wdgvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:919
-Warning: Replacing memory \wgpn_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:918
-Warning: Replacing memory \wbase_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:917
-Warning: Replacing memory \wctx_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:916
-Warning: Replacing memory \wvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:915
-Warning: Replacing memory \wpc_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:914
-Warning: Replacing memory \ws_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:913
-Warning: Replacing memory \iburst with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:842, /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:808
-Warning: Replacing memory \iaddr with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:807
-Warning: Replacing memory \iwant with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:806
+Warning: Replacing memory \bspa_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:936
+Warning: Replacing memory \bctx_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:935
+Warning: Replacing memory \bvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:934
+Warning: Replacing memory \bs_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:933
+Warning: Replacing memory \wbeat_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:926
+Warning: Replacing memory \wline_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:925
+Warning: Replacing memory \wdgvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:924
+Warning: Replacing memory \wgpn_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:923
+Warning: Replacing memory \wbase_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:922
+Warning: Replacing memory \wctx_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:921
+Warning: Replacing memory \wvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:920
+Warning: Replacing memory \wpc_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:919
+Warning: Replacing memory \ws_q with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:918
+Warning: Replacing memory \iburst with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:847, /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:813
+Warning: Replacing memory \iaddr with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:812
+Warning: Replacing memory \iwant with list of registers. See /foss/designs/syn/build_nested/cfg4_prefetch/cfg4_prefetch.v:811
 OpenSTA 3.1.0 76c4d6df35 Copyright (c) 2026, Parallax Software, Inc.
 License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
 
@@ -60,8 +60,8 @@ under certain conditions; type `show_copying' for details.
 This program comes with ABSOLUTELY NO WARRANTY; for details type `show_warranty'.
 === CRITICAL PATH (reg2reg max) @ 2.5ns ===
 Warning 503: sta.tcl line 1, report_checks -group_count is deprecated. Use -group_path_count instead.
-Startpoint: _08641_ (rising edge-triggered flip-flop clocked by clk)
-Endpoint: _16170_ (rising edge-triggered flip-flop clocked by clk)
+Startpoint: _10655_ (rising edge-triggered flip-flop clocked by clk)
+Endpoint: _10472_ (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
 Path Type: max
 
@@ -69,30 +69,39 @@ Fanout       Cap      Slew     Delay      Time   Description
 -------------------------------------------------------------------------------------
                     0.0000    0.0000    0.0000   clock clk (rise edge)
                               0.0000    0.0000   clock network delay (ideal)
-                    0.0000    0.0000    0.0000 ^ _08641_/CLK (sky130_fd_sc_hd__dfrtp_1)
-     7    0.0135    0.0870    0.3896    0.3896 v _08641_/Q (sky130_fd_sc_hd__dfrtp_1)
-     8    0.0165    0.2283    0.2999    0.6896 v _07043_/Y (sky130_fd_sc_hd__nand4b_1)
-    65    0.1868    6.9215    5.3260    6.0156 ^ _07989_/Y (sky130_fd_sc_hd__nor4_1)
-    86    0.2751    1.8723    4.0649   10.0805 v _15910_/Y (sky130_fd_sc_hd__nand2_1)
-     1    0.0019    0.0720    0.8663   10.9468 v _15975_/X (sky130_fd_sc_hd__mux2_1)
-                    0.0720    0.0000   10.9468 v _16170_/D (sky130_fd_sc_hd__dfrtp_1)
-                                       10.9468   data arrival time
+                    0.0000    0.0000    0.0000 ^ _10655_/CLK (sky130_fd_sc_hd__dfrtp_1)
+    24    0.0631    0.5454    0.6636    0.6636 ^ _10655_/Q (sky130_fd_sc_hd__dfrtp_1)
+    13    0.0279    0.2863    0.3807    1.0443 v _10836_/Y (sky130_fd_sc_hd__clkinv_1)
+     1    0.0021    0.0383    0.2828    1.3271 v _12879_/X (sky130_fd_sc_hd__a22o_1)
+     1    0.0025    0.2305    0.1928    1.5199 ^ _12880_/Y (sky130_fd_sc_hd__a221oi_1)
+     1    0.0022    0.0856    0.1127    1.6326 v _12885_/Y (sky130_fd_sc_hd__nand4_1)
+     1    0.0024    0.2066    0.2639    1.8965 ^ _12915_/Y (sky130_fd_sc_hd__nor4_1)
+     1    0.0022    0.0818    0.1124    2.0090 v _12916_/Y (sky130_fd_sc_hd__nand4_1)
+    94    0.2303    8.5175    6.4222    8.4312 ^ _12917_/Y (sky130_fd_sc_hd__nor4_1)
+     4    0.0089    1.1070    0.4485    8.8796 v _12919_/Y (sky130_fd_sc_hd__nor2_1)
+     1    0.0016    0.1646    0.2303    9.1099 ^ _13905_/Y (sky130_fd_sc_hd__nand2_1)
+     4    0.0099    0.1104    0.1782    9.2881 ^ _13908_/X (sky130_fd_sc_hd__or4_1)
+    33    0.0720    0.3243    0.2904    9.5785 v _08797_/Y (sky130_fd_sc_hd__nor4b_1)
+   107    0.2445    4.1165    3.1308   12.7093 ^ _09332_/Y (sky130_fd_sc_hd__nor2_1)
+     1    0.0019    0.4333    0.3440   13.0533 v _10012_/Y (sky130_fd_sc_hd__o21ai_0)
+                    0.4333    0.0000   13.0533 v _10472_/D (sky130_fd_sc_hd__dfrtp_1)
+                                       13.0533   data arrival time
 
                     0.0000    2.5000    2.5000   clock clk (rise edge)
                               0.0000    2.5000   clock network delay (ideal)
                               0.0000    2.5000   clock reconvergence pessimism
-                                        2.5000 ^ _16170_/CLK (sky130_fd_sc_hd__dfrtp_1)
-                             -0.1364    2.3636   library setup time
-                                        2.3636   data required time
+                                        2.5000 ^ _10472_/CLK (sky130_fd_sc_hd__dfrtp_1)
+                             -0.2944    2.2056   library setup time
+                                        2.2056   data required time
 -------------------------------------------------------------------------------------
-                                        2.3636   data required time
-                                      -10.9468   data arrival time
+                                        2.2056   data required time
+                                      -13.0533   data arrival time
 -------------------------------------------------------------------------------------
-                                       -8.5832   slack (VIOLATED)
+                                      -10.8477   slack (VIOLATED)
 
 
-Startpoint: _08641_ (rising edge-triggered flip-flop clocked by clk)
-Endpoint: _16171_ (rising edge-triggered flip-flop clocked by clk)
+Startpoint: _10655_ (rising edge-triggered flip-flop clocked by clk)
+Endpoint: _10682_ (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
 Path Type: max
 
@@ -100,41 +109,50 @@ Fanout       Cap      Slew     Delay      Time   Description
 -------------------------------------------------------------------------------------
                     0.0000    0.0000    0.0000   clock clk (rise edge)
                               0.0000    0.0000   clock network delay (ideal)
-                    0.0000    0.0000    0.0000 ^ _08641_/CLK (sky130_fd_sc_hd__dfrtp_1)
-     7    0.0135    0.0870    0.3896    0.3896 v _08641_/Q (sky130_fd_sc_hd__dfrtp_1)
-     8    0.0165    0.2283    0.2999    0.6896 v _07043_/Y (sky130_fd_sc_hd__nand4b_1)
-    65    0.1868    6.9215    5.3260    6.0156 ^ _07989_/Y (sky130_fd_sc_hd__nor4_1)
-    86    0.2751    1.8723    4.0649   10.0805 v _15910_/Y (sky130_fd_sc_hd__nand2_1)
-     1    0.0019    0.0720    0.8663   10.9468 v _15974_/X (sky130_fd_sc_hd__mux2_1)
-                    0.0720    0.0000   10.9468 v _16171_/D (sky130_fd_sc_hd__dfrtp_1)
-                                       10.9468   data arrival time
+                    0.0000    0.0000    0.0000 ^ _10655_/CLK (sky130_fd_sc_hd__dfrtp_1)
+    24    0.0631    0.5454    0.6636    0.6636 ^ _10655_/Q (sky130_fd_sc_hd__dfrtp_1)
+    13    0.0279    0.2863    0.3807    1.0443 v _10836_/Y (sky130_fd_sc_hd__clkinv_1)
+     1    0.0021    0.0383    0.2828    1.3271 v _12879_/X (sky130_fd_sc_hd__a22o_1)
+     1    0.0025    0.2305    0.1928    1.5199 ^ _12880_/Y (sky130_fd_sc_hd__a221oi_1)
+     1    0.0022    0.0856    0.1127    1.6326 v _12885_/Y (sky130_fd_sc_hd__nand4_1)
+     1    0.0024    0.2066    0.2639    1.8965 ^ _12915_/Y (sky130_fd_sc_hd__nor4_1)
+     1    0.0022    0.0818    0.1124    2.0090 v _12916_/Y (sky130_fd_sc_hd__nand4_1)
+    94    0.2303    8.5175    6.4222    8.4312 ^ _12917_/Y (sky130_fd_sc_hd__nor4_1)
+     4    0.0089    1.1070    0.4485    8.8796 v _12919_/Y (sky130_fd_sc_hd__nor2_1)
+     1    0.0016    0.1646    0.2303    9.1099 ^ _13905_/Y (sky130_fd_sc_hd__nand2_1)
+     4    0.0099    0.1104    0.1782    9.2881 ^ _13908_/X (sky130_fd_sc_hd__or4_1)
+    33    0.0720    0.3243    0.2904    9.5785 v _08797_/Y (sky130_fd_sc_hd__nor4b_1)
+   107    0.2445    4.1165    3.1308   12.7093 ^ _09332_/Y (sky130_fd_sc_hd__nor2_1)
+     1    0.0019    0.4333    0.3440   13.0533 v _10277_/Y (sky130_fd_sc_hd__o21ai_0)
+                    0.4333    0.0000   13.0533 v _10682_/D (sky130_fd_sc_hd__dfrtp_1)
+                                       13.0533   data arrival time
 
                     0.0000    2.5000    2.5000   clock clk (rise edge)
                               0.0000    2.5000   clock network delay (ideal)
                               0.0000    2.5000   clock reconvergence pessimism
-                                        2.5000 ^ _16171_/CLK (sky130_fd_sc_hd__dfrtp_1)
-                             -0.1364    2.3636   library setup time
-                                        2.3636   data required time
+                                        2.5000 ^ _10682_/CLK (sky130_fd_sc_hd__dfrtp_1)
+                             -0.2944    2.2056   library setup time
+                                        2.2056   data required time
 -------------------------------------------------------------------------------------
-                                        2.3636   data required time
-                                      -10.9468   data arrival time
+                                        2.2056   data required time
+                                      -13.0533   data arrival time
 -------------------------------------------------------------------------------------
-                                       -8.5832   slack (VIOLATED)
+                                      -10.8477   slack (VIOLATED)
 
 
 === WORST SLACK ===
-worst slack max -8.58
+worst slack max -10.85
 === POWER (activity 0.2) ===
 Group                    Internal    Switching      Leakage        Total
                             Power        Power        Power        Power (Watts)
 ------------------------------------------------------------------------
-Sequential           4.356185e-02 2.538066e-03 2.808144e-08 4.609995e-02  81.5%
-Combinational        6.058014e-03 4.376634e-03 1.800076e-08 1.043467e-02  18.5%
+Sequential           5.132130e-02 6.775818e-04 3.544607e-08 5.199892e-02  94.6%
+Combinational        1.715369e-03 1.240611e-03 2.194620e-08 2.956002e-03   5.4%
 Clock                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
 Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
 Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
 ------------------------------------------------------------------------
-Total                4.962003e-02 6.914434e-03 4.608293e-08 5.653451e-02 100.0%
-                            87.8%        12.2%         0.0%
+Total                5.303648e-02 1.918071e-03 5.739331e-08 5.495460e-02 100.0%
+                            96.5%         3.5%         0.0%
 
 =STDERR=

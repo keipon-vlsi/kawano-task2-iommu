@@ -9,7 +9,7 @@ Run after syn/synth_nested.py and syn/power_vcd.py. Writes:
 import csv, json, math, re
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
-A_FF, DATA_W = 25.02, 28
+A_FF, DATA_W, CTXW = 25.02, 48, 44   # cache data = PTE[47:0]; CTX = device_id(24)+PASID(20)
 def clog2(n): return 1 if n < 2 else math.ceil(math.log2(n))
 
 # cfg, dir, NCTX, BUF, CO, has_iotlb, has_pf, tag_ctx
@@ -51,9 +51,9 @@ AREA_ROWS=["Walker RF","Transaction buffer","Misc ctrl FF","Arbiter+adders+MSHR 
            "IOTLB lookup logic","prefetch_ctrl","mem_master"]
 area={r:{} for r in AREA_ROWS}; area_total={}
 for cn,d,nctx,buf,co,iot,pf,tc in CFGS:
-    fa,mods,nd=fa_and_dff(d); tcw=36 if tc else 0
+    fa,mods,nd=fa_and_dff(d); tcw=CTXW if tc else 0
     seq=nd*A_FF; comb=max(0.0,mods["ctrl"]-seq); vpnline=27 if co==1 else 24
-    wl=(2+4+27+36+28+27+27+vpnline+4)*nctx; bf=(2+27+36+40)*buf
+    wl=(2+4+27+CTXW+28+27+27+vpnline+4)*nctx; bf=(2+27+CTXW+40)*buf
     ms=(28+18+1 if pf else 0)+56+64+clog2(nctx)+clog2(buf); tot=wl+bf+ms
     area["Walker RF"][cn]=seq*wl/tot; area["Transaction buffer"][cn]=seq*bf/tot
     area["Misc ctrl FF"][cn]=seq*ms/tot; area["Arbiter+adders+MSHR (comb)"][cn]=comb
@@ -89,8 +89,8 @@ def pvget(cn,k,d=None):
 ppa_rows.append(["area_um2"]+[f"{area_total[c]:,.0f}" for c in NAMES])
 ppa_rows.append(["Fmax_MHz"]+[f"{pget(c,'fmax_mhz'):.1f}" for c in NAMES])
 ppa_rows.append(["worst_slack_ns"]+[f"{pget(c,'wns_ns'):.2f}" for c in NAMES])
-ppa_rows.append(["power_VCD_mW@400"]+[("%.2f"%pvget(c,'total_mW') if pvget(c,'total_mW') is not None else "n/a") for c in NAMES])
-ppa_rows.append(["power_flat0.2_mW@400"]+[f"{pget(c,'power_mw'):.1f}" for c in NAMES])
+ppa_rows.append(["power_est_mW@400(calib)"]+[f"{pget(c,'power_mw'):.1f}" for c in NAMES])
+ppa_rows.append(["power_VCD_mW(28b ref)"]+[("%.1f"%pvget(c,'total_mW') if pvget(c,'total_mW') is not None else "n/a") for c in NAMES])
 print(md_table("PPA 比較 (sky130_fd_sc_hd tt 1v80, 2.5ns target)", ppa_hdr, ppa_rows))
 write_csv("ppa_compare.csv", ppa_hdr, ppa_rows)
 
@@ -101,15 +101,44 @@ area_rows.append(["TOTAL"]+[f"{area_total[c]:,.0f}" for c in NAMES])
 print(md_table("詳細 面積内訳 (µm²; cache=tag/data/lookup)", area_hdr, area_rows))
 write_csv("area_breakdown.csv", area_hdr, area_rows)
 
-# 3) power breakdown (VCD-annotated)
-pw_hdr=["power_mW@400(VCD)"]+NAMES
+# 3) power breakdown -- from the VCD-CALIBRATED flat STA (group table) + per-module
+#    apportionment by FF(sequential)/comb area. No per-run VCD needed.
+def read_grouppwr(d):
+    t=(ROOT/d/"results/sta.txt").read_text(); n=r"([0-9][0-9.eE+-]*)"
+    out={}
+    for grp,key in [("Sequential","seq"),("Combinational","comb")]:
+        m=re.search(rf"^{grp}\s+{n}\s+{n}\s+{n}\s+{n}",t,re.M)
+        if m: out[key]=float(m.group(4))*1000
+    mt=re.search(rf"^Total\s+{n}\s+{n}\s+{n}\s+{n}",t,re.M)
+    if mt:
+        out["dyn"]=(float(mt.group(1))+float(mt.group(2)))*1000
+        out["leak_uW"]=float(mt.group(3))*1e6; out["total"]=float(mt.group(4))*1000
+    return out
+# per-module seq/comb area groups (reuse the area breakdown)
+SEQ={"IOTLB":["IOTLB tag","IOTLB data+valid"],"PWC":["PWC tag","PWC data+valid"],
+     "Control":["Walker RF","Transaction buffer","Misc ctrl FF"]}
+COMB={"IOTLB":["IOTLB lookup logic"],"PWC":["PWC lookup logic"],
+      "Control":["Arbiter+adders+MSHR (comb)"],"prefetch_ctrl":["prefetch_ctrl"],
+      "mem_master":["mem_master"]}
+gp={c:read_grouppwr(DIRS[c]) for c in NAMES}
+pmod={c:{} for c in NAMES}
+for c in NAMES:
+    sa=sum(area[r][c] for g in SEQ.values() for r in g)
+    ca=sum(area[r][c] for g in COMB.values() for r in g)
+    sp=gp[c].get("seq",0); cp=gp[c].get("comb",0)
+    for mod in ["IOTLB","PWC","Control","prefetch_ctrl","mem_master"]:
+        s=sum(area[r][c] for r in SEQ.get(mod,[])); k=sum(area[r][c] for r in COMB.get(mod,[]))
+        pmod[c][mod]=(sp*s/sa if sa else 0)+(cp*k/ca if ca else 0)
+pw_hdr=["power_mW@400(calib)"]+NAMES
 pw_rows=[]
-for k,lab in [("dynamic_mW","dynamic"),("leakage_uW","leakage_uW"),
-              ("sequential_mW","sequential"),("combinational_mW","combinational"),
-              ("total_mW","TOTAL")]:
-    pw_rows.append([lab]+[("%.3f"%pvget(c,k) if pvget(c,k) is not None else "n/a") for c in NAMES])
-for mod in ["IOTLB","PWC(x4)","Control","prefetch_ctrl","mem_master"]:
-    pw_rows.append(["  "+mod]+[("%.2f"%pv.get(c,{}).get("per_module_mW",{}).get(mod,0.0) if c in pv else "n/a") for c in NAMES])
-print(md_table("詳細 電力内訳 (VCD-annotated, 実トグル率)", pw_hdr, pw_rows))
+for key,lab in [("dyn","dynamic"),("leak_uW","leakage_uW"),("seq","sequential"),
+                ("comb","combinational"),("total","TOTAL")]:
+    pw_rows.append([lab]+[f"{gp[c].get(key,0):.3f}" for c in NAMES])
+for mod in ["IOTLB","PWC","Control","prefetch_ctrl","mem_master"]:
+    pw_rows.append(["  "+mod]+[f"{pmod[c][mod]:.2f}" for c in NAMES])
+print(md_table("詳細 電力内訳 (VCD較正済み flat 推定 + モジュール按分)", pw_hdr, pw_rows))
 write_csv("power_breakdown.csv", pw_hdr, pw_rows)
-print("\nCSV: results/ppa_compare.csv, area_breakdown.csv, power_breakdown.csv")
+print("\nNote: per-config switching activity was calibrated once against the VCD-annotated"
+      "\n      gate-level power (28b design); going forward the flat STA estimate is used"
+      "\n      (no per-run VCD). The 48b/24b design is larger, so absolute power > the 28b VCD.")
+print("CSV: results/ppa_compare.csv, area_breakdown.csv, power_breakdown.csv")

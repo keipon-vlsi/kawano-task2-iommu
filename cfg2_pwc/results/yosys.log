@@ -1,19 +1,19 @@
 Warning: Replacing memory \data_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:62
 Warning: Replacing memory \tag_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:61
 Warning: Replacing memory \valid_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:60
-Warning: Replacing memory \bspa_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:931
-Warning: Replacing memory \bctx_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:930
-Warning: Replacing memory \bvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:929
-Warning: Replacing memory \bs_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:928
-Warning: Replacing memory \wbeat_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:921
-Warning: Replacing memory \wline_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:920
-Warning: Replacing memory \wdgvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:919
-Warning: Replacing memory \wgpn_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:918
-Warning: Replacing memory \wbase_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:917
-Warning: Replacing memory \wctx_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:916
-Warning: Replacing memory \wvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:915
-Warning: Replacing memory \wpc_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:914
-Warning: Replacing memory \ws_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:913
-Warning: Replacing memory \iburst with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:842, /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:808
-Warning: Replacing memory \iaddr with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:807
-Warning: Replacing memory \iwant with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:806
+Warning: Replacing memory \bspa_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:936
+Warning: Replacing memory \bctx_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:935
+Warning: Replacing memory \bvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:934
+Warning: Replacing memory \bs_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:933
+Warning: Replacing memory \wbeat_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:926
+Warning: Replacing memory \wline_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:925
+Warning: Replacing memory \wdgvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:924
+Warning: Replacing memory \wgpn_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:923
+Warning: Replacing memory \wbase_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:922
+Warning: Replacing memory \wctx_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:921
+Warning: Replacing memory \wvpn_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:920
+Warning: Replacing memory \wpc_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:919
+Warning: Replacing memory \ws_q with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:918
+Warning: Replacing memory \iburst with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:847, /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:813
+Warning: Replacing memory \iaddr with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:812
+Warning: Replacing memory \iwant with list of registers. See /foss/designs/syn/build_nested/cfg2_pwc/cfg2_pwc.v:811

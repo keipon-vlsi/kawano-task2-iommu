@@ -11,7 +11,7 @@ extent FF power is uniform per FF and comb power is uniform per area.
 import math, re
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
-A_FF, DATA_W = 25.02, 28
+A_FF, DATA_W = 25.02, 48
 def clog2(n): return 1 if n < 2 else math.ceil(math.log2(n))
 
 CFGS = [("cfg1","cfg1_nocache",37,37,1,0,0,1),("cfg2","cfg2_pwc",5,5,1,0,0,1),
@@ -45,7 +45,7 @@ def csplit(meas,entries,tagw):
 print(f"{'module':<16}"+"".join(f"{c:>9}" for c,*_ in CFGS)+"   (mW @400MHz act0.2)")
 rows={m:{} for m in ["IOTLB","PWC(x4)","Control(wlk/buf/arb)","prefetch_ctrl","mem_master"]}
 for disp,cfg,nctx,buf,co,iot,pf,tc in CFGS:
-    fa,mods=fa_areas(cfg); nd=dff(cfg); tcw=36 if tc else 0
+    fa,mods=fa_areas(cfg); nd=dff(cfg); tcw=44 if tc else 0
     seqA=nd*A_FF; ctrl=mods["ctrl"]; combA_ctrl=max(0.0,ctrl-seqA)
     # cache seq/comb
     it_seq=it_comb=pwc_seq=pwc_comb=0.0

@@ -41,8 +41,8 @@ def dff_count(cfg):
 
 def nominal_bits(nctx, buf, co, iotlb, pf):
     vpnline = 27 if co == 1 else 24
-    walker = (2+4+27+36+28+27+27+vpnline+4) * nctx         # +wbeat; IOTLB filled per-beat
-    buffer = (2+27+36+40) * buf                            # bs,bvpn,bctx,bspa
+    walker = (2+4+27+44+28+27+27+vpnline+4) * nctx         # +wbeat; IOTLB filled per-beat
+    buffer = (2+27+44+40) * buf                            # bs,bvpn,bctx,bspa
     misc   = (28+18+1 if pf else 0) + 56 + 64 + clog2(nctx) + clog2(buf)
     return {"Walker RF": walker, "Buffer": buffer, "Misc seq": misc}
 

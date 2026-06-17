@@ -13,7 +13,7 @@ import math, re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-A_FF, DATA_W = 25.02, 28
+A_FF, DATA_W = 25.02, 48
 def clog2(n): return 1 if n < 2 else math.ceil(math.log2(n))
 
 # name, dir, NCTX, BUFFER, COALESCE, has_iotlb, has_pf, TAG_CTX
@@ -57,11 +57,11 @@ ROWS=["Walker RF (FF)","Transaction buffer (FF)",
 table={r:{} for r in ROWS}
 
 for disp,cfg,nctx,buf,co,iot,pf,tc in CFGS:
-    fa,mods=areas(cfg); nd=dff(cfg); tcw=36 if tc else 0
+    fa,mods=areas(cfg); nd=dff(cfg); tcw=44 if tc else 0
     seq=nd*A_FF; ctrl=mods["ctrl"]; comb_ctrl=max(0.0,ctrl-seq)
     vpnline=27 if co==1 else 24
-    wl=(2+4+27+36+28+27+27+vpnline+4)*nctx           # +4 = wbeat (leaf-burst beat ctr)
-    bf=(2+27+36+40)*buf
+    wl=(2+4+27+44+28+27+27+vpnline+4)*nctx           # +4 = wbeat (leaf-burst beat ctr)
+    bf=(2+27+44+40)*buf
     ms=(28+18+1 if pf else 0)+56+64+clog2(nctx)+clog2(buf)
     tot=wl+bf+ms
     table["Walker RF (FF)"][disp]=seq*wl/tot
