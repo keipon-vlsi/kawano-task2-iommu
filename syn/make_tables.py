@@ -78,7 +78,9 @@ def md_table(title, header, rows):
 
 def write_csv(path, header, rows):
     with open(ROOT/"results"/path,"w",newline="") as f:
-        w=csv.writer(f); w.writerow(header); w.writerows(rows)
+        w=csv.writer(f); w.writerow(header)
+        for r in rows:
+            w.writerow([str(c).replace(",", "") for c in r])   # raw numbers, no 1000-sep
 
 # post-opt (constraints+sizing P&R) results, keyed by short cfg name
 po = {}
@@ -101,6 +103,15 @@ ppa_rows.append(["Fmax_synth_MHz"]+[f"{pget(c,'fmax_mhz'):.1f}" for c in NAMES])
 ppa_rows.append(["Fmax_postopt_MHz"]+[fmt(poget(c,'fmax_mhz')) for c in NAMES])
 ppa_rows.append(["power_synth_mW@400"]+[f"{pget(c,'power_mw'):.1f}" for c in NAMES])
 ppa_rows.append(["power_postopt_mW@400"]+[fmt(poget(c,'power_mW')) for c in NAMES])
+# --- fair iso-work efficiency: energy/translation (freq-independent) + power@wire-rate ---
+WIRE = 24.41e6      # translations/s (100 GB/s / 4 KB)  ;  FSPEC = 400 MHz spec clock
+FSPEC = 400e6
+CYC = {"cfg1": 10.82, "cfg2": 17.33, "cfg3": 10.80, "cfg4": 11.08, "cfg5": 11.08}  # cocotb
+def etrans_nJ(c):   # energy per translation = P * (cycles/translation) / f  (f cancels)
+    return (pget(c, "power_mw") / 1000.0) * (CYC[c] / FSPEC) * 1e9
+ppa_rows.append(["cyc/translation"]+[f"{CYC[c]:.2f}" for c in NAMES])
+ppa_rows.append(["energy/trans_nJ"]+[f"{etrans_nJ(c):.2f}" for c in NAMES])
+ppa_rows.append(["power@wirerate_mW"]+[f"{etrans_nJ(c)*WIRE*1e-9*1e3:.1f}" for c in NAMES])
 print(md_table("PPA 比較 (sky130_fd_sc_hd tt 1v80, 2.5ns target; synth=ideal-wireload "
                "estimate, postopt=P&R+resize 制約サイジング後)", ppa_hdr, ppa_rows))
 write_csv("ppa_compare.csv", ppa_hdr, ppa_rows)

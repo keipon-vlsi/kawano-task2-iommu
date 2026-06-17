@@ -1,5 +1,13 @@
 [
   {
+    "cfg": "cfg1_nocache",
+    "post_slack_ns": null,
+    "fmax_mhz": null,
+    "area_um2": null,
+    "power_mW": null,
+    "note": "repair_design only (37-walker; repair_timing impractical)"
+  },
+  {
     "cfg": "cfg2_pwc",
     "post_slack_ns": -6.99,
     "fmax_mhz": 105.4,
