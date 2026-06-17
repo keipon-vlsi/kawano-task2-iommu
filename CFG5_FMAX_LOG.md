@@ -20,8 +20,9 @@ PPA を測る。sky130_fd_sc_hd, tt 1v80。
 | v5 | servicer probe/commit パイプ化 | 11.10 | 38 | 99,911 | 115.2 | 115,611 | **241.5** | **+50.2%** | 43.5 | 1.21 | 採用 |
 | v6 | ライン枠 IOTLB（2枠×8, CAM→tag比較+offset index） | 11.10 | 38 | 81,049 | 121.4 | 92,845 | **234.7** | **+46.0%** | 35.8 | 0.99 | 採用 |
 | v7 | メモリ R チャネル 1 段レジスタ化 | 11.35 | 38 | 82,452 | 108.0 | 92,773 | **229.9** | +43.0% | 36.6 | 1.04 | 外れ・破棄 |
+| v8 | (a)launch addr事前計算+(b)e_busy除外+R登録（commit/consume 同時短縮） | 11.35 | 38 | 82,615 | 118.1 | 93,376 | **213.7** | +32.9% | 36.8 | 1.04 | 外れ・破棄（回帰） |
 
-注: v3/v4/v5/v6 は累積（v7 は破棄＝v6 が現状）（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
+注: v3/v4/v5/v6 は累積（v7/v8 は破棄＝v6 が現状ベスト 234.7MHz）（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
 v3 は汎用改善として常時適用、v4 は cfg5 で PIPELINE_DEPTH=2。詳細な分析は各版の節を参照。
 energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-work 指標）。Fmax を稼ぐ過程で
 バッファ挿入により power がやや増え、energy/trans は 1.05→1.15 nJ と微増（性能と引き換えのコスト）。
@@ -90,6 +91,14 @@ energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-
 - **真因（ネットリスト FF 確認）**：v7 後の startpoint=`stg_line_q`(=`e_line`)、endpoint=`wbase_q[0]`(slack −1.85)/`wiaddr_q[0]`。= **commit（launch）経路**：`stg_line_q → e_busy 比較(walker line と照合) → e_svc_launch → wbase_q / iaddr_of→wiaddr_q`。つまり R 登録で **consume 経路（rdata→wbase）は確かに非律速化**したが、**commit 経路が同水準（~230–235MHz）で待ち構えていた**ため総合 Fmax は不変。
 - **学び**：v6 後、**consume 経路と commit 経路が ~230–235MHz で“同着のクリティカル”**だった。片方（consume）だけ直しても、もう片方（commit）が即座に律速になり総合は動かない。**両方を同時に下げない限り Fmax は上がらない**。R 登録は単独では純コスト（レイテンシ増）なので破棄。
 - **次の方針 v8**：露出した **commit（launch）経路**を短縮。具体的には `e_busy`（staging line と walker wline の比較）と launch 時の `iaddr_of`（idx_of+pte_addr）を commit クリティカルから外す。案：(a) launch 用 start アドレスを probe サイクルで事前計算し staging に積む（`stg_start_addr_q`）＝commit は reg→reg 書込みのみ、(b) e_busy を probe 側で算出して staging 化。これで commit を下げ、必要なら consume 側（v7 の R 登録）と**セットで**再投入して両クリティカルを同時に解消する。
+
+### v8 結果：**回帰（234.7→213.7, −9%）** — 外れ、破棄。第 3 の co-critical「prefetch launch」が露出
+- **実装**：(a) demand launch アドレスを probe で事前計算（`stg_start_addr_q`）→ commit は `wiaddr_q<=stg_start_addr_q` の reg→reg、(b) `e_svc_launch` から `e_busy` 項を除外（単一 walker では `wfree_v` が `~busy` を含意するため冗長）＋ commit を if-else→独立 if 化（launch enable から `~e_svc_ride` を排除）、(c) v7 の R チャネル登録を同時投入。cocotb 全 PASS、walks=38、cyc/trans 11.35。
+- **結果**：post-opt 234.7→**213.7 MHz（回帰）**。狙った demand-commit と consume は短縮できたが、**第 3 の経路が露出**。
+- **新ボトルネック**（ネットリスト FF 確認）：startpoint=`stg_line_q`(=`e_line`)、endpoint=`wpc_q[0]`/`wiaddr_q`。経路本体は `stg_line_q → and4_4 ×7（+LEAD 加算器の桁上げ鎖）→ pf_trig → pf_launch → wpc_q/wiaddr_q`。= **prefetch launch 経路**：`prefetch_ctrl` が `pf_line = demand_line + LEAD` を**加算器**で作り、`iaddr_of(8, region_vml0_q, {pf_line})` を launch 時に計算して `wiaddr_q`/`wvpn_q`/`wline_q` へ。demand 側だけ事前計算したので、**prefetch 側の「加算器 + iaddr_of」が今や最長**に。
+- **学び**：co-critical はもう一段あった。**demand-commit・consume・prefetch-launch の 3 本が ~214–235MHz に密集**。v8 は前 2 本を下げて 3 本目（prefetch）を露出させ、その prefetch 経路は「+LEAD 加算器 → idx_of+pte_addr」と**むしろ最長**だったため総合が悪化。1〜2 本ずつ潰す限り、最後に残った最長経路で頭打ち（むしろ表面化で悪化し得る）。
+- **判断**：v8 破棄、**v6（234.7MHz, area 92,845, power 35.8, energy 0.99）を現状ベストとして確定**。さらに上げるには prefetch の `pf_line` 加算器と iaddr_of も probe 段へ事前計算（(c)）し、demand+consume+prefetch の 3 本を**同時に**下げる必要がある＝複雑度が増し利得は逓減。
+- **次の方針（任意）v9**：(c) prefetch アドレス/`pf_line` の probe 事前計算を v8 の (a)(b)(R) と**全部まとめて**投入し 3 本同時に解消。やる価値があるかは費用対効果次第（v6 で既に +46%・面積/電力大幅減を達成済み）。
 
 ## v0 baseline（現状）の critical path
 融合 consume→次状態→発行コーン: walker 状態 FF → cache 最完全ヒット短絡 → `unique
