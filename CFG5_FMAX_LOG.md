@@ -8,6 +8,21 @@ PPA を測る。sky130_fd_sc_hd, tt 1v80。
 合成見積 Fmax = OpenSTA（理想 wireload, placement 無し）。post-opt Fmax = 配置+リサイザ後
 （CTS/route 省略, ideal clock）。電力は @400MHz・較正 activity 0.053。
 
+## PPA 履歴（全版サマリ）
+
+| 版 | 変更点 | cocotb cyc/trans | walks | area_synth µm² | Fmax_synth MHz | area_postopt µm² | **Fmax_postopt MHz** | Δ vs v0 | power@400 mW | 結果 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| v0 | baseline（フラット 12 状態 pc） | 11.08 | 38 | 95,374 | 99.5 | 110,465 | **160.8** | — | 37.9 | 基準 |
+| v1 | G-walk factoring（{kind,lev,ret}） | 11.08 | 38 | 95,195 | 87.3 | 111,489 | **155.0** | −3.6% | 40.7 | 外れ・破棄 |
+| v2 | issue パイプ化（PIPELINE_DEPTH=2） | 11.20 | 38 | 93,705 | 87.3 | 108,537 | **158.2** | −1.6% | 40.4 | 外れ・破棄 |
+| v3 | 観測カウンタ脱結合 | 11.08 | 38 | 94,900 | 86.4 | 110,291 | **189.0** | **+17.5%** | 40.6 | 採用 |
+| v4 | 発行アドレス事前計算（wiaddr_q, PD=2） | 11.20 | 38 | 95,463 | 80.1 | 111,447 | **207.0** | **+28.7%** | 41.2 | 採用 |
+
+注: v3/v4 は累積（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
+v3 は汎用改善として常時適用、v4 は cfg5 で PIPELINE_DEPTH=2。詳細な分析は各版の節を参照。
+
+## 版ごとの記録（時系列・分析付き）
+
 | 版 | 変更点 | cocotb (cyc/trans, walks) | area_synth µm² | Fmax_synth | area_postopt µm² | **Fmax_postopt** | power@400 |
 |---|---|---|---|---|---|---|---|
 | v0 baseline | フラット 12 状態 pc | 11.08, 38 | 95,374 | 99.5 MHz | 110,465 | **160.8 MHz** | 37.9 mW |
