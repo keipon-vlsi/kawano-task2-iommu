@@ -18,8 +18,9 @@ PPA を測る。sky130_fd_sc_hd, tt 1v80。
 | v3 | 観測カウンタ脱結合 | 11.08 | 38 | 94,900 | 86.4 | 110,291 | **189.0** | **+17.5%** | 40.6 | 1.12 | 採用 |
 | v4 | 発行アドレス事前計算（wiaddr_q, PD=2） | 11.20 | 38 | 95,463 | 80.1 | 111,447 | **207.0** | **+28.7%** | 41.2 | 1.15 | 採用 |
 | v5 | servicer probe/commit パイプ化 | 11.10 | 38 | 99,911 | 115.2 | 115,611 | **241.5** | **+50.2%** | 43.5 | 1.21 | 採用 |
+| v6 | ライン枠 IOTLB（2枠×8, CAM→tag比較+offset index） | 11.10 | 38 | 81,049 | 121.4 | 92,845 | **234.7** | **+46.0%** | 35.8 | 0.99 | 採用 |
 
-注: v3/v4/v5 は累積（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
+注: v3/v4/v5/v6 は累積（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
 v3 は汎用改善として常時適用、v4 は cfg5 で PIPELINE_DEPTH=2。詳細な分析は各版の節を参照。
 energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-work 指標）。Fmax を稼ぐ過程で
 バッファ挿入により power がやや増え、energy/trans は 1.05→1.15 nJ と微増（性能と引き換えのコスト）。
@@ -74,6 +75,13 @@ energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-
 - **新ボトルネック**（ネットリスト FF 確認）：startpoint=`bvpn_q[0]`（demand VPN）、endpoint=`stg_iotlb_d_q`（=`e_iotlb_d`、staged IOTLB data）。slack −1.64。= **IOTLB 16 エントリ CAM ルックアップそのもの**：`bvpn_q → IOTLB CAM 比較(16-way, tag=VPN27) → 優先+データ mux → stg_iotlb_d_q`。狙い通り CAM コンペアが probe サイクルに分離され、commit 側（reg→start→wbase/wiaddr）は非律速化。
 - **学び**：v3/v4 で「カウンタ」「発行アドレス」を順に除去し、v5 でついに**本丸の IOTLB CAM 比較**が露出。ここからは「キャッシュ・ルックアップ構造」そのものの最適化（CAM のパイプ化／連想度・タグ幅削減／set-assoc 化）が効く領域。
 - **次の方針 v6 候補**：(a) IOTLB CAM のパイプ化（tag 比較を 1 段、data mux を次段）、(b) IOTLB を full-assoc → set-assoc/直接マップ化して比較器段数を削減（coalesce 済みストリームなら命中率影響は小）、(c) タグ幅短縮。まず (a) か (b) を測る。
+
+### v6 結果：**Fmax ほぼ横ばい（241.5→234.7, −2.8% P&R ノイズ域）だが面積 −19.7%・電力 −17.7%・energy/trans −18% の大幅効率改善**
+- **実装**：連続 IOVA / coalesce 構造を直接利用した `line_iotlb.sv`（fa_cache とポート互換、`HAS_IOTLB` 経路で差替え）。VPN を `{line_tag=VPN[26:3], offset=VPN[2:0]}` に分解し、**2 ライン枠 × 8 ページ**で保持。ルックアップは **16-way×27bit CAM → 2×ライン tag 比較(24bit) + offset 駆動の 8:1 データ mux**（match デコード不要）。fill は従来のビート単位のまま、書き先が「ライン枠の offset スロット」になるだけ。
+- **効果**：synth 見積 Fmax 115.2→**121.4 MHz**（決定論的には改善）、post-opt 241.5→**234.7 MHz**（resizer のばらつきで微減＝ノイズ域）。一方 **面積 115,611→81,049µm²(synth)/92,845µm²(post-opt)（−19.7%）**、**電力 43.5→35.8mW（−17.7%）**、**energy/trans 1.21→0.99nJ（v0 の 1.05 すら下回る）**。比較器・タグ FF が 1/8 になった効果。cocotb 全 IOTLB config（cfg3/4/5）PASS・walks/cyc 完全不変（機能等価）。
+- **新ボトルネック**（ネットリスト FF 確認）：startpoint=`rdata[35]`（メモリ返却データ入力）、endpoint=`wbase_q[0]`(slack −1.76)/`wiaddr_q[0]`。= **consume 経路**：`rdata → ppn28(cons_pte) → next_base(unique case cons_pc) → wbase_q`、および wiaddr 事前計算。**IOTLB CAM はもはや律速ではない**（狙い達成）。律速はメモリ返却→次状態計算のコーン（startpoint が入力ポートなので input_delay も乗る）。
+- **学び**：ワークロード特化のライン枠化は **Fmax よりむしろ面積・電力で効く**（CAM の比較器/タグが支配的だった）。Fmax は v5 でリサイザが既に IOTLB パスを十分バッファ化していたため横ばいだが、**律速が consume 側に移った**＝IOTLB はもう問題でない。energy/trans が v0 以下に戻ったのも収穫。
+- **次の方針 v7 候補**：consume 経路の短縮。(a) mem_master の R データ入力を 1 段レジスタ化（input_delay 経路を内部 reg2reg 化＝実機の R チャネルレジスタスライス相当）、(b) consume の next-state 計算と wbase/wiaddr 事前計算を分割（launch 側 v4/v5 の consume 版）。まず (a)（軽量・実機妥当）を測る。
 
 ## v0 baseline（現状）の critical path
 融合 consume→次状態→発行コーン: walker 状態 FF → cache 最完全ヒット短絡 → `unique

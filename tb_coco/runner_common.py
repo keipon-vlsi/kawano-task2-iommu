@@ -10,7 +10,7 @@ from cocotb_tools.runner import get_runner
 
 ROOT = Path(__file__).resolve().parent.parent
 RTL = ROOT / "rtl"
-CORE = [RTL / f for f in ["iommu_pkg.sv", "fa_cache.sv", "mem_master.sv",
+CORE = [RTL / f for f in ["iommu_pkg.sv", "fa_cache.sv", "line_iotlb.sv", "mem_master.sv",
                           "prefetch_ctrl.sv", "iommu_top.sv"]]
 WAIVERS = ["-Wno-PINCONNECTEMPTY", "-Wno-IMPORTSTAR", "-Wno-UNUSEDSIGNAL",
            "-Wno-DECLFILENAME", "-Wno-UNUSEDPARAM", "-Wno-WIDTHEXPAND",

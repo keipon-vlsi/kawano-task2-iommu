@@ -307,7 +307,10 @@ module iommu_top #(
       assign vml2_d='0; assign vml1_d='0; assign gl2_d='0; assign gl1_d='0;
     end
     if (HAS_IOTLB != 0) begin : g_iotlb
-      fa_cache #(.ENTRIES(IOTLB_N), .TAG_W(IOTLB_TW), .DATA_W(CDW)) u_iotlb (
+      // line-organized IOTLB: 2 line slots x CO pages (= IOTLB_N entries), matching the
+      // coalesced sequential-IOVA stream. Collapses the CO+CO-way VPN CAM into 2 line-tag
+      // compares + an offset-indexed CO:1 data mux (see line_iotlb.sv).
+      line_iotlb #(.NLINES(2), .PAGES(CO), .TAG_W(IOTLB_TW), .DATA_W(CDW)) u_iotlb (
         .clk,.rst_n,.lk_tag(iotlb_lk),.lk_hit(iotlb_hit),.lk_data(iotlb_d),
         .fill_en(iotlb_fe),.fill_tag(iotlb_fk),.fill_data(iotlb_fd));
     end else begin : g_noiotlb

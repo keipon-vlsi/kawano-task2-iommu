@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 IMAGE = "hpretl/iic-osic-tools:latest"
 D = "/foss/designs"
 LIB = "/foss/pdks/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib"
-CORE = ["rtl/iommu_pkg.sv", "rtl/fa_cache.sv", "rtl/mem_master.sv",
+CORE = ["rtl/iommu_pkg.sv", "rtl/fa_cache.sv", "rtl/line_iotlb.sv", "rtl/mem_master.sv",
         "rtl/prefetch_ctrl.sv", "rtl/iommu_top.sv"]
 PERIOD_NS = 2.5      # 400 MHz spec target
 
