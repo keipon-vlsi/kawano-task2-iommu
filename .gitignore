@@ -37,3 +37,15 @@ cfg*/results/gl.vcd
 cfg*/results/gl_sim/
 cfg*/results/gl_build/
 syn/build_nested/
+
+# --- heavy/generated artifacts: untracked, regenerable (do not push to GitHub) ---
+/sim_build/
+cfg*/tb_coco/gl_build/
+cfg*/tb_coco/gl_sim/
+**/tb_coco/gl_build/
+syn/build_hs/
+syn/build_nopipe_hd/
+syn/build_nopipe_hs/
+# synthesized netlists for the hd/hs/nopipe result dirs (regenerable from RTL+flow)
+cfg*/results_hd/netlist.v
+cfg*/results_hs/netlist.v
