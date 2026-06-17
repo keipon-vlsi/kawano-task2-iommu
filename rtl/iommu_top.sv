@@ -169,11 +169,17 @@ module iommu_top #(
 
   logic [TAGW-1:0]  arb_rr_q;
   logic [BW-1:0]    brr_q;
+  // walks_o/resp_o are SIM-ONLY performance counters (walks launched / responses sent),
+  // read by the testbench to check coalescing/throughput. They are NOT used by the
+  // translation datapath. Their 32b ripple-carry was the last Fmax limiter, so they are
+  // EXCLUDED FROM SYNTHESIS (`SYNTHESIS defined by the synth flow) and tied to 0 there.
+`ifndef SYNTHESIS
   logic [31:0]      walks_q, resp_q;
-  // observability counters only -> keep their 32b carry chains OFF the critical path by
-  // incrementing from REGISTERED enables (the stats land 1 cycle later; final count same).
   logic             walk_inc_q, pf_inc_q, resp_inc_q;
   assign walks_o=walks_q; assign resp_o=resp_q;
+`else
+  assign walks_o='0; assign resp_o='0;
+`endif
 
   // ---------------- helpers ----------------
   function automatic logic [PPN_W-1:0] ppn28(input logic [PTE_W-1:0] p);
@@ -530,8 +536,11 @@ module iommu_top #(
         wiaddr_q[i]<='0; wiburst_q[i]<=1'b0; wia_rdy_q[i]<=1'b0;
       end
       for (int i=0;i<BUFFER_DEPTH;i++) begin bs_q[i]<=BFREE; bvpn_q[i]<='0; bctx_q[i]<='0; bspa_q[i]<='0; end
-      arb_rr_q<='0; brr_q<='0; walks_q<='0; resp_q<='0;
+      arb_rr_q<='0; brr_q<='0;
+`ifndef SYNTHESIS
+      walks_q<='0; resp_q<='0;
       walk_inc_q<=1'b0; pf_inc_q<=1'b0; resp_inc_q<=1'b0;
+`endif
       region_vml0_q<='0; region_valid_q<=1'b0; region_id_q<='0;
       stg_v_q<=1'b0; stg_bsel_q<='0; stg_vpn_q<='0; stg_ctx_q<='0; stg_line_q<='0;
       stg_iotlb_hit_q<=1'b0; stg_iotlb_d_q<='0; stg_start_pc_q<=4'd0; stg_start_base_q<='0;
@@ -636,10 +645,11 @@ module iommu_top #(
             wia_rdy_q[w] <= 1'b1;
           end
       end
-      // register the increment enables; counters add from the registered versions so the
-      // IOTLB-lookup-derived svc_launch no longer feeds the 32b counter carry chain.
+`ifndef SYNTHESIS
+      // sim-only perf counters (registered enables; excluded from synthesis)
       walk_inc_q <= e_svc_launch; pf_inc_q <= pf_launch; resp_inc_q <= (rsel_v & rsp_ready);
       walks_q <= walks_q + 32'(walk_inc_q) + 32'(pf_inc_q);
+`endif
 
       // consume a tagged return: advance state (or complete), update PWC fills are comb
       if (do_consume) begin
@@ -696,7 +706,9 @@ module iommu_top #(
 
       // response handshake
       if (rsel_v & rsp_ready) bs_q[rsel]<=BFREE;   // functional free (combinational decide)
-      resp_q <= resp_q + 32'(resp_inc_q);          // stats: registered enable, off crit path
+`ifndef SYNTHESIS
+      resp_q <= resp_q + 32'(resp_inc_q);          // sim-only perf counter (excluded from synth)
+`endif
     end
   end
 endmodule

@@ -1,10 +1,10 @@
 [
   {
     "cfg": "cfg5_notag",
-    "total_area_um2": 84222.0256,
-    "wns_ns": -10.87,
-    "fmax_mhz": 74.79431563201197,
-    "power_mw": 35.82218,
+    "total_area_um2": 81608.2688,
+    "wns_ns": -11.54,
+    "fmax_mhz": 71.22507122507123,
+    "power_mw": 34.63754,
     "period_ns": 2.5
   }
 ]

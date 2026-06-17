@@ -77,7 +77,7 @@ exit
 """
     bash = (
         f"mkdir -p {bld} {res} && "
-        f"sv2v {srcs} > {bld}/{cfg}.v 2>{bld}/sv2v.log && "
+        f"sv2v -D SYNTHESIS {srcs} > {bld}/{cfg}.v 2>{bld}/sv2v.log && "
         f"cat > {bld}/synth.ys <<'YSEOF'\n{ys}\nYSEOF\n"
         f"cat > {bld}/sta.tcl <<'STAEOF'\n{sta}\nSTAEOF\n"
         f"yosys -q {bld}/synth.ys 2>&1 | tee {res}/yosys.log ; "

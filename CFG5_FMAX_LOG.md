@@ -22,9 +22,12 @@ PPA を測る。sky130_fd_sc_hd, tt 1v80。
 | v7 | メモリ R チャネル 1 段レジスタ化 | 11.35 | 38 | 82,452 | 108.0 | 92,773 | **229.9** | +43.0% | 36.6 | 1.04 | 外れ・破棄 |
 | v8 | (a)launch addr事前計算+(b)e_busy除外+R登録（commit/consume 同時短縮） | 11.35 | 38 | 82,615 | 118.1 | 93,376 | **213.7** | +32.9% | 36.8 | 1.04 | 外れ・破棄（回帰） |
 | v9 | v8 + (c)prefetch line/addr の probe 事前計算（3経路同時解消） | 11.35 | 38 | 83,986 | 94.1 | 98,517 | **261.8** | +62.8% | 38.1 | 1.08 | 採用 |
-| v10 | consume の addr-gen 段分割（wia_rdy_q, iaddr_of を別サイクル化） | 11.47 | 38 | 84,222 | 74.8 | 96,616 | **287.4** | **+78.7%** | 38.0 | 1.09 | **採用（ベスト）** |
+| v10 | consume の addr-gen 段分割（wia_rdy_q, iaddr_of を別サイクル化） | 11.47 | 38 | 84,222 | 74.8 | 96,616 | **287.4** | +78.7% | 38.0 | 1.09 | 採用 |
+| v11 | 観測カウンタ walks_q/resp_q を合成から除外（`ifndef SYNTHESIS`） | 11.47 | 38† | 81,608 | 71.2 | 94,091 | **266.7** | +65.9% | 36.7 | 1.05 | **採用（最終・機能クリーン）** |
 
-注: v3/v4/v5/v6/v9/v10 は採用。v10 が現状ベスト（287.4MHz）。rollback タグ `cfg5-v6-best`/`cfg5-v9-best`/`cfg5-v10-best`。v7/v8 は破棄。（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
+†walks=38 はシミュレーション値（カウンタは sim のみ存在）。合成では walks_o/resp_o は 0 固定。
+注: v3/v4/v5/v6/v9/v10/v11 は採用。**v11 が最終の機能クリーン版**（デバッグカウンタを silicon から除去）。
+v10 は計測 Fmax 最高だが律速は除去予定のデバッグカウンタ。rollback タグ `cfg5-v6/v9/v10-best`。v7/v8 破棄。（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
 v3 は汎用改善として常時適用、v4 は cfg5 で PIPELINE_DEPTH=2。詳細な分析は各版の節を参照。
 energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-work 指標）。Fmax を稼ぐ過程で
 バッファ挿入により power がやや増え、energy/trans は 1.05→1.15 nJ と微増（性能と引き換えのコスト）。
@@ -116,6 +119,15 @@ energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-
 - **学び**：v9 で第 4 経路（consume addr）を割ったら、ついに**律速が「観測専用カウンタ」に戻った**＝**実機能パスの最適化はほぼ底**。ここから先は「カウンタを timing から外す」話（機能ではなく計装の問題）。
 - **判断**：v10 を**新ベスト採用**（287.4MHz, area 96,616, power 38.0, energy 1.09）。rollback タグ `cfg5-v9-best`/`cfg5-v10-best` 維持。
 - **次の方針（任意）v11**：観測カウンタ `walks_q`/`resp_q` の桁上げを timing から外す。(a) ビット幅縮小（32→16bit で連鎖半減）、(b) 下位/上位分割＋registered 桁上げ（最終値不変）、(c) SDC で `set_false_path`/`set_multicycle_path`（観測専用・ソフトが非同期サンプルするので妥当）。**実機能の最適化はここで打ち止め**＝以降は計装の扱いの問題。
+
+### v11 結果：観測カウンタを合成から除去 — 機能クリーン化（面積 −2.5k・電力 −1.3mW）、Fmax は実パス律速に
+- **実装**：`walks_q`/`resp_q`（翻訳機能に**不使用**の性能カウンタ）を `\`ifndef SYNTHESIS` で囲い、**合成時は除去**（`walks_o`/`resp_o` は `32'd0` 固定）、**シミュレーション時は保持**（cocotb が `walks_o` で coalescing 検証）。合成フローは `sv2v -D SYNTHESIS` を追加。`outstanding_o`/mem_master の outstanding は cap に使う**機能ロジックなので残置**。
+- **検証**：cocotb（Verilator, SYNTHESIS 未定義）= カウンタ存在 → walks=38 で PASS。合成ネットリスト = `assign walks_o=32'd0`、`walks_q` レジスタ無し（確認済み）。
+- **PPA**：synth area 84,222→**81,608**、post-opt area 96,616→**94,091（−2,525）**、power 38.0→**36.7mW**、energy 1.05nJ。デバッグカウンタの 64 FF + 加算器が消えた。
+- **Fmax**：post-opt 287.4→**266.7 MHz**。**論理が遅くなったのではなく P&R レイアウト変動**：v10 の律速はカウンタ（−0.98=287.4）で、real パスはそれより速かった。カウンタ除去でネットリスト/配置が変わり、real パス（probe の PWC ルックアップ → `stg_start_base_q`）が新レイアウトで −1.25=266.7 に着地。**新律速は機能パス**（`bvpn_q → PWC CAM → start_base 段化`）。CTS 無し ideal-clock フローの構造変動（±約 10%）の範囲。
+- **学び**：v10 の 287.4 は「除去予定のデバッグカウンタが timed path」だった＝製品では出ない数字。**v11（カウンタ除去）が実機能設計の正味**で、real datapath Fmax は ~267–287MHz クラス。観測カウンタは sim 専用に確定（機能・検証の両立）。
+- **判断**：**v11 を最終の機能クリーン版として採用**。計測 Fmax 最高は v10 だが、それはデバッグ計装由来なので「最終設計」は v11。tag `cfg5-v10-best`（カウンタ込み計測上限）と `cfg5-v9/v6-best` は rollback 用に維持。
+- 注：`-D SYNTHESIS` は全 config に効く（cfg1-4 も合成時カウンタ除去）。canonical な cfg1-4 の表を更新するには再合成が必要（別途）。
 
 ## v0 baseline（現状）の critical path
 融合 consume→次状態→発行コーン: walker 状態 FF → cache 最完全ヒット短絡 → `unique
