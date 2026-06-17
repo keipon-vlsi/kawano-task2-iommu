@@ -26,6 +26,7 @@ PPA を測る。sky130_fd_sc_hd, tt 1v80。
 | v11 | 観測カウンタ walks_q/resp_q を合成から除外（`ifndef SYNTHESIS`） | 11.47 | 38† | 81,608 | 71.2 | 94,091 | **266.7** | +65.9% | 36.7 | 1.05 | **採用（最終・機能クリーン）** |
 | v12 | **ライブラリ hd→hs（高速セル）**で再合成・配置最適化（RTL は v11 と同一） | 11.47 | 38† | 115,673 | 130.2 | 131,926 | **347.2** | **+115.9%** | 50.5 | 1.45 | 採用（hs 版） |
 | v13 | prefetch dedup を probe 事前計算（hs で合成） | 11.47 | 38† | 116,461 | 126.3 | 134,165 | **355.9** | +121.3% | 50.8 | 1.46 | 採用（hs・dedup 改良） |
+| v14 | hs の P&R 制約・配置最適化（slew緩め+UTIL65、RTL は v13 と同一） | 11.47 | 38† | 116,461 | 126.3 | 123,510 | **395.3** | **+145.8%** | 50.1 | 1.44 | 採用（hs 最終, 400 の 98.8%）|
 
 †walks=38 はシミュレーション値（カウンタは sim のみ存在）。合成では walks_o/resp_o は 0 固定。
 注: v3/v4/v5/v6/v9/v10/v11 は採用（hd）。**v11 が hd の最終機能クリーン版**。**v12 は同一 RTL を高速ライブラリ hs で合成**（spec 400MHz の 87%）。
@@ -152,6 +153,14 @@ energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-
 - **新ボトルネック**（hs ネットリスト確認）：startpoint=`rdata_q`（登録 R データ）、endpoint=`wbase_q[0][7]`。= **consume の next-state コーン**：`rdata_q → ppn28/gpn27 抽出 → next_base（cons_pc 12-way mux）→ wbase_q`。**これは翻訳機能そのものの論理**（PTE→PPN 抽出＋次状態 mux）で、v10 で wiaddr 側は addr-gen に分離済み、残った next_base 段が露出。
 - **400MHz に届くか（正直な評価）**：あと **0.31ns**。consume next-state をもう一段割れば ideal-clock 段で 400 に触れる可能性はあるが、(1) walk ステップ毎に +1cyc のレイテンシ増、(2) FSM 次状態 mux の分割は複雑（v1 の factoring は外した実績）、そして決定的に **(3) この 355.9 は CTS/配線なしの ideal-clock 値**で、CTS は skew/insertion を ~0.2–0.5ns 足す＝実シリコンでは **~10–25% 低下**。よって「ideal で 400」を作っても **silicon の 400 closure ではない**。sky130 オープンフローで真の 400 は CLAUDE.md どおり攻めすぎで、**hs＋アーキ最適化で 356MHz（spec 89%, ideal-clock）が現実的な到達点**。
 - **判断**：v13 を hs の最終とする。dedup 事前計算は hd にも効く汎用改良（hd 再合成は別途）。400 を「ideal-clock 段で形式的に」狙うより、ここで止めるのが工学的に妥当。
+
+### v14 結果：hs の P&R 制約・配置最適化で **355.9→395.3 MHz（spec 400 の 98.8%）** — RTL 不変、ここで打ち切り
+- **内容**：v13 と**同一 RTL/同一ネットリスト**。`opt.tcl` の P&R 制約のみ調整（RTL 差分ゼロ）。効いたノブ：**(1) slew 制約を緩める**（`MAXTRANS 0.5→0.75`, `SLEWM/CAPM=0`）＝過剰バッファ抑制で配線遅延が減る（hd でも k2>k3 だった現象）、**(2) フロアプラン密度 `UTIL 35→65`**＝ダイ横断配線の短縮（critical path の ~44% がバッファ鎖だったため効く）、(3) `SETUPM=0.15`。`set_driving_cell`/floorplan util を env(`DRVCELL`/`UTIL`)化。
+- **ノブ探索（hs netlist 固定）**：slew 0.5→0.75 で 355.9→387.6、UTIL 35→65 で 389→**395.3**（UTIL45=374.5, 55=380.2, **65=395.3**, 70=384.6, 80=390.6；65 が最良）。UTIL65 は setupM 0.15/0.25/0.35 で全て −0.03＝**決定論的な配置律速の天井**（ノイズではない）。
+- **最終 PPA（hs, UTIL65, post-opt）**：**Fmax 395.3 MHz**、**WNS −0.03ns / TNS −0.20ns**（＝ほぼ全パスが 400 を満たし、違反は最悪パス 1 本が −0.03ns のみ）、area 123,510µm²、power 50.1mW、energy 1.44nJ。
+- **クリティカルパス**（hs ネットリスト）：startpoint=`cons_newdg`(=`gpn27(rdata_q)`)、endpoint=`wbase_q[0]`。= v13 と同じ **consume の G-PWC 短絡パス**：`rdata_q → gpn27 → G-PWC(gl1/gl2) CAM 比較 → next_base mux → wbase_q`。経路の ~44% がダイ横断バッファ（配線）、残りは G-PWC 比較＋次状態 mux＝**翻訳機能そのものの論理**。
+- **打ち切り判断（ユーザ停止条件に合致）**：(1) **P&R 制約調整では 395.3 が決定論的天井**（UTIL65 で飽和、これ以上削れない）、(2) **クリティカルパスが配線長依存**（~44% バッファ鎖）＋残りは機能論理（G-PWC 短絡）、(3) 残り 0.03ns を消すには G-PWC 短絡をパイプ化＝walk レイテンシ増を伴う機能論理の改変が必要で、しかも **この 395.3 は ideal-clock 値（CTS/route で ~10–25% 低下）**＝形式的 400 を作っても silicon の 400 closure ではない。→ **v14（395.3MHz, 98.8% of spec）で打ち切り**。
+- **到達点まとめ**：アーキ最適化（v3–v13, hd で +66%）＋高速ライブラリ＋P&R 最適化で、**ideal-clock で spec 400MHz の 98.8%（395.3MHz）**。hd 最終 v11=266.7（67%）、hs 最終 v14=395.3（98.8%）。
 
 ## v0 baseline（現状）の critical path
 融合 consume→次状態→発行コーン: walker 状態 FF → cache 最完全ヒット短絡 → `unique

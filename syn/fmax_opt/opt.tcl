@@ -32,7 +32,7 @@ set_max_transition [ev MAXTRANS 0.75] [current_design]
 set_max_fanout     [ev MAXFO 16]      [current_design]
 
 # ---- floorplan + global placement (realistic parasitics) ----
-initialize_floorplan -utilization 35 -aspect_ratio 1.0 -core_space 5 -site [ev SITE unithd]
+initialize_floorplan -utilization [ev UTIL 35] -aspect_ratio 1.0 -core_space 5 -site [ev SITE unithd]
 make_tracks
 place_pins -hor_layers met3 -ver_layers met2
 set_wire_rc -signal -layer met3
