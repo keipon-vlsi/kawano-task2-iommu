@@ -205,6 +205,40 @@ dead-logic removal（v11 — 非機能カウンタの合成除外）、library/P
 **rollback タグ**: `cfg5-v6-best`（234.7, 最小電力 hd）/ `cfg5-v9-best` / `cfg5-v10-best`
 （287.4, hd 最高 Fmax）/ `cfg5-v11-clean`（hd 機能クリーン）/ `cfg5-v14-hs-tuned`（395.3, hs 最終）。
 
+---
+
+## 4. 補足: パイプライン無し（論理構造・段数最適化のみ）の上限
+
+「パイプラインを一切入れず（`PIPELINE_DEPTH=1`）、論理構造・段数の最適化のみ」行った場合の
+最大周波数。構成 `cfg5_nopipe_top`：probe/commit 分割・発行アドレス事前計算・addr-gen 段・
+R チャネル登録・prefetch staging（全 PD≥2 ロジック）を **OFF**。非パイプの構造最適化＝
+**ライン枠 IOTLB（v6）と観測カウンタ合成除外（v11）は保持**。P&R は v14 と同じ tuned knobs。
+cocotb PASS（walks=38, cyc/trans **11.08**＝パイプ無しで最小レイテンシ）。
+
+| lib | synth Fmax | **post-opt Fmax** | WNS [ns] | TNS [ns] | area [µm²] | power [mW] | energy/trans [nJ] |
+|---|---|---|---|---|---|---|---|
+| hd | 106.3 | **214.6 MHz** | −2.16 | −3002.2 | 80,938 | 31.1 | 0.86 |
+| hs | 124.5 | **222.2 MHz** | −2.00 | −989.4 | 108,750 | 43.1 | 1.19 |
+
+- **クリティカルパス（両 lib 共通）**: `rdata（入力ポート）→ consume 次状態 → アドレス生成 → araddr
+  （出力ポート）`。= **メモリ返却 → メモリ発行の融合コンビネーショナルコーン**（1 サイクルに
+  cache lookup + next-state + idx_of+pte_addr + arbiter が全て載る、input→output パス）。これは
+  まさに v4/v5/v9/v10 のパイプ段が分割していた経路で、**パイプ無しでは 1 本の長大コーン**として残る。
+- **対比（同じ logic 最適化済み・P&R も同条件）**:
+  - hd: パイプ無し **214.6** → パイプ有り(v11) **266.7 MHz**（**+24%**）。
+  - hs: パイプ無し **222.2** → パイプ有り(v14) **395.3 MHz**（**+78%**）。
+- **示唆**: 論理構造・段数最適化（ライン枠 IOTLB、カウンタ除去）だけでも v0 比では大きく改善するが、
+  **融合コーンの段分割（パイプライン）無しでは hd/hs とも ~215–222 MHz が上限**。とくに hs の利得は
+  パイプ無しだと +3.5%（214.6→222.2）に留まる ← 長大な input→output コーン（配線+IO delay 込み）が
+  支配的で、高速セルの効果が薄い。**hs の高速性はコーンを段分割して初めて活きる**（パイプ有りで +78%）。
+- **トレードオフ**: パイプ無しは **面積最小・電力最小・レイテンシ最小**（hd 80,938µm²/31.1mW/0.86nJ、
+  cyc/trans 11.08）。Fmax を犠牲に PPA 効率は最良。
+
+> 注: no-pipe の数値は `cfg5_nopipe/results_{hd,hs}/postopt.log`（post-place+resize, ideal clock,
+> no CTS/route, v14-tuned knobs）から抽出。
+
+---
+
 > 注: 全 WNS/TNS/area/power は `results/fmax_opt/postopt_cfg5_notag.log`（v0–v11, 各版 git コミット）
 > および `cfg5_notag/results_hs/postopt*.log`（v12–v14）から抽出した post-place+resize（ideal clock,
 > no CTS/route）の実測値。v7/v8 はリバートのため WNS は Fmax 逆算・TNS は未保存（表注記参照）。

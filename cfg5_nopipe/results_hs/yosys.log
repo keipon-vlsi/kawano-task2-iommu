@@ -1,0 +1,26 @@
+Warning: Replacing memory \data_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:62
+Warning: Replacing memory \tag_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:61
+Warning: Replacing memory \valid_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:60
+Warning: Replacing memory \data_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:172
+Warning: Replacing memory \subv_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:168
+Warning: Replacing memory \ltag_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:167
+Warning: Replacing memory \lvalid_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:166
+Warning: Replacing memory \bspa_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1178
+Warning: Replacing memory \bctx_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1177
+Warning: Replacing memory \bvpn_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1176
+Warning: Replacing memory \bs_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1175
+Warning: Replacing memory \wia_rdy_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1168
+Warning: Replacing memory \wiburst_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1167
+Warning: Replacing memory \wiaddr_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1166
+Warning: Replacing memory \wbeat_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1165
+Warning: Replacing memory \wline_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1164
+Warning: Replacing memory \wdgvpn_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1163
+Warning: Replacing memory \wgpn_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1162
+Warning: Replacing memory \wbase_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1161
+Warning: Replacing memory \wctx_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1160
+Warning: Replacing memory \wvpn_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1159
+Warning: Replacing memory \wpc_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1158
+Warning: Replacing memory \ws_q with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1157
+Warning: Replacing memory \iburst with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1086, /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1043
+Warning: Replacing memory \iaddr with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1042
+Warning: Replacing memory \iwant with list of registers. See /foss/designs/syn/build_nopipe_hs/cfg5_nopipe.v:1041
