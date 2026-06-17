@@ -153,6 +153,7 @@ module iommu_top #(
   logic [PA_W-1:0]       stg_pf_addr_q;       // iaddr_of(pc8, region base, pf_line)
   logic                  stg_pf_same_q;       // same VM-L0 table guard
   logic                  stg_pf_region_ok_q;  // region captured & matches
+  logic                  stg_pf_fresh_q;      // v13: dedup precomputed (pf_line != pf_last)
   logic [PPN_W-1:0]      stg_pf_regbase_q;    // region VM-L0 base snapshot
   logic [VPNLINE_W-1:0]  pf_last_q;           // prefetch dedup (PD>=2)
 
@@ -431,7 +432,7 @@ module iommu_top #(
   logic pf_launch_c;
   assign pf_launch_c = (PREFETCH_EN!=0) & stg_v_q & (e_svc_iotlb | e_svc_launch)
                      & stg_pf_region_ok_q & stg_pf_same_q & wfree_v & ~e_svc_launch
-                     & (stg_pf_line_q != pf_last_q);
+                     & stg_pf_fresh_q;   // v13: dedup precomputed at probe (compare off launch path)
   assign pf_launch = SVC_PIPE ? pf_launch_c
                               : ((PREFETCH_EN!=0) & pf_trig & wfree_v & ~e_svc_launch);
 
@@ -546,7 +547,7 @@ module iommu_top #(
       stg_iotlb_hit_q<=1'b0; stg_iotlb_d_q<='0; stg_start_pc_q<=4'd0; stg_start_base_q<='0;
       stg_start_addr_q<='0; stg_start_burst_q<=1'b0;
       stg_pf_line_q<='0; stg_pf_addr_q<='0; stg_pf_same_q<=1'b0; stg_pf_region_ok_q<=1'b0;
-      stg_pf_regbase_q<='0; pf_last_q<='0;
+      stg_pf_regbase_q<='0; pf_last_q<='0; stg_pf_fresh_q<=1'b0;
       rvalid_q<=1'b0; rlast_q<=1'b0; rdata_q<='0; rid_q<='0;
     end else begin
       // R channel register slice (consumed by the engine when PIPELINE_DEPTH>=2)
@@ -580,6 +581,10 @@ module iommu_top #(
                                   {(bsel_line + VPNLINE_W'(PREFETCH_LEAD)), {LINE_LSB{1'b0}}}, '0, '0);
             stg_pf_region_ok_q<= region_valid_q & (region_id_q == bvpn_q[bsel][VPN_W-1:IDX_W]);
             stg_pf_regbase_q  <= region_vml0_q;
+            // v13: precompute dedup here so the launch enable is reg-only (no 24b compare).
+            // pf_last_q is stable between this probe and its commit (1-shot staging), so the
+            // staged result is correct; a re-probe refreshes it after any prefetch launch.
+            stg_pf_fresh_q    <= ((bsel_line + VPNLINE_W'(PREFETCH_LEAD)) != pf_last_q);
           end
           brr_q <= (brr_q==BW'(BUFFER_DEPTH-1)) ? '0 : brr_q+BW'(1);
         end

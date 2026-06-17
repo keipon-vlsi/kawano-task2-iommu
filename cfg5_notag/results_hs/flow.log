@@ -38,25 +38,25 @@ Warning: Replacing memory \data_q with list of registers. See /foss/designs/syn/
 Warning: Replacing memory \subv_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:168
 Warning: Replacing memory \ltag_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:167
 Warning: Replacing memory \lvalid_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:166
-Warning: Replacing memory \bspa_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1177
-Warning: Replacing memory \bctx_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1176
-Warning: Replacing memory \bvpn_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1175
-Warning: Replacing memory \bs_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1174
-Warning: Replacing memory \wia_rdy_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1167
-Warning: Replacing memory \wiburst_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1166
-Warning: Replacing memory \wiaddr_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1165
-Warning: Replacing memory \wbeat_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1164
-Warning: Replacing memory \wline_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1163
-Warning: Replacing memory \wdgvpn_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1162
-Warning: Replacing memory \wgpn_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1161
-Warning: Replacing memory \wbase_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1160
-Warning: Replacing memory \wctx_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1159
-Warning: Replacing memory \wvpn_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1158
-Warning: Replacing memory \wpc_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1157
-Warning: Replacing memory \ws_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1156
-Warning: Replacing memory \iburst with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1085, /foss/designs/syn/build_hs/cfg5_notag.v:1042
-Warning: Replacing memory \iaddr with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1041
-Warning: Replacing memory \iwant with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1040
+Warning: Replacing memory \bspa_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1178
+Warning: Replacing memory \bctx_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1177
+Warning: Replacing memory \bvpn_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1176
+Warning: Replacing memory \bs_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1175
+Warning: Replacing memory \wia_rdy_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1168
+Warning: Replacing memory \wiburst_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1167
+Warning: Replacing memory \wiaddr_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1166
+Warning: Replacing memory \wbeat_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1165
+Warning: Replacing memory \wline_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1164
+Warning: Replacing memory \wdgvpn_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1163
+Warning: Replacing memory \wgpn_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1162
+Warning: Replacing memory \wbase_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1161
+Warning: Replacing memory \wctx_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1160
+Warning: Replacing memory \wvpn_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1159
+Warning: Replacing memory \wpc_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1158
+Warning: Replacing memory \ws_q with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1157
+Warning: Replacing memory \iburst with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1086, /foss/designs/syn/build_hs/cfg5_notag.v:1043
+Warning: Replacing memory \iaddr with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1042
+Warning: Replacing memory \iwant with list of registers. See /foss/designs/syn/build_hs/cfg5_notag.v:1041
 OpenSTA 3.1.0 76c4d6df35 Copyright (c) 2026, Parallax Software, Inc.
 License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
 
@@ -64,18 +64,18 @@ This is free software, and you are free to change and redistribute it
 under certain conditions; type `show_copying' for details. 
 This program comes with ABSOLUTELY NO WARRANTY; for details type `show_warranty'.
 === WORST SLACK ===
-worst slack max -5.18
+worst slack max -5.42
 === POWER ===
 Group                    Internal    Switching      Leakage        Total
                             Power        Power        Power        Power (Watts)
 ------------------------------------------------------------------------
-Sequential           4.284674e-02 5.670240e-04 1.232857e-06 4.341500e-02  86.5%
-Combinational        5.780614e-03 1.003323e-03 3.486581e-07 6.784285e-03  13.5%
+Sequential           4.286590e-02 5.714434e-04 1.233503e-06 4.343858e-02  86.4%
+Combinational        5.811953e-03 1.009985e-03 3.509244e-07 6.822289e-03  13.6%
 Clock                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
 Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
 Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
 ------------------------------------------------------------------------
-Total                4.862741e-02 1.570387e-03 1.581540e-06 5.019939e-02 100.0%
+Total                4.867802e-02 1.581466e-03 1.584452e-06 5.026107e-02 100.0%
                             96.9%         3.1%         0.0%
 
 =ERR=

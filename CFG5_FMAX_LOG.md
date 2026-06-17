@@ -24,8 +24,8 @@ PPA を測る。sky130_fd_sc_hd, tt 1v80。
 | v9 | v8 + (c)prefetch line/addr の probe 事前計算（3経路同時解消） | 11.35 | 38 | 83,986 | 94.1 | 98,517 | **261.8** | +62.8% | 38.1 | 1.08 | 採用 |
 | v10 | consume の addr-gen 段分割（wia_rdy_q, iaddr_of を別サイクル化） | 11.47 | 38 | 84,222 | 74.8 | 96,616 | **287.4** | +78.7% | 38.0 | 1.09 | 採用 |
 | v11 | 観測カウンタ walks_q/resp_q を合成から除外（`ifndef SYNTHESIS`） | 11.47 | 38† | 81,608 | 71.2 | 94,091 | **266.7** | +65.9% | 36.7 | 1.05 | **採用（最終・機能クリーン）** |
-
 | v12 | **ライブラリ hd→hs（高速セル）**で再合成・配置最適化（RTL は v11 と同一） | 11.47 | 38† | 115,673 | 130.2 | 131,926 | **347.2** | **+115.9%** | 50.5 | 1.45 | 採用（hs 版） |
+| v13 | prefetch dedup を probe 事前計算（hs で合成） | 11.47 | 38† | 116,461 | 126.3 | 134,165 | **355.9** | +121.3% | 50.8 | 1.46 | 採用（hs・dedup 改良） |
 
 †walks=38 はシミュレーション値（カウンタは sim のみ存在）。合成では walks_o/resp_o は 0 固定。
 注: v3/v4/v5/v6/v9/v10/v11 は採用（hd）。**v11 が hd の最終機能クリーン版**。**v12 は同一 RTL を高速ライブラリ hs で合成**（spec 400MHz の 87%）。
@@ -145,6 +145,13 @@ energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-
 - **新ボトルネック**（hs ネットリスト FF 確認）：startpoint=`pf_last_q[14]`（prefetch dedup レジスタ）、endpoint=`wiaddr_q[0]`、slack −0.38。= **v9 の prefetch dedup 比較 → prefetch launch → wiaddr_q**（`stg_pf_line_q != pf_last_q`）。実機能パスで、2.5ns まであと −0.38ns。
 - **学び**：同一 RTL/同一フローでライブラリだけ hs にすると **+30% Fmax**、ただし面積 +40%・電力 +38%。**spec 400MHz の 87% まで到達**（hd では 67%）。CLAUDE.md の「sky130 で 400MHz は標準セル/オープンフローには攻めすぎ（快適なのは ~100–250MHz）」に対し、アーキ最適化（v3-v11）＋高速ライブラリ（v12）で 347MHz まで来た。残り 13% は CTS/route 後に削られる余裕分とほぼ拮抗。
 - **判断**：v12 を **hs 版として採用**（用途次第：Fmax 最優先なら hs、面積/電力優先なら hd の v11）。RTL は v11 と完全同一なので **どちらのライブラリでも同じ設計**。
+
+### v13 結果：hs で **347.2→355.9 MHz**（prefetch dedup 事前計算）— 400 まであと ~0.31ns、ただし ideal-clock 値
+- **実装**：v12 の律速 `pf_last_q → (24bit dedup 比較) → pf_launch → wiaddr_q` を解消。dedup `(pf_line != pf_last_q)` を **probe で事前計算**して `stg_pf_fresh_q` に格納（pf_last_q は probe→commit 間で安定、1-shot staging で再 probe が refresh）。launch enable から 24bit 比較が消えた。汎用 RTL 改良（hd でも有効）。cocotb 全 PASS、walks=38、dedup 正常。
+- **効果**：hs post-opt 347.2→**355.9 MHz**（+2.5%、spec 400 の **89%**）。async reset-recovery は −0.02 とほぼ達成、reg2reg worst が −0.31。
+- **新ボトルネック**（hs ネットリスト確認）：startpoint=`rdata_q`（登録 R データ）、endpoint=`wbase_q[0][7]`。= **consume の next-state コーン**：`rdata_q → ppn28/gpn27 抽出 → next_base（cons_pc 12-way mux）→ wbase_q`。**これは翻訳機能そのものの論理**（PTE→PPN 抽出＋次状態 mux）で、v10 で wiaddr 側は addr-gen に分離済み、残った next_base 段が露出。
+- **400MHz に届くか（正直な評価）**：あと **0.31ns**。consume next-state をもう一段割れば ideal-clock 段で 400 に触れる可能性はあるが、(1) walk ステップ毎に +1cyc のレイテンシ増、(2) FSM 次状態 mux の分割は複雑（v1 の factoring は外した実績）、そして決定的に **(3) この 355.9 は CTS/配線なしの ideal-clock 値**で、CTS は skew/insertion を ~0.2–0.5ns 足す＝実シリコンでは **~10–25% 低下**。よって「ideal で 400」を作っても **silicon の 400 closure ではない**。sky130 オープンフローで真の 400 は CLAUDE.md どおり攻めすぎで、**hs＋アーキ最適化で 356MHz（spec 89%, ideal-clock）が現実的な到達点**。
+- **判断**：v13 を hs の最終とする。dedup 事前計算は hd にも効く汎用改良（hd 再合成は別途）。400 を「ideal-clock 段で形式的に」狙うより、ここで止めるのが工学的に妥当。
 
 ## v0 baseline（現状）の critical path
 融合 consume→次状態→発行コーン: walker 状態 FF → cache 最完全ヒット短絡 → `unique
