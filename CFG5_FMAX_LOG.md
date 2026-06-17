@@ -21,8 +21,9 @@ PPA を測る。sky130_fd_sc_hd, tt 1v80。
 | v6 | ライン枠 IOTLB（2枠×8, CAM→tag比較+offset index） | 11.10 | 38 | 81,049 | 121.4 | 92,845 | **234.7** | **+46.0%** | 35.8 | 0.99 | 採用 |
 | v7 | メモリ R チャネル 1 段レジスタ化 | 11.35 | 38 | 82,452 | 108.0 | 92,773 | **229.9** | +43.0% | 36.6 | 1.04 | 外れ・破棄 |
 | v8 | (a)launch addr事前計算+(b)e_busy除外+R登録（commit/consume 同時短縮） | 11.35 | 38 | 82,615 | 118.1 | 93,376 | **213.7** | +32.9% | 36.8 | 1.04 | 外れ・破棄（回帰） |
+| v9 | v8 + (c)prefetch line/addr の probe 事前計算（3経路同時解消） | 11.35 | 38 | 83,986 | 94.1 | 98,517 | **261.8** | **+62.8%** | 38.1 | 1.08 | **採用（ベスト）** |
 
-注: v3/v4/v5/v6 は累積（v7/v8 は破棄＝v6 が現状ベスト 234.7MHz）（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
+注: v3/v4/v5/v6/v9 は採用。v9 が現状ベスト（261.8MHz）。v6 は rollback タグ `cfg5-v6-best`。v7/v8 は破棄。（v4 は v3 を含む）。Δ vs v0 は post-opt Fmax の対 v0 比。v1/v2 は計測後に破棄（v0 へリバート）、
 v3 は汎用改善として常時適用、v4 は cfg5 で PIPELINE_DEPTH=2。詳細な分析は各版の節を参照。
 energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-work 指標）。Fmax を稼ぐ過程で
 バッファ挿入により power がやや増え、energy/trans は 1.05→1.15 nJ と微増（性能と引き換えのコスト）。
@@ -99,6 +100,13 @@ energy/trans = power@400 × (cyc/trans) ÷ 400 [nJ]（周波数非依存の iso-
 - **学び**：co-critical はもう一段あった。**demand-commit・consume・prefetch-launch の 3 本が ~214–235MHz に密集**。v8 は前 2 本を下げて 3 本目（prefetch）を露出させ、その prefetch 経路は「+LEAD 加算器 → idx_of+pte_addr」と**むしろ最長**だったため総合が悪化。1〜2 本ずつ潰す限り、最後に残った最長経路で頭打ち（むしろ表面化で悪化し得る）。
 - **判断**：v8 破棄、**v6（234.7MHz, area 92,845, power 35.8, energy 0.99）を現状ベストとして確定**。さらに上げるには prefetch の `pf_line` 加算器と iaddr_of も probe 段へ事前計算（(c)）し、demand+consume+prefetch の 3 本を**同時に**下げる必要がある＝複雑度が増し利得は逓減。
 - **次の方針（任意）v9**：(c) prefetch アドレス/`pf_line` の probe 事前計算を v8 の (a)(b)(R) と**全部まとめて**投入し 3 本同時に解消。やる価値があるかは費用対効果次第（v6 で既に +46%・面積/電力大幅減を達成済み）。
+
+### v9 結果：**+11.5%（234.7→261.8 MHz）／v0 比 +62.8%** — 3 経路同時解消で突破、現状ベスト
+- **実装**：v8 の (a)(b)(R) に **(c) prefetch の事前計算**を追加。`prefetch_ctrl` の `pf_line = demand_line + LEAD`（加算器）・`same_table`・launch アドレス `iaddr_of(pc8,...)` を **probe サイクルで計算**して staging（`stg_pf_line_q`/`stg_pf_addr_q`/`stg_pf_same_q`/`stg_pf_region_ok_q`/`stg_pf_regbase_q`）に積む。commit/launch は **reg→reg 書込み + dedup 比較（`stg_pf_line_q != pf_last_q`）**のみ。PD≥2 専用（cfg4=PD<2 は従来 `prefetch_ctrl` 経路のまま不変）。
+- **効果**：post-opt 234.7→**261.8 MHz**（v6 比 +11.5%、これまでのベスト v5 241.5 も更新）。cocotb 全 PASS、walks=38 不変（prefetch + dedup 正常）、cyc/trans 11.35（R 登録ぶん +0.25、wire rate 16.4 に余裕）。area 92,845→98,517（staging FF ぶん +5,672、なお v0 の 110,465 は下回る）、power 38.1mW、energy/trans 1.08nJ。
+- **学び（核心）**：v7（consume 単独）= null、v8（commit+consume 2 本）= 第 3 経路露出で回帰、**v9（demand-commit + consume + prefetch-launch の 3 本同時）= 突破**。**co-critical なパス群は「全部まとめて下げる」必要がある**ことを実証。1〜2 本ずつでは最長経路が残って効かない（むしろ表面化で悪化し得る）。
+- **新ボトルネック**（ネットリスト FF 確認）：startpoint=`rdata_q`（登録 R データ）、endpoint=`wiaddr_q[0]`（slack −1.32）。= **consume 側のアドレス事前計算**：`rdata_q → gpn27/next-state(next_dg/next_base) → iaddr_of → wiaddr_q`。3 本を潰した結果、**第 4 の経路（consume の iaddr_of 事前計算）**が露出。これは v4 の consume 版を「もう一段 probe 化」する話で、さらに逓減。
+- **判断**：v9 を**新ベストとして採用**（261.8MHz, area 98,517, power 38.1, energy 1.08）。rollback タグ `cfg5-v6-best` は維持。これ以上は consume 側 iaddr_of の段分割（v10）になるが、+62.8% 達成済みで費用対効果は更に低下。
 
 ## v0 baseline（現状）の critical path
 融合 consume→次状態→発行コーン: walker 状態 FF → cache 最完全ヒット短絡 → `unique

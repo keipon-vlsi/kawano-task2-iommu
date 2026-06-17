@@ -139,6 +139,23 @@ module iommu_top #(
   logic [CDW-1:0]        stg_iotlb_d_q;
   logic [3:0]            stg_start_pc_q;
   logic [PPN_W-1:0]      stg_start_base_q;
+  // v8(a): demand launch read address precomputed at probe (iaddr_of off the commit path)
+  logic [PA_W-1:0]       stg_start_addr_q;
+  logic                  stg_start_burst_q;
+  // v9(c): prefetch target line + launch address precomputed at probe (the +LEAD adder
+  // and iaddr_of leave the commit/launch path; commit does reg->reg writes + a dedup compare)
+  logic [VPNLINE_W-1:0]  stg_pf_line_q;       // demand_line + LEAD
+  logic [PA_W-1:0]       stg_pf_addr_q;       // iaddr_of(pc8, region base, pf_line)
+  logic                  stg_pf_same_q;       // same VM-L0 table guard
+  logic                  stg_pf_region_ok_q;  // region captured & matches
+  logic [PPN_W-1:0]      stg_pf_regbase_q;    // region VM-L0 base snapshot
+  logic [VPNLINE_W-1:0]  pf_last_q;           // prefetch dedup (PD>=2)
+
+  // v8: register the memory R channel (AXI R register slice) so the consume cone
+  // rdata -> ppn -> next_base -> {wbase_q,wiaddr_q} is reg2reg, not an input-delay path.
+  logic                  rvalid_q, rlast_q;
+  logic [PTE_W-1:0]      rdata_q;
+  logic [TAG_W_TOP-1:0]  rid_q;
 
   // prefetch (next-line) region capture
   logic [PPN_W-1:0]  region_vml0_q;
@@ -210,11 +227,17 @@ module iommu_top #(
   end
 
   // ===================================================== cache lookups
+  // effective R channel: registered (PD>=2) or pass-through (PD<2). rready is always 1.
+  logic                 r_valid, r_last;  logic [PTE_W-1:0] r_data;  logic [TAG_W_TOP-1:0] r_id;
+  always_comb begin
+    if (PIPELINE_DEPTH>=2) begin r_valid=rvalid_q; r_last=rlast_q; r_data=rdata_q; r_id=rid_q; end
+    else                   begin r_valid=rvalid;   r_last=rlast;   r_data=rdata;   r_id=rid;   end
+  end
   // consuming walker (from memory return tag)
   logic [TAGW-1:0]   cons_w;
   logic [VPN_W-1:0]  cons_vpn;  logic [CTX_W-1:0] cons_ctx;  logic [GVPN_W-1:0] cons_dgvpn;
   logic [3:0]        cons_pc;
-  assign cons_w     = rid[TAGW-1:0];
+  assign cons_w     = r_id[TAGW-1:0];
   assign cons_vpn   = wvpn_q[cons_w];
   assign cons_ctx   = wctx_q[cons_w];
   assign cons_dgvpn = wdgvpn_q[cons_w];
@@ -222,9 +245,9 @@ module iommu_top #(
   // a pc11 leaf read (CO>1) returns 8 beats -> burst path; everything else is 1 beat
   logic        burst_beat, do_consume;
   logic [PTE_W-1:0] cons_pte;
-  assign burst_beat = (CO>1) & rvalid & rready & (ws_q[cons_w]==WWAIT) & (cons_pc==4'd11);
-  assign do_consume = rvalid & rready & (ws_q[cons_w]==WWAIT) & ~burst_beat;
-  assign cons_pte   = rdata;            // 8 B data bus: rdata IS the PTE
+  assign burst_beat = (CO>1) & r_valid & rready & (ws_q[cons_w]==WWAIT) & (cons_pc==4'd11);
+  assign do_consume = r_valid & rready & (ws_q[cons_w]==WWAIT) & ~burst_beat;
+  assign cons_pte   = r_data;            // 8 B data bus: rdata IS the PTE
   logic [GVPN_W-1:0] cons_newdg;        // data GVPN just produced at pc8 consume
   assign cons_newdg = gpn27(cons_pte);
 
@@ -258,7 +281,7 @@ module iommu_top #(
   assign gl2_fd  = cons_pte[CDW-1:0]; assign gl1_fd  = cons_pte[CDW-1:0];
   // IOTLB filled one entry per burst beat (beat j -> page j of the line)
   assign iotlb_fe = (HAS_IOTLB!=0) & burst_beat;
-  assign iotlb_fd = rdata[CDW-1:0];
+  assign iotlb_fd = r_data[CDW-1:0];
 
   generate
     if (TAG_CONTEXT_EN != 0) begin : g_tag_ctx
@@ -368,7 +391,10 @@ module iommu_top #(
   logic e_svc_iotlb, e_svc_ride, e_svc_launch;
   assign e_svc_iotlb  = e_v & (HAS_IOTLB!=0) & e_iotlb_hit;
   assign e_svc_ride   = e_v & ~e_svc_iotlb & e_busy;
-  assign e_svc_launch = e_v & ~e_svc_iotlb & ~e_svc_ride & wfree_v;
+  // v8(b): single walker -> wfree_v already implies ~e_busy, and a busy walker can't be
+  // re-launched anyway, so the e_busy compare is redundant in the launch decision and is
+  // dropped off the commit critical path. NCTX>1 keeps the ride guard.
+  assign e_svc_launch = e_v & ~e_svc_iotlb & wfree_v & ((NCTX>1) ? ~e_svc_ride : 1'b1);
 
   // next-line prefetch trigger (cfg4/cfg5)
   logic pf_free, pf_trig, pf_region_ok, pf_launch;  logic [VPNLINE_W-1:0] pf_line;
@@ -387,8 +413,16 @@ module iommu_top #(
       assign pf_free=1'b0; assign pf_trig=1'b0; assign pf_line='0; assign pf_region_ok=1'b0;
     end
   endgenerate
-  // prefetch may launch the shared walker only when a demand isn't taking it
-  assign pf_launch = (PREFETCH_EN!=0) & pf_trig & wfree_v & ~e_svc_launch;
+  // prefetch may launch the shared walker only when a demand isn't taking it.
+  // PD>=2 (v9c): launch from the PROBE-precomputed prefetch staging (pf_line/addr already
+  // computed), gated by a short dedup compare -> the +LEAD adder and iaddr_of are off the
+  // launch path. PD<2: the combinational prefetch_ctrl path (unchanged).
+  logic pf_launch_c;
+  assign pf_launch_c = (PREFETCH_EN!=0) & stg_v_q & (e_svc_iotlb | e_svc_launch)
+                     & stg_pf_region_ok_q & stg_pf_same_q & wfree_v & ~e_svc_launch
+                     & (stg_pf_line_q != pf_last_q);
+  assign pf_launch = SVC_PIPE ? pf_launch_c
+                              : ((PREFETCH_EN!=0) & pf_trig & wfree_v & ~e_svc_launch);
 
   // ===================================================== consume next-state (comb)
   logic [3:0]        next_pc;   logic [PPN_W-1:0] next_base;
@@ -495,7 +529,13 @@ module iommu_top #(
       region_vml0_q<='0; region_valid_q<=1'b0; region_id_q<='0;
       stg_v_q<=1'b0; stg_bsel_q<='0; stg_vpn_q<='0; stg_ctx_q<='0; stg_line_q<='0;
       stg_iotlb_hit_q<=1'b0; stg_iotlb_d_q<='0; stg_start_pc_q<=4'd0; stg_start_base_q<='0;
+      stg_start_addr_q<='0; stg_start_burst_q<=1'b0;
+      stg_pf_line_q<='0; stg_pf_addr_q<='0; stg_pf_same_q<=1'b0; stg_pf_region_ok_q<=1'b0;
+      stg_pf_regbase_q<='0; pf_last_q<='0;
+      rvalid_q<=1'b0; rlast_q<=1'b0; rdata_q<='0; rid_q<='0;
     end else begin
+      // R channel register slice (consumed by the engine when PIPELINE_DEPTH>=2)
+      rvalid_q <= rvalid; rlast_q <= rlast; rdata_q <= rdata; rid_q <= rid;
       // accept request
       if (req_valid & req_ready) begin
         bs_q[bfree_i]<=BNEED; bvpn_q[bfree_i]<=req_vpn; bctx_q[bfree_i]<={req_device_id,req_pasid};
@@ -512,20 +552,36 @@ module iommu_top #(
           stg_v_q<=1'b1; stg_bsel_q<=bsel; stg_vpn_q<=bvpn_q[bsel]; stg_ctx_q<=bctx_q[bsel];
           stg_line_q<=bsel_line; stg_iotlb_hit_q<=(HAS_IOTLB!=0)&iotlb_hit;
           stg_iotlb_d_q<=iotlb_d; stg_start_pc_q<=start_pc; stg_start_base_q<=start_base;
+          // v8(a): precompute the demand launch read address now (iaddr_of off commit path)
+          stg_start_addr_q  <= iaddr_of(start_pc, start_base, bvpn_q[bsel], '0, '0);
+          stg_start_burst_q <= (CO>1) && (start_pc==4'd11);
+          // v9(c): precompute the next-line prefetch target+address+guards now (the +LEAD
+          // adder and iaddr_of leave the launch path; commit just reg->reg + dedup compare)
+          if (PREFETCH_EN!=0) begin
+            stg_pf_line_q     <= bsel_line + VPNLINE_W'(PREFETCH_LEAD);
+            stg_pf_same_q     <= ((bsel_line + VPNLINE_W'(PREFETCH_LEAD)) >> LINE_IN_L0)
+                                  == (bsel_line >> LINE_IN_L0);
+            stg_pf_addr_q     <= iaddr_of(4'd8, region_vml0_q,
+                                  {(bsel_line + VPNLINE_W'(PREFETCH_LEAD)), {LINE_LSB{1'b0}}}, '0, '0);
+            stg_pf_region_ok_q<= region_valid_q & (region_id_q == bvpn_q[bsel][VPN_W-1:IDX_W]);
+            stg_pf_regbase_q  <= region_vml0_q;
+          end
           brr_q <= (brr_q==BW'(BUFFER_DEPTH-1)) ? '0 : brr_q+BW'(1);
         end
         if (stg_v_q) begin                                 // commit: act on staged probe
           stg_v_q<=1'b0;
+          // independent (mutually exclusive) actions: launch does NOT gate on ~e_svc_ride,
+          // so e_busy stays off the commit critical path (v8(b)).
           if (e_svc_iotlb) begin
             bs_q[e_bsel]<=BRES; bspa_q[e_bsel]<={ppn28s(e_iotlb_d),{OFFSET_W{1'b0}}};
-          end else if (e_svc_ride) begin
-            // line busy/in-flight: wait (re-probe next cycle)
-          end else if (e_svc_launch) begin
+          end
+          if (e_svc_launch) begin                          // reg->reg writes only (v8(a))
             ws_q[wfree_i]<=WRUN; wpc_q[wfree_i]<=e_start_pc; wbase_q[wfree_i]<=e_start_base;
             wvpn_q[wfree_i]<=e_vpn; wctx_q[wfree_i]<=e_ctx; wline_q[wfree_i]<=e_line;
-            wiaddr_q[wfree_i] <= iaddr_of(e_start_pc, e_start_base, e_vpn, '0, '0);
-            wiburst_q[wfree_i]<= (CO>1) && (e_start_pc==4'd11);
+            wiaddr_q[wfree_i] <= stg_start_addr_q;
+            wiburst_q[wfree_i]<= stg_start_burst_q;
           end
+          // else (ride / no free walker): wait, re-probe next cycle
         end
       end else begin
         // PD<2: single-cycle combinational servicer
@@ -546,12 +602,16 @@ module iommu_top #(
       // prefetch launch: reuse the idle shared walker (only when demand isn't taking
       // it), warm-start at the VM-L0 leaf for line+LEAD using the captured region base
       if (pf_launch) begin
-        ws_q[wfree_i]<=WRUN; wpc_q[wfree_i]<=4'd8; wbase_q[wfree_i]<=region_vml0_q;
-        wvpn_q[wfree_i]<={pf_line, {LINE_LSB{1'b0}}}; wctx_q[wfree_i]<=bctx_q[bsel];
-        wline_q[wfree_i]<=pf_line;
-        if (PIPELINE_DEPTH>=2) begin    // prefetch warm-starts at VM-L0 leaf (pc8)
-          wiaddr_q[wfree_i] <= iaddr_of(4'd8, region_vml0_q, {pf_line,{LINE_LSB{1'b0}}}, '0, '0);
-          wiburst_q[wfree_i]<= 1'b0;
+        if (SVC_PIPE) begin             // v9(c): launch from probe-precomputed staging
+          ws_q[wfree_i]<=WRUN; wpc_q[wfree_i]<=4'd8; wbase_q[wfree_i]<=stg_pf_regbase_q;
+          wvpn_q[wfree_i]<={stg_pf_line_q, {LINE_LSB{1'b0}}}; wctx_q[wfree_i]<=stg_ctx_q;
+          wline_q[wfree_i]<=stg_pf_line_q;
+          wiaddr_q[wfree_i]<=stg_pf_addr_q; wiburst_q[wfree_i]<=1'b0;
+          pf_last_q <= stg_pf_line_q;   // dedup
+        end else begin                  // PD<2: combinational prefetch_ctrl path
+          ws_q[wfree_i]<=WRUN; wpc_q[wfree_i]<=4'd8; wbase_q[wfree_i]<=region_vml0_q;
+          wvpn_q[wfree_i]<={pf_line, {LINE_LSB{1'b0}}}; wctx_q[wfree_i]<=bctx_q[bsel];
+          wline_q[wfree_i]<=pf_line;
         end
       end
       // register the increment enables; counters add from the registered versions so the
@@ -576,7 +636,7 @@ module iommu_top #(
             if (bs_q[b]==BNEED && bvpn_q[b][VPN_W-1:LINE_LSB]==wline_q[cons_w] &&
                 bctx_q[b]==wctx_q[cons_w]) begin
               bs_q[b]<=BRES;
-              bspa_q[b]<={ppn28(rdata),{OFFSET_W{1'b0}}};
+              bspa_q[b]<={ppn28(r_data),{OFFSET_W{1'b0}}};
             end
           ws_q[cons_w]<=WFREE; wpc_q[cons_w]<=4'd0;
         end else begin
@@ -600,10 +660,10 @@ module iommu_top #(
               bctx_q[b]==wctx_q[cons_w] &&
               bvpn_q[b][LBW-1:0]==wbeat_q[cons_w][LBW-1:0]) begin
             bs_q[b]<=BRES;
-            bspa_q[b]<={ppn28(rdata),{OFFSET_W{1'b0}}};
+            bspa_q[b]<={ppn28(r_data),{OFFSET_W{1'b0}}};
           end
         wbeat_q[cons_w] <= wbeat_q[cons_w] + 4'd1;
-        if (rlast) begin ws_q[cons_w]<=WFREE; wpc_q[cons_w]<=4'd0; wbeat_q[cons_w]<=4'd0; end
+        if (r_last) begin ws_q[cons_w]<=WFREE; wpc_q[cons_w]<=4'd0; wbeat_q[cons_w]<=4'd0; end
       end
 
       // arbiter grant: the issuing walker goes WWAIT (overrides WRUN set above)
