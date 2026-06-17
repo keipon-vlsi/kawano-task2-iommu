@@ -29,9 +29,9 @@ package iommu_pkg;
   localparam int SPA_W    = PPN_W  + OFFSET_W;   // 40
 
   // ---- context tag widths (device_id + PASID; no VMID in this task) ----
-  localparam int DEVICE_W = 16;
+  localparam int DEVICE_W = 24;                  // RISC-V IOMMU device_id (up to 24b)
   localparam int PASID_W  = 20;
-  localparam int CTX_W    = DEVICE_W + PASID_W;  // 36
+  localparam int CTX_W    = DEVICE_W + PASID_W;  // 44
 
   // ---- memory / PTE geometry ----
   localparam int PTE_W     = 64;                 // RISC-V Sv39 PTE

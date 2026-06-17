@@ -81,6 +81,7 @@ module iommu_top #(
   localparam int GL1_TW   = TCW + 2*IDX_W;
   localparam int IOTLB_TW = TCW + VPN_W;
   localparam int IOTLB_N  = (HAS_IOTLB != 0) ? (CO + CO) : 1;
+  localparam int CDW      = 48;   // cache data width = PTE[47:0] (flags + used PPN)
   localparam int LINE_IN_L0 = IDX_W - LINE_LSB;     // line-index bits within a VM-L0 table
   localparam int REGID_W  = VPN_W - IDX_W;          // VM-L0-table region id = VPN[26:9]
   localparam logic [3:0] PC_DONE = 4'd12;
@@ -133,6 +134,11 @@ module iommu_top #(
   endfunction
   function automatic logic [GPN_W-1:0] gpn27(input logic [PTE_W-1:0] p);
     logic [43:0] f; f = pte_ppn44(p); return f[GPN_W-1:0];
+  endfunction
+  // Cache data = lower 48b of the PTE (flags + the PPN we use); the top 16b
+  // (reserved/PBMT/N + unused high PPN) are redundant for this happy-path design.
+  function automatic logic [PPN_W-1:0] ppn28s(input logic [CDW-1:0] d);
+    return d[10 +: PPN_W];        // Sv39 PTE PPN starts at bit 10 -> ppn28 = d[37:10]
   endfunction
   function automatic logic [IDX_W-1:0] idx_of(input logic [3:0] pc, input logic [VPN_W-1:0] vpn,
                                               input logic [GPN_W-1:0] gpn, input logic [GVPN_W-1:0] dg);
@@ -204,7 +210,7 @@ module iommu_top #(
 
   // fill ports (combinational, same cycle as the triggering event)
   logic vml2_fe, vml1_fe, gl2_fe, gl1_fe, iotlb_fe;
-  logic [PPN_W-1:0] vml2_fd, vml1_fd, gl2_fd, gl1_fd, iotlb_fd;
+  logic [CDW-1:0] vml2_fd, vml1_fd, gl2_fd, gl1_fd, iotlb_fd;
   logic [VML2_TW-1:0] vml2_fk;  logic [VML1_TW-1:0] vml1_fk;
   logic [GL2_TW-1:0]  gl2_fk;   logic [GL1_TW-1:0]  gl1_fk;
   logic [IOTLB_TW-1:0] iotlb_fk;
@@ -212,11 +218,13 @@ module iommu_top #(
   assign vml1_fe = (HAS_PWC!=0) & do_consume & (cons_pc==4'd7);
   assign gl2_fe  = (HAS_PWC!=0) & do_consume & (cons_pc==4'd9);
   assign gl1_fe  = (HAS_PWC!=0) & do_consume & (cons_pc==4'd10);
-  assign vml2_fd = ppn28(cons_pte); assign vml1_fd = ppn28(cons_pte);
-  assign gl2_fd  = ppn28(cons_pte); assign gl1_fd  = ppn28(cons_pte);
+  // store the lower 48b of the resolving PTE (PWC: the table-resolving PTE; IOTLB: the
+  // data-leaf PTE). ppn is extracted on use via ppn28s().
+  assign vml2_fd = cons_pte[CDW-1:0]; assign vml1_fd = cons_pte[CDW-1:0];
+  assign gl2_fd  = cons_pte[CDW-1:0]; assign gl1_fd  = cons_pte[CDW-1:0];
   // IOTLB filled one entry per burst beat (beat j -> page j of the line)
   assign iotlb_fe = (HAS_IOTLB!=0) & burst_beat;
-  assign iotlb_fd = ppn28(rdata);
+  assign iotlb_fd = rdata[CDW-1:0];
 
   generate
     if (TAG_CONTEXT_EN != 0) begin : g_tag_ctx
@@ -245,19 +253,19 @@ module iommu_top #(
   endgenerate
 
   logic vml2_hit, vml1_hit, gl2_hit, gl1_hit, iotlb_hit;
-  logic [PPN_W-1:0] vml2_d, vml1_d, gl2_d, gl1_d, iotlb_d;
+  logic [CDW-1:0] vml2_d, vml1_d, gl2_d, gl1_d, iotlb_d;
   generate
     if (HAS_PWC != 0) begin : g_pwc
-      fa_cache #(.ENTRIES(1), .TAG_W(VML2_TW), .DATA_W(PPN_W)) u_pwc_vml2 (
+      fa_cache #(.ENTRIES(1), .TAG_W(VML2_TW), .DATA_W(CDW)) u_pwc_vml2 (
         .clk,.rst_n,.lk_tag(vml2_lk),.lk_hit(vml2_hit),.lk_data(vml2_d),
         .fill_en(vml2_fe),.fill_tag(vml2_fk),.fill_data(vml2_fd));
-      fa_cache #(.ENTRIES(2), .TAG_W(VML1_TW), .DATA_W(PPN_W)) u_pwc_vml1 (
+      fa_cache #(.ENTRIES(2), .TAG_W(VML1_TW), .DATA_W(CDW)) u_pwc_vml1 (
         .clk,.rst_n,.lk_tag(vml1_lk),.lk_hit(vml1_hit),.lk_data(vml1_d),
         .fill_en(vml1_fe),.fill_tag(vml1_fk),.fill_data(vml1_fd));
-      fa_cache #(.ENTRIES(1), .TAG_W(GL2_TW), .DATA_W(PPN_W)) u_pwc_gl2 (
+      fa_cache #(.ENTRIES(1), .TAG_W(GL2_TW), .DATA_W(CDW)) u_pwc_gl2 (
         .clk,.rst_n,.lk_tag(gl2_lk),.lk_hit(gl2_hit),.lk_data(gl2_d),
         .fill_en(gl2_fe),.fill_tag(gl2_fk),.fill_data(gl2_fd));
-      fa_cache #(.ENTRIES(2), .TAG_W(GL1_TW), .DATA_W(PPN_W)) u_pwc_gl1 (
+      fa_cache #(.ENTRIES(2), .TAG_W(GL1_TW), .DATA_W(CDW)) u_pwc_gl1 (
         .clk,.rst_n,.lk_tag(gl1_lk),.lk_hit(gl1_hit),.lk_data(gl1_d),
         .fill_en(gl1_fe),.fill_tag(gl1_fk),.fill_data(gl1_fd));
     end else begin : g_nopwc
@@ -265,7 +273,7 @@ module iommu_top #(
       assign vml2_d='0; assign vml1_d='0; assign gl2_d='0; assign gl1_d='0;
     end
     if (HAS_IOTLB != 0) begin : g_iotlb
-      fa_cache #(.ENTRIES(IOTLB_N), .TAG_W(IOTLB_TW), .DATA_W(PPN_W)) u_iotlb (
+      fa_cache #(.ENTRIES(IOTLB_N), .TAG_W(IOTLB_TW), .DATA_W(CDW)) u_iotlb (
         .clk,.rst_n,.lk_tag(iotlb_lk),.lk_hit(iotlb_hit),.lk_data(iotlb_d),
         .fill_en(iotlb_fe),.fill_tag(iotlb_fk),.fill_data(iotlb_fd));
     end else begin : g_noiotlb
@@ -289,8 +297,8 @@ module iommu_top #(
   // VS-stage most-complete-hit shortcut for the launched walker
   logic [3:0]       start_pc;  logic [PPN_W-1:0] start_base;
   always_comb begin
-    if (HAS_PWC!=0 && vml1_hit)      begin start_pc=4'd8; start_base=vml1_d; end
-    else if (HAS_PWC!=0 && vml2_hit) begin start_pc=4'd4; start_base=vml2_d; end
+    if (HAS_PWC!=0 && vml1_hit)      begin start_pc=4'd8; start_base=ppn28s(vml1_d); end
+    else if (HAS_PWC!=0 && vml2_hit) begin start_pc=4'd4; start_base=ppn28s(vml2_d); end
     else                             begin start_pc=4'd0; start_base=vs_root_spa_q; end
   end
 
@@ -326,8 +334,8 @@ module iommu_top #(
       4'd6: begin next_pc=4'd7;  next_base=ppn28(cons_pte); end
       4'd7: begin next_pc=4'd8;  next_base=ppn28(cons_pte); end
       4'd8: begin next_dg=cons_newdg;
-                  if (HAS_PWC!=0 && gl1_hit)      begin next_pc=4'd11; next_base=gl1_d; end
-                  else if (HAS_PWC!=0 && gl2_hit) begin next_pc=4'd10; next_base=gl2_d; end
+                  if (HAS_PWC!=0 && gl1_hit)      begin next_pc=4'd11; next_base=ppn28s(gl1_d); end
+                  else if (HAS_PWC!=0 && gl2_hit) begin next_pc=4'd10; next_base=ppn28s(gl2_d); end
                   else                            begin next_pc=4'd9;  next_base=g_root_spa_q; end end
       4'd9: begin next_pc=4'd10; next_base=ppn28(cons_pte); end
       4'd10:begin next_pc=4'd11; next_base=ppn28(cons_pte); end
@@ -411,7 +419,7 @@ module iommu_top #(
       // buffer servicer
       if (bsel_v) begin
         if (svc_iotlb) begin
-          bs_q[bsel]<=BRES; bspa_q[bsel]<={iotlb_d,{OFFSET_W{1'b0}}};
+          bs_q[bsel]<=BRES; bspa_q[bsel]<={ppn28s(iotlb_d),{OFFSET_W{1'b0}}};
         end else if (svc_ride) begin
           // wait for the in-flight / just-filled line
         end else if (svc_launch) begin
