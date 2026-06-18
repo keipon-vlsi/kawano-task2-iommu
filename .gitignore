@@ -55,3 +55,11 @@ syn/notag_build/
 
 # PWC combined/split compare workspace (regenerable via syn/pwc_compare.py)
 syn/pwc_cmp/
+
+# cache_study generated synth/sim artifacts (regenerable)
+cache_study/results/*.netlist.v
+cache_study/results/*.vvp
+cache_study/results/*.wrap.sv
+cache_study/results/*.ys
+cache_study/results/*.sta
+cache_study/results/sky130_hd_nolp.lib
