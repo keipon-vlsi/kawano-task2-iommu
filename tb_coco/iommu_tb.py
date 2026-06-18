@@ -29,6 +29,8 @@ MEM_LAT    = int(os.environ.get("MEM_LATENCY", "40"))
 HAS_PWC    = int(os.environ.get("HAS_PWC", "1"))
 HAS_IOTLB  = int(os.environ.get("HAS_IOTLB", "1"))
 DEV, PASID = 1, 1
+MEM_TXN    = [0]   # main-memory read transactions (AR handshakes); 1 burst = 1 txn
+MEM_BEATS  = [0]   # data beats returned (8 B each); coalesced leaf burst = 8 beats
 
 # wire rate: 100 GB/s, 4 KB pages -> 40.96 ns/translation; clk 2.5 ns -> 16.384 cyc
 INTER_ARRIVAL_CYC = 40.96 / 2.5
@@ -123,6 +125,7 @@ async def mem_stub(dut):
         if int(dut.arvalid.value) and int(dut.arready.value):
             beats = int(dut.arlen.value) + 1
             waiting.append([MEM_LAT, int(dut.araddr.value), int(dut.arid.value), beats])
+            MEM_TXN[0] += 1; MEM_BEATS[0] += beats
         for w in waiting:
             w[0] -= 1
         still = []
@@ -195,6 +198,7 @@ async def wire_rate(dut):
     dut.req_device_id.value = DEV
     dut.req_pasid.value = PASID
     accept_cyc = {}
+    MEM_TXN[0] = 0; MEM_BEATS[0] = 0   # count memory accesses over the request stream
     for vpn in range(N_REQS):
         dut.req_vpn.value = vpn
         dut.req_valid.value = 1
@@ -239,4 +243,7 @@ async def wire_rate(dut):
     assert cyc_per <= INTER_ARRIVAL_CYC * 1.10, \
         f"{CFG}: wire rate NOT met: {cyc_per:.2f} > {INTER_ARRIVAL_CYC:.2f} cyc/translation"
 
+    dut._log.info(f"{CFG}: mem accesses = {MEM_TXN[0]/N_REQS:.3f} txn/translation, "
+                  f"{MEM_BEATS[0]/N_REQS:.3f} beats/translation "
+                  f"({MEM_TXN[0]} txn / {MEM_BEATS[0]} beats over {N_REQS} reqs)")
     dut._log.info(f"{CFG}: PASS  ({N_REQS} translations, all SPA correct, wire rate met)")
