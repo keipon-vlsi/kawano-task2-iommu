@@ -52,3 +52,6 @@ cfg*/results_hs/netlist.v
 
 # notag PPA workspace (regenerable via syn/notag_ppa.py)
 syn/notag_build/
+
+# PWC combined/split compare workspace (regenerable via syn/pwc_compare.py)
+syn/pwc_cmp/
