@@ -49,3 +49,6 @@ syn/build_nopipe_hs/
 # synthesized netlists for the hd/hs/nopipe result dirs (regenerable from RTL+flow)
 cfg*/results_hd/netlist.v
 cfg*/results_hs/netlist.v
+
+# notag PPA workspace (regenerable via syn/notag_ppa.py)
+syn/notag_build/
