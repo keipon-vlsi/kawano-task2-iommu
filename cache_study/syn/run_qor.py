@@ -24,6 +24,16 @@ ABC_D = 400       # abc delay target [ps]
 # (name, kind, file, module). kind: pwc (tag 18b) | iotlb (tag 27b)
 VARIANTS = [
     ("pwc_p0", "pwc", "pwc/pwc_p0.sv", "pwc_p0"),
+    ("pwc_p1", "pwc", "pwc/pwc_p1.sv", "pwc_p1"),
+    ("pwc_p2", "pwc", "pwc/pwc_p2.sv", "pwc_p2"),
+    ("pwc_p3", "pwc", "pwc/pwc_p3.sv", "pwc_p3"),
+    ("pwc_p4", "pwc", "pwc/pwc_p4.sv", "pwc_p4"),
+    ("iotlb_t0", "iotlb", "iotlb/iotlb_t0.sv", "iotlb_t0"),
+    ("iotlb_t1", "iotlb", "iotlb/iotlb_t1.sv", "iotlb_t1"),
+    ("iotlb_t2", "iotlb", "iotlb/iotlb_t2.sv", "iotlb_t2"),
+    ("iotlb_t3", "iotlb", "iotlb/iotlb_t3.sv", "iotlb_t3"),
+    ("iotlb_t4", "iotlb", "iotlb/iotlb_t4.sv", "iotlb_t4"),
+    ("iotlb_t5", "iotlb", "iotlb/iotlb_t5.sv", "iotlb_t5"),
 ]
 
 
