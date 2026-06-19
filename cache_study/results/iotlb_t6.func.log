@@ -1,0 +1,2 @@
+IOTLB_TB PASS
+/foss/designs/cache_study/tb/iotlb_tb.sv:33: $finish called at 501000 (1ps)

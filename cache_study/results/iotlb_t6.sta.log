@@ -1,0 +1,44 @@
+OpenSTA 3.1.0 76c4d6df35 Copyright (c) 2026, Parallax Software, Inc.
+License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
+
+This is free software, and you are free to change and redistribute it
+under certain conditions; type `show_copying' for details. 
+This program comes with ABSOLUTELY NO WARRANTY; for details type `show_warranty'.
+=== WNS ===
+worst slack max -3.88
+=== PATH ===
+Warning 503: iotlb_t6.sta line 1, report_checks -group_count is deprecated. Use -group_path_count instead.
+Startpoint: _6117_ (rising edge-triggered flip-flop clocked by clk)
+Endpoint: _6169_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+      Cap      Slew     Delay      Time   Description
+-------------------------------------------------------------------------------
+             0.0000    0.0000    0.0000   clock clk (rise edge)
+                       0.0000    0.0000   clock network delay (ideal)
+             0.0000    0.0000    0.0000 ^ _6117_/CLK (sky130_fd_sc_hd__dfxtp_1)
+   0.0448    0.4214    0.5541    0.5541 ^ _6117_/Q (sky130_fd_sc_hd__dfxtp_1)
+   0.0251    0.2419    0.3184    0.8725 v _2483_/Y (sky130_fd_sc_hd__clkinv_1)
+   0.0014    0.0506    0.4129    1.2855 v _2518_/X (sky130_fd_sc_hd__a2111o_1)
+   0.0022    0.0790    0.5045    1.7900 v _2530_/X (sky130_fd_sc_hd__or4_1)
+   0.1109    4.1700    3.2340    5.0240 ^ _2559_/Y (sky130_fd_sc_hd__nor4_1)
+   0.0024    0.1328    0.4466    5.4706 ^ _3474_/X (sky130_fd_sc_hd__a22o_1)
+   0.0023    0.5801    0.0620    5.5326 v _3475_/Y (sky130_fd_sc_hd__a221oi_1)
+   0.0017    0.1423    0.2643    5.7969 ^ _3478_/Y (sky130_fd_sc_hd__nand4_1)
+             0.1423    0.0000    5.7969 ^ _6169_/D (sky130_fd_sc_hd__dfxtp_1)
+                                 5.7969   data arrival time
+
+             0.0000    2.0000    2.0000   clock clk (rise edge)
+                       0.0000    2.0000   clock network delay (ideal)
+                       0.0000    2.0000   clock reconvergence pessimism
+                                 2.0000 ^ _6169_/CLK (sky130_fd_sc_hd__dfxtp_1)
+                      -0.0831    1.9169   library setup time
+                                 1.9169   data required time
+-------------------------------------------------------------------------------
+                                 1.9169   data required time
+                                -5.7969   data arrival time
+-------------------------------------------------------------------------------
+                                -3.8800   slack (VIOLATED)
+
+

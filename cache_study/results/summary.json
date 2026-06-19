@@ -90,6 +90,21 @@
     "crit_end": "_6888_"
   },
   {
+    "name": "iotlb_t6",
+    "func_pass": true,
+    "area_um2": 52874.4608,
+    "cells": 3729,
+    "dff_cells": 1228,
+    "dff_area_um2": 30340.0,
+    "comb_area_um2": 22534.5,
+    "fmax_mhz": 367.8,
+    "fmax_unbuf_mhz": 170.1,
+    "logic_depth": 7,
+    "crit_path": "clkinvlp_4 -> a2111oi_4 -> nand4_1 -> nor4_4 -> a22o_1 -> a221oi_2 -> nand4_1",
+    "crit_start": "_6136_",
+    "crit_end": "_6171_"
+  },
+  {
     "name": "pwc_p0",
     "func_pass": true,
     "area_um2": 6965.4304,

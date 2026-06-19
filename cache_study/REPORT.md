@@ -9,7 +9,10 @@ repair）で合成。前提は `ASSUMPTIONS.md`、実行は `README.md`、生デ
 - IOTLB = 16 エントリ = 2 ライン × 8 ページ、tag = VPN[2:0] (27b)、value = data SPA (44b)。
 - 格納は全て **DFF**。lookup/fill 両方を実装。各 variant は req/resp レジスタで挟み、測定経路を
   clean な reg→reg「lookup 経路」に統一。
-- **Fmax** = OpenROAD repair 後の reg→reg 経路（buffering 込み・配置寄生・CTS/route なし）。
+- **Fmax** = **配置 + ファンアウト/バッファ最適化込み**の reg→reg 経路。フローは OpenROAD で
+  `initialize_floorplan` → `global_placement` → `estimate_parasitics`（実配置寄生）→ `repair_design`
+  （slew/cap/**fanout** DRC = 高ファンアウトのバッファツリー化）→ `repair_timing -setup`（セル
+  サイジング + バッファ挿入）→ `detailed_placement` → STA。**CTS/route のみ省略**（ideal clock）。
 - **論理段数** = repair 後クリティカルパス上の**論理ゲート段数**（buffer/clk/delay セル除外）。
 - **面積** = µm² と GE（= 面積 ÷ nand2_1 3.75µm²）、内訳は **storage DFF vs 組合せ**。
 - 全 variant **機能チェック PASS**（iverilog, 連続 IOVA トレース + window 外ミス）。
@@ -56,12 +59,13 @@ repair）で合成。前提は `ASSUMPTIONS.md`、実行は `README.md`、生デ
 |---|---|---|---|---|---|---|---|---|---|---|
 | **T1** | aligned single-window（比較 23b ×1 + 16:1 mux） | ✅ | **464.2** | 32,572 | 8,686 | 816 | 12,532 | **5** | nand2b→o2111ai→or4→o31a→mux2 | ○整列 |
 | **T3** | speculative read（index 直読み + 並列 validate） | ✅ | **464.2** | 32,572 | 8,686 | 816 | 12,532 | 5 | （T1 と同一に合成） | ○整列 |
+| **T6** | **16-way FA, one-hot 前提（優先エンコーダ廃止, AND-OR mux）** | ✅ | **367.8** | 52,874 | 14,100 | 1,228 | 22,534 | **7** | clkinvlp→a2111oi→nand4→nor4→a22o→a221oi→nand4 | ○一意 |
 | T0 | line baseline（現行: 2 ライン tag 比較 + 8:1 mux） | ✅ | 343.7 | 34,556 | 9,215 | 843 | 13,816 | 7 | nor2b→a2111o→nor4→nand4→a21o→nor4→mux2 | × |
 | T2 | sequential pointer（current ライン優先） | ✅ | 293.8 | 37,868 | 10,098 | 843 | 17,128 | 7 | mux2i→o22ai→a211oi→nand4→o21a→nor4b→mux2 | ○連続 |
 | T5 | **16-way FA CAM**（基準: 16 比較 + 優先） | ✅ | 245.6 | **53,466** | 14,258 | 1,228 | 23,126 | 10 | clkinvlp→a221oi→nand4→or3→…→a31oi | × |
 | **T4** | per-line base+offset（base_ppn + adder, 連続前提） | ✅ | 127.0 | **12,090** | **3,224** | **229** | 6,720 | **28** | …→maj3×2→nor4b×多数→…→adder | ○連続物理 |
 
-- **面積順**: **T4(12,090) ≪ T1=T3(32,572) < T0(34,556) < T2(37,868) < T5(53,466)**。
+- **面積順**: **T4(12,090) ≪ T1=T3(32,572) < T0(34,556) < T2(37,868) < T6(52,874) < T5(53,466)**。
 
 ### 考察
 - **T4（base+offset）が最小面積（他の 1/3〜1/4）かつ最低 Fmax**。連続物理なら **16×44b の data を捨て、
@@ -80,6 +84,14 @@ repair）で合成。前提は `ASSUMPTIONS.md`、実行は `README.md`、生デ
   worst-case 利得なし（PWC の P3 と同じ結論）。
 - **T5（16-way FA CAM）は最大面積（53k）・遅い**。16 比較器 + 16 入力優先 + 16:1 mux。任意アクセスに
   強いが高コスト。**構造化変種が削減対象とする基準**。T0/T1 はこれに対し面積 **−35〜39%**、Fmax **+40〜89%**。
+- **T6（one-hot 前提で優先エンコーダ廃止）は T5 を Fmax +49.8%（245.6→367.8 MHz）改善**。VPN は高々
+  1 エントリにしかキャッシュされない（fill が重複タグを作らない）ので **match は one-hot**＝T5 の優先
+  エンコーダ（"lowest index wins" の直列鎖）が**不要**。SPA を **AND-OR の one-hot mux**
+  `spa = Σ_i (match[i] ? spa[i] : 0)`（平衡 OR ツリー）にでき、**論理段数 10→7**、cells 4,089→3,729 と
+  クリティカルパスが浅くなる。面積はほぼ不変（−1.1%：storage DFF 支配で、削れた優先論理は面積比では
+  小さいがパス上にあったため Fmax に大きく効く）。**賭け = タグ一意（IOMMU の通常動作で成立）**。
+  外れ（重複タグ）時は出力が複数 SPA の bitwise-OR になり得るので、fill 側で既存タグの上書き/無効化に
+  より one-hot 不変量を保つのが前提（通常の TLB fill 動作）。**T5 を採るなら T6 にすべき**という明確な結論。
 
 ---
 
@@ -128,7 +140,8 @@ repair）で合成。前提は `ASSUMPTIONS.md`、実行は `README.md`、生デ
 - ◯ T3 speculative — T1 と合成等価（知見）
 - ◯ T4 base+offset 連続圧縮 — **最小面積**だが加算器で最遅
 - ◯ T2 sequential pointer — 最遅・最大（不採用）
-- ◯ T5 16-way FA CAM — 最大・基準（任意アクセス用）
+- ◯ T5 16-way FA CAM — 最大・基準（任意アクセス用, 優先エンコーダあり）
+- ◯ T6 16-way FA, one-hot 前提（優先エンコーダ廃止）— **T5 比 Fmax +50%**。FA を採るならこちら
 - △ 4 ライン × 4 / 8 ライン × 2 等の line/way 配分スイープ — T0/T1 の中間、別途スイープ可
 - △ X2 partial-tag（16-way 用） / X3 pipeline — 大連想度で有効だが本タスク非対象
 - △ base+offset を **超ページ単一エントリ**化 — 粒度が粗すぎ（4kB ストリームには不適）
@@ -152,7 +165,9 @@ repair）で合成。前提は `ASSUMPTIONS.md`、実行は `README.md`、生デ
   （減算器が致命）。
 - **IOTLB**: **T1（aligned window）が速度・面積・段数のバランス最良**で推奨。**T4 は連続物理が強く保証できる
   場合のみ**（面積 1/3 だが 127 MHz＝ただし IOMMU 400MHz spec には未達なので、T4 単独採用は不可。
-  T4 は「面積最優先かつ別途パイプ化前提」の選択肢）。**T5 FA CAM は本ワークロードでは過剰**。
+  T4 は「面積最優先かつ別途パイプ化前提」の選択肢）。**フル連想（FA）が要る場面なら T5 ではなく T6**
+  （タグ一意 ⇒ 優先エンコーダ廃止で Fmax +50%、245→368 MHz）を使うべき。とはいえ本ワークロードでは
+  整列窓 T1 が FA より速く小さいので、IOTLB は T1 が第一候補。
 - **賭けの安全性**: 連続性に賭ける全変種（P2/P4/P1/P3, T1/T2/T3/T4）は、外れても**最低限のタグ比較で
   正しくミス化**し、IOMMU 本体の walk フォールバックへ落ちる（遅くなるだけで誤翻訳しない）。tagless
   系（X6）だけは誤ヒットの危険で却下。
