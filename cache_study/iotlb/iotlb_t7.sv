@@ -1,16 +1,13 @@
-// iotlb_t7 -- 2 lines x 8 with a DETERMINISTIC line predictor. With coalescing a line is
-// hit 8 times (offset 0..7) in a row; for sequential IOVA the access right after offset 7
-// is GUARANTEED to be the other line. So a 1-bit "current line" register predicts which
-// line to look at: the lookup reads data[cur][offset] (SPA mux is index-driven by the
-// register + offset -- it does NOT wait for a tag compare), and validates with ONE tag
-// compare in parallel. The predictor flips to the other line when offset wraps (after the
-// last page of the current line). vs T0/T2 (compare BOTH lines): only one line is consulted
-// and the SPA read is off the compare path.
-// BET: sequential IOVA (the next line is the predicted one). Unlike T1/T3 (single 16-aligned
-// window), T7 keeps 2 INDEPENDENT line tags, so the two cached lines need not be 16-aligned.
-// FALLBACK: a misprediction (out-of-order / non-sequential) sees the wrong line -> miss
-// (correct), forcing a re-walk. Lookup datapath: 2:1 (cur) line-tag mux -> 1x 24b compare
-// (parallel) + (cur,offset)-indexed 16:1 SPA mux.
+// iotlb_t7 -- double-buffered single current line (deterministic line predictor).
+// Refinement: the lookup consults ONLY the "current" line; if it misses, it is a MISS --
+// the other line is NEVER consulted on the lookup path. So the current line lives in its
+// own flat registers (cur_*), and the lookup is just  1x 24b tag compare + 8:1 offset SPA
+// mux  -- NO 2-line array index mux. The "next" line is a shadow (nxt_*) filled ahead
+// (prefetch); when the offset wraps past page 7 the shadow is swapped in (cur <= nxt).
+// BET: sequential IOVA (after a line's 8 pages, the stream is on the prefetched next line).
+// FALLBACK: any access not in the current line misses (correct) -> re-walk. Compared to T0
+// (compares both lines) and the array-indexed predictor, this keeps the lookup to a single
+// 8-entry line, so the data mux is 8:1 (not 16:1) and there is no line-select mux.
 module iotlb_t7 (
   input  logic clk, rst_n,
   input  logic [26:0] lk_tag,
@@ -20,38 +17,49 @@ module iotlb_t7 (
   input  logic [26:0] fill_tag,
   input  logic [43:0] fill_spa
 );
-  logic [23:0] ltag_q [2];
-  logic        lval_q [2];
-  logic [7:0]  subv_q [2];
-  logic [43:0] data_q [2][8];
-  logic        cur_q;                                   // predicted current line
-  logic        vptr_q;                                  // fill victim
+  // current line (the only thing looked up)
+  logic [23:0] cur_tag_q;  logic cur_val_q;  logic [7:0] cur_subv_q;  logic [43:0] cur_data_q [8];
+  // shadow / next line (prefetch target, swapped in on wrap)
+  logic [23:0] nxt_tag_q;  logic nxt_val_q;  logic [7:0] nxt_subv_q;  logic [43:0] nxt_data_q [8];
 
   logic [2:0]  lo; assign lo = lk_tag[2:0];
   logic [23:0] lt; assign lt = lk_tag[26:3];
-  // consult ONLY the predicted line: validate with one compare; SPA is index-driven (no compare gate)
-  assign lk_hit = lval_q[cur_q] & (ltag_q[cur_q] == lt) & subv_q[cur_q][lo];
-  assign lk_spa = data_q[cur_q][lo];
+  // single-line lookup: 1 compare + 8:1 mux, no line-select mux
+  assign lk_hit = cur_val_q & (cur_tag_q == lt) & cur_subv_q[lo];
+  assign lk_spa = cur_data_q[lo];
 
   logic [2:0]  fo; assign fo = fill_tag[2:0];
   logic [23:0] ft; assign ft = fill_tag[26:3];
-  logic        fe0, fe1, fslot;
-  assign fe0 = lval_q[0] & (ltag_q[0]==ft);
-  assign fe1 = lval_q[1] & (ltag_q[1]==ft);
-  assign fslot = fe1 ? 1'b1 : (fe0 ? 1'b0 : vptr_q);
+  logic        f_cur, f_nxt;
+  assign f_cur = cur_val_q & (cur_tag_q == ft);            // fill belongs to current line
+  assign f_nxt = ~f_cur;                                   // else it targets the shadow/next line
   integer p;
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      lval_q[0]<=0; lval_q[1]<=0; subv_q[0]<=0; subv_q[1]<=0; ltag_q[0]<=0; ltag_q[1]<=0;
-      cur_q<=0; vptr_q<=0; for(p=0;p<8;p++) begin data_q[0][p]<=0; data_q[1][p]<=0; end
+      cur_val_q<=0; cur_tag_q<=0; cur_subv_q<=0; nxt_val_q<=0; nxt_tag_q<=0; nxt_subv_q<=0;
+      for (p=0;p<8;p++) begin cur_data_q[p]<=0; nxt_data_q[p]<=0; end
     end else if (fill_en) begin
-      if (fe0 | fe1) begin data_q[fslot][fo] <= fill_spa; subv_q[fslot][fo] <= 1'b1; end
-      else begin
-        ltag_q[vptr_q] <= ft; lval_q[vptr_q] <= 1'b1; subv_q[vptr_q] <= (8'b1<<fo);
-        data_q[vptr_q][fo] <= fill_spa; vptr_q <= ~vptr_q;
+      if (f_cur) begin
+        cur_subv_q[fo] <= 1'b1; cur_data_q[fo] <= fill_spa;
+      end else begin                                        // (re)open the shadow line
+        if (!nxt_val_q || nxt_tag_q != ft) begin            // new shadow line: clear then set
+          nxt_tag_q <= ft; nxt_val_q <= 1'b1; nxt_subv_q <= (8'b1<<fo);
+          for (p=0;p<8;p++) nxt_data_q[p] <= (p==fo) ? fill_spa : 44'd0;
+        end else begin
+          nxt_subv_q[fo] <= 1'b1; nxt_data_q[fo] <= fill_spa;
+        end
+        if (!cur_val_q) begin                               // bootstrap: first line becomes current
+          cur_tag_q <= ft; cur_val_q <= 1'b1; cur_subv_q <= (8'b1<<fo);
+          for (p=0;p<8;p++) cur_data_q[p] <= (p==fo) ? fill_spa : 44'd0;
+          nxt_val_q <= 1'b0;
+        end
       end
-    end else if (lk_hit & (lo == 3'd7)) begin
-      cur_q <= ~cur_q;                                   // finished current line -> predict the other
+    end else if (lo == 3'd7) begin
+      // offset wrap (deterministic predictor advances by access count, NOT by the tag
+      // compare -- keeps the 24b compare off the cur_data register update path): swap the
+      // prefetched shadow in as current. A misprediction just misses next (correct).
+      cur_tag_q <= nxt_tag_q; cur_val_q <= nxt_val_q; cur_subv_q <= nxt_subv_q;
+      for (p=0;p<8;p++) cur_data_q[p] <= nxt_data_q[p];
     end
   end
 endmodule

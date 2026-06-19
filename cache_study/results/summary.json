@@ -107,17 +107,17 @@
   {
     "name": "iotlb_t7",
     "func_pass": true,
-    "area_um2": 34197.7984,
-    "cells": 2316,
-    "dff_cells": 844,
+    "area_um2": 35515.312,
+    "cells": 3070,
+    "dff_cells": 842,
     "dff_area_um2": 20740.0,
-    "comb_area_um2": 13457.8,
-    "fmax_mhz": 331.0,
-    "fmax_unbuf_mhz": 188.0,
+    "comb_area_um2": 14775.3,
+    "fmax_mhz": 335.4,
+    "fmax_unbuf_mhz": 94.2,
     "logic_depth": 7,
-    "crit_path": "xnor2_1 -> o221ai_1 -> nor4b_2 -> and4_1 -> o211ai_1 -> or4_4 -> mux2_1",
-    "crit_start": "_3096_",
-    "crit_end": "_3204_"
+    "crit_path": "xor2_1 -> a221o_1 -> nor4_2 -> and4_4 -> nor3b_1 -> clkdlybuf4s50_1 -> a22o_1",
+    "crit_start": "_5234_",
+    "crit_end": "_5030_"
   },
   {
     "name": "pwc_p0",
