@@ -1,0 +1,66 @@
+
+7. Printing statistics.
+
+=== qor_top ===
+
+        +----------Local Count, excluding submodules.
+        |        +-Local Area, excluding submodules.
+        |        | 
+     2876        - wires
+     4190        - wire bits
+       60        - public wires
+     1374        - public wire bits
+        8        - ports
+      146        - port bits
+     4089 5.35E+04 cells
+       69   604.33   sky130_fd_sc_hd__a2111oi_0
+        1    7.507   sky130_fd_sc_hd__a211oi_1
+        2   15.014   sky130_fd_sc_hd__a21boi_0
+       89  445.427   sky130_fd_sc_hd__a21oi_1
+       44  440.422   sky130_fd_sc_hd__a221o_1
+      137  1.2E+03   sky130_fd_sc_hd__a221oi_1
+        9   90.086   sky130_fd_sc_hd__a222oi_1
+       23  201.443   sky130_fd_sc_hd__a22o_1
+       19  142.637   sky130_fd_sc_hd__a22oi_1
+        3   26.275   sky130_fd_sc_hd__a2bb2oi_1
+       41  410.394   sky130_fd_sc_hd__a311o_1
+       42  262.752   sky130_fd_sc_hd__a31oi_1
+        3   18.768   sky130_fd_sc_hd__and3_1
+        3   26.275   sky130_fd_sc_hd__and4_1
+      143  536.765   sky130_fd_sc_hd__clkinv_1
+     1156 2.89E+04   sky130_fd_sc_hd__dfrtp_1
+       72 1.44E+03   sky130_fd_sc_hd__dfxtp_1
+     1027 1.16E+04   sky130_fd_sc_hd__mux2_1
+       42  420.403   sky130_fd_sc_hd__mux2i_1
+      170  638.112   sky130_fd_sc_hd__nand2_1
+       78  487.968   sky130_fd_sc_hd__nand2b_1
+       10   50.048   sky130_fd_sc_hd__nand3_1
+        3   22.522   sky130_fd_sc_hd__nand3b_1
+       37  231.472   sky130_fd_sc_hd__nand4_1
+      195  731.952   sky130_fd_sc_hd__nor2_1
+       89  556.784   sky130_fd_sc_hd__nor2b_1
+       50   250.24   sky130_fd_sc_hd__nor3_1
+        1    7.507   sky130_fd_sc_hd__nor3b_1
+       29  181.424   sky130_fd_sc_hd__nor4_1
+        1   11.261   sky130_fd_sc_hd__o2111a_1
+       11   96.342   sky130_fd_sc_hd__o2111ai_1
+       44  330.317   sky130_fd_sc_hd__o211ai_1
+      168  840.806   sky130_fd_sc_hd__o21ai_0
+       44  495.475   sky130_fd_sc_hd__o221a_1
+        8   70.067   sky130_fd_sc_hd__o221ai_1
+       99  619.344   sky130_fd_sc_hd__o22ai_1
+       26  227.718   sky130_fd_sc_hd__o2bb2ai_1
+        1    10.01   sky130_fd_sc_hd__o311a_1
+        1    8.758   sky130_fd_sc_hd__o31a_1
+        1    7.507   sky130_fd_sc_hd__o31ai_1
+        3   26.275   sky130_fd_sc_hd__o41ai_1
+       13   81.328   sky130_fd_sc_hd__or2_0
+        3   18.768   sky130_fd_sc_hd__or3_1
+        9   67.565   sky130_fd_sc_hd__or4_1
+        1    10.01   sky130_fd_sc_hd__or4b_1
+       24  210.202   sky130_fd_sc_hd__xnor2_1
+       45  394.128   sky130_fd_sc_hd__xor2_1
+
+   Chip area for module '\qor_top': 53466.278400
+     of which used for sequential elements: 30369.126400 (56.80%)
+

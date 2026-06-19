@@ -1,0 +1,39 @@
+OpenSTA 3.1.0 76c4d6df35 Copyright (c) 2026, Parallax Software, Inc.
+License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
+
+This is free software, and you are free to change and redistribute it
+under certain conditions; type `show_copying' for details. 
+This program comes with ABSOLUTELY NO WARRANTY; for details type `show_warranty'.
+=== WNS ===
+worst slack max -1.84
+=== PATH ===
+Warning 503: pwc_p0.sta line 1, report_checks -group_count is deprecated. Use -group_path_count instead.
+Startpoint: _537_ (rising edge-triggered flip-flop clocked by clk)
+Endpoint: _584_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+      Cap      Slew     Delay      Time   Description
+-------------------------------------------------------------------------------
+             0.0000    0.0000    0.0000   clock clk (rise edge)
+                       0.0000    0.0000   clock network delay (ideal)
+             0.0000    0.0000    0.0000 ^ _537_/CLK (sky130_fd_sc_hd__dfrtp_1)
+   0.0087    0.0668    0.3692    0.3692 v _537_/Q (sky130_fd_sc_hd__dfrtp_1)
+   0.2220    3.9533    2.9314    3.3006 ^ _381_/Y (sky130_fd_sc_hd__nor2b_1)
+   0.0019    0.0587    0.4133    3.7140 v _444_/X (sky130_fd_sc_hd__mux2_1)
+             0.0587    0.0000    3.7140 v _584_/D (sky130_fd_sc_hd__dfrtp_1)
+                                 3.7140   data arrival time
+
+             0.0000    2.0000    2.0000   clock clk (rise edge)
+                       0.0000    2.0000   clock network delay (ideal)
+                       0.0000    2.0000   clock reconvergence pessimism
+                                 2.0000 ^ _584_/CLK (sky130_fd_sc_hd__dfrtp_1)
+                      -0.1306    1.8694   library setup time
+                                 1.8694   data required time
+-------------------------------------------------------------------------------
+                                 1.8694   data required time
+                                -3.7140   data arrival time
+-------------------------------------------------------------------------------
+                                -1.8445   slack (VIOLATED)
+
+

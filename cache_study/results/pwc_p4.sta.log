@@ -1,0 +1,42 @@
+OpenSTA 3.1.0 76c4d6df35 Copyright (c) 2026, Parallax Software, Inc.
+License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
+
+This is free software, and you are free to change and redistribute it
+under certain conditions; type `show_copying' for details. 
+This program comes with ABSOLUTELY NO WARRANTY; for details type `show_warranty'.
+=== WNS ===
+worst slack max -0.80
+=== PATH ===
+Warning 503: pwc_p4.sta line 1, report_checks -group_count is deprecated. Use -group_path_count instead.
+Startpoint: _507_ (rising edge-triggered flip-flop clocked by clk)
+Endpoint: _525_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+      Cap      Slew     Delay      Time   Description
+-------------------------------------------------------------------------------
+             0.0000    0.0000    0.0000   clock clk (rise edge)
+                       0.0000    0.0000   clock network delay (ideal)
+             0.0000    0.0000    0.0000 ^ _507_/CLK (sky130_fd_sc_hd__dfxtp_1)
+   0.2418    2.2297    1.8225    1.8225 ^ _507_/Q (sky130_fd_sc_hd__dfxtp_1)
+   0.0051    0.2538    0.3440    2.1665 ^ _338_/Y (sky130_fd_sc_hd__mux2i_1)
+   0.0022    0.0773    0.1193    2.2858 v _339_/Y (sky130_fd_sc_hd__o22ai_1)
+   0.0024    0.1767    0.1662    2.4520 ^ _340_/Y (sky130_fd_sc_hd__a211oi_1)
+   0.0023    0.0675    0.1096    2.5616 v _341_/Y (sky130_fd_sc_hd__nand4_1)
+   0.0017    0.1194    0.1602    2.7218 ^ _371_/Y (sky130_fd_sc_hd__nor3_1)
+             0.1194    0.0000    2.7218 ^ _525_/D (sky130_fd_sc_hd__dfxtp_1)
+                                 2.7218   data arrival time
+
+             0.0000    2.0000    2.0000   clock clk (rise edge)
+                       0.0000    2.0000   clock network delay (ideal)
+                       0.0000    2.0000   clock reconvergence pessimism
+                                 2.0000 ^ _525_/CLK (sky130_fd_sc_hd__dfxtp_1)
+                      -0.0778    1.9222   library setup time
+                                 1.9222   data required time
+-------------------------------------------------------------------------------
+                                 1.9222   data required time
+                                -2.7218   data arrival time
+-------------------------------------------------------------------------------
+                                -0.7996   slack (VIOLATED)
+
+

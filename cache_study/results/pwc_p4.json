@@ -1,0 +1,15 @@
+{
+  "name": "pwc_p4",
+  "func_pass": true,
+  "area_um2": 6613.8432,
+  "cells": 401,
+  "dff_cells": 187,
+  "dff_area_um2": 4361.2,
+  "comb_area_um2": 2252.6,
+  "fmax_mhz": 615.8,
+  "fmax_unbuf_mhz": 357.1,
+  "logic_depth": 5,
+  "crit_path": "mux2i_1 -> o22ai_1 -> a211oi_1 -> nand4_1 -> nor3_2",
+  "crit_start": "_507_",
+  "crit_end": "_525_"
+}

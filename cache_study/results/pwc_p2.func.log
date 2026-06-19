@@ -1,0 +1,2 @@
+PWC_TB PASS
+/foss/designs/cache_study/tb/pwc_tb.sv:36: $finish called at 111000 (1ps)

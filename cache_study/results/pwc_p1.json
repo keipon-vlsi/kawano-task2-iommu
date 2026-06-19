@@ -1,0 +1,15 @@
+{
+  "name": "pwc_p1",
+  "func_pass": true,
+  "area_um2": 6832.8032,
+  "cells": 492,
+  "dff_cells": 171,
+  "dff_area_um2": 3961.2,
+  "comb_area_um2": 2871.6,
+  "fmax_mhz": 221.9,
+  "fmax_unbuf_mhz": 130.7,
+  "logic_depth": 15,
+  "crit_path": "nand2b_1 -> maj3_2 -> maj3_2 -> maj3_2 -> maj3_2 -> a21oi_2 -> o211ai_1 -> a211oi_2 -> o311ai_1 -> a311oi_1 -> or2_0 -> a22o_1 -> nand4b_1 -> or4_4 -> mux2_1",
+  "crit_start": "_641_",
+  "crit_end": "_616_"
+}

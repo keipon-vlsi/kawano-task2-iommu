@@ -1,0 +1,15 @@
+{
+  "name": "pwc_p3",
+  "func_pass": true,
+  "area_um2": 7124.3328,
+  "cells": 460,
+  "dff_cells": 190,
+  "dff_area_um2": 4441.2,
+  "comb_area_um2": 2683.1,
+  "fmax_mhz": 367.2,
+  "fmax_unbuf_mhz": 192.3,
+  "logic_depth": 7,
+  "crit_path": "mux2i_2 -> xnor2_1 -> nor4_1 -> and3_1 -> nand4_1 -> xor2_2 -> mux2_1",
+  "crit_start": "_576_",
+  "crit_end": "_678_"
+}

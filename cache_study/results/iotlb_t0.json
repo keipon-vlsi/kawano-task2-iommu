@@ -1,0 +1,15 @@
+{
+  "name": "iotlb_t0",
+  "func_pass": true,
+  "area_um2": 34555.6416,
+  "cells": 2393,
+  "dff_cells": 843,
+  "dff_area_um2": 20740.0,
+  "comb_area_um2": 13815.6,
+  "fmax_mhz": 343.7,
+  "fmax_unbuf_mhz": 150.2,
+  "logic_depth": 7,
+  "crit_path": "nor2b_1 -> a2111o_1 -> nor4_2 -> nand4_1 -> a21o_1 -> nor4_4 -> mux2_1",
+  "crit_start": "_3229_",
+  "crit_end": "_3534_"
+}

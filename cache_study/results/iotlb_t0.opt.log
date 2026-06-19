@@ -1,0 +1,431 @@
+OpenROAD 26Q2-1164-g08f67ee5e 
+Features included (+) or not (-): +GPU +GUI +Python
+This program is licensed under the BSD-3 license. See the LICENSE file for details.
+Components of this program may be licensed under more restrictive licenses which must be honored.
+[INFO ODB-0227] LEF file: /foss/pdks/sky130A/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom.tlef, created 14 layers, 25 vias
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file /foss/pdks/sky130A/libs.ref/sky130_fd_sc_hd/lef/sky130_fd_sc_hd.lef at line 2.
+
+[INFO ODB-0227] LEF file: /foss/pdks/sky130A/libs.ref/sky130_fd_sc_hd/lef/sky130_fd_sc_hd.lef, created 437 library cells
+[WARNING STA-0366] port 'pl_valid' not found.
+[WARNING STA-0366] port 'pl_sel' not found.
+[WARNING STA-0366] port 'pl_data' not found.
+[WARNING STA-0366] port 'req_valid' not found.
+[WARNING STA-0366] port 'req_vpn' not found.
+[WARNING STA-0366] port 'req_device_id' not found.
+[WARNING STA-0366] port 'req_pasid' not found.
+[WARNING STA-0366] port 'req_is_write' not found.
+[WARNING STA-0366] port 'rsp_ready' not found.
+[WARNING STA-0366] port 'arready' not found.
+[WARNING STA-0366] port 'rvalid' not found.
+[WARNING STA-0366] port 'rdata' not found.
+[WARNING STA-0366] port 'rid' not found.
+[WARNING STA-0366] port 'rlast' not found.
+[WARNING STA-0366] port 'req_ready' not found.
+[WARNING STA-0366] port 'rsp_valid' not found.
+[WARNING STA-0366] port 'rsp_vpn' not found.
+[WARNING STA-0366] port 'rsp_spa' not found.
+[WARNING STA-0366] port 'arvalid' not found.
+[WARNING STA-0366] port 'araddr' not found.
+[WARNING STA-0366] port 'arid' not found.
+[WARNING STA-0366] port 'arlen' not found.
+[WARNING STA-0366] port 'rready' not found.
+[WARNING STA-0366] port 'walks_o' not found.
+[WARNING STA-0366] port 'resp_o' not found.
+[WARNING STA-0366] port 'outstanding_o' not found.
+[INFO IFP-0107] Defining die area using utilization: 40.00% and aspect ratio: 1.
+[WARNING IFP-0028] Core area lower left (5.000, 5.000) snapped to (5.060, 5.440).
+[INFO IFP-0001] Added 107 rows of 638 site unithd.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 303.920 303.920 ) um
+[INFO IFP-0101] Core BBox: (  5.060  5.440 ) ( 298.540 296.480 ) um
+[INFO IFP-0102] Core area:                        85414.419 um^2
+[INFO IFP-0103] Total instances area:             34555.642 um^2
+[INFO IFP-0104] Effective utilization:                0.405
+[INFO IFP-0105] Number of instances:                   2393
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0001] Number of available slots 1098
+[INFO PPL-0002] Number of I/O             146
+[INFO PPL-0003] Number of I/O w/sink      146
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 29433.60 um.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
+[INFO GPL-0002] DBU: 1000
+[INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
+[INFO GPL-0004] CoreBBox: (  5.060  5.440 ) ( 298.540 296.480 ) um
+[INFO GPL-0036] Movable instances area:      34555.642 um^2
+[INFO GPL-0037] Total instances area:        34555.642 um^2
+[INFO GPL-0035] Pin density area adjust:      2257.128 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
+[INFO GPL-0006] Number of instances:              2393
+[INFO GPL-0007] Movable instances:                2393
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                   2494
+[INFO GPL-0011] Number of pins:                  10036
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 303.920 303.920 ) um
+[INFO GPL-0013] Core BBox: (  5.060  5.440 ) ( 298.540 296.480 ) um
+[INFO GPL-0016] Core area:                   85414.419 um^2
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                 85414.419 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:      36812.770 um^2
+[INFO GPL-0019] Utilization:                    43.099 %
+[INFO GPL-0020] Standard cells area:         36812.770 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 2393	Region center = 0
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000998 HPWL: 89861980
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000504 HPWL: 32457032
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000285 HPWL: 32499087
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000234 HPWL: 32524387
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00001910 HPWL: 32567218
+[InitialPlace]  Iter: 6 conjugate gradient residual: 0.00001810 HPWL: 32680368
+[InitialPlace]  Iter: 7 conjugate gradient residual: 0.00003183 HPWL: 32665449
+[InitialPlace]  Iter: 8 conjugate gradient residual: 0.00004573 HPWL: 32856723
+[InitialPlace]  Iter: 9 conjugate gradient residual: 0.00001351 HPWL: 32837645
+[InitialPlace]  Iter: 10 conjugate gradient residual: 0.00002472 HPWL: 32986997
+[InitialPlace]  Iter: 11 conjugate gradient residual: 0.00003429 HPWL: 32991634
+[InitialPlace]  Iter: 12 conjugate gradient residual: 0.00001202 HPWL: 33077092
+[InitialPlace]  Iter: 13 conjugate gradient residual: 0.00002774 HPWL: 33055372
+[InitialPlace]  Iter: 14 conjugate gradient residual: 0.00001483 HPWL: 33156692
+[InitialPlace]  Iter: 15 conjugate gradient residual: 0.00002612 HPWL: 33085187
+[InitialPlace]  Iter: 16 conjugate gradient residual: 0.00001371 HPWL: 33194004
+[InitialPlace]  Iter: 17 conjugate gradient residual: 0.00001988 HPWL: 33092342
+[InitialPlace]  Iter: 18 conjugate gradient residual: 0.00001998 HPWL: 33213341
+[InitialPlace]  Iter: 19 conjugate gradient residual: 0.00002713 HPWL: 33118603
+[InitialPlace]  Iter: 20 conjugate gradient residual: 0.00002869 HPWL: 33219820
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
+[INFO GPL-0023] Placement target density:       0.5500
+[INFO GPL-0024] Movable insts average area:     15.384 um^2
+[INFO GPL-0025] Ideal bin area:                 27.970 um^2
+[INFO GPL-0026] Ideal bin count:                  3053
+[INFO GPL-0027] Total bin area:              85414.419 um^2
+[INFO GPL-0028] Bin count (X, Y):          32 ,     32
+[INFO GPL-0029] Bin size (W * H):       9.171 *  9.095 um
+[INFO GPL-0030] Number of bins:                   1024
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        0 |   0.9735 |  1.609765e+04 |   +0.00% |  9.99e-16 |      
+       10 |   0.9648 |  1.794213e+04 |  +11.46% |  1.63e-15 |      
+       20 |   0.9651 |  1.792197e+04 |   -0.11% |  2.65e-15 |      
+       30 |   0.9651 |  1.795181e+04 |   +0.17% |  4.32e-15 |      
+       40 |   0.9651 |  1.797938e+04 |   +0.15% |  7.03e-15 |      
+       50 |   0.9650 |  1.793954e+04 |   -0.22% |  1.14e-14 |      
+       60 |   0.9649 |  1.789533e+04 |   -0.25% |  1.86e-14 |      
+       70 |   0.9649 |  1.788390e+04 |   -0.06% |  3.04e-14 |      
+       80 |   0.9648 |  1.789223e+04 |   +0.05% |  4.95e-14 |      
+       90 |   0.9648 |  1.790473e+04 |   +0.07% |  8.06e-14 |      
+      100 |   0.9647 |  1.789985e+04 |   -0.03% |  1.31e-13 |      
+      110 |   0.9647 |  1.788383e+04 |   -0.09% |  2.14e-13 |      
+      120 |   0.9646 |  1.787873e+04 |   -0.03% |  3.48e-13 |      
+      130 |   0.9620 |  1.792804e+04 |   +0.28% |  5.67e-13 |      
+      140 |   0.9578 |  1.810812e+04 |   +1.00% |  9.24e-13 |      
+      150 |   0.9554 |  1.857830e+04 |   +2.60% |  1.51e-12 |      
+      160 |   0.9515 |  1.935133e+04 |   +4.16% |  2.45e-12 |      
+      170 |   0.9423 |  2.043783e+04 |   +5.61% |  3.99e-12 |      
+      180 |   0.9293 |  2.171422e+04 |   +6.25% |  6.50e-12 |      
+      190 |   0.9132 |  2.329765e+04 |   +7.29% |  1.06e-11 |      
+      200 |   0.8894 |  2.508828e+04 |   +7.69% |  1.73e-11 |      
+      210 |   0.8641 |  2.689258e+04 |   +7.19% |  2.81e-11 |      
+      220 |   0.8405 |  2.910332e+04 |   +8.22% |  4.58e-11 |      
+      230 |   0.8103 |  3.132901e+04 |   +7.65% |  7.45e-11 |      
+      240 |   0.7723 |  3.331119e+04 |   +6.33% |  1.21e-10 |      
+      250 |   0.7343 |  3.529670e+04 |   +5.96% |  1.98e-10 |      
+      260 |   0.6965 |  3.657321e+04 |   +3.62% |  3.22e-10 |      
+      270 |   0.6508 |  3.831252e+04 |   +4.76% |  5.24e-10 |      
+      280 |   0.6133 |  3.998408e+04 |   +4.36% |  8.54e-10 |      
+      290 |   0.5741 |  4.182894e+04 |   +4.61% |  1.39e-09 |      
+      300 |   0.5119 |  4.302761e+04 |   +2.87% |  2.26e-09 |      
+      310 |   0.4617 |  4.374578e+04 |   +1.67% |  3.69e-09 |      
+      320 |   0.4368 |  4.502420e+04 |   +2.92% |  6.01e-09 |      
+      330 |   0.3980 |  4.573816e+04 |   +1.59% |  9.78e-09 |      
+      340 |   0.3442 |  4.628597e+04 |   +1.20% |  1.59e-08 |      
+      350 |   0.2996 |  4.700549e+04 |   +1.55% |  2.35e-08 |      
+      360 |   0.2673 |  4.741950e+04 |   +0.88% |  3.46e-08 |      
+      370 |   0.2338 |  4.792278e+04 |   +1.06% |  5.09e-08 |      
+      380 |   0.2034 |  4.824562e+04 |   +0.67% |  7.50e-08 |      
+      390 |   0.1730 |  4.862121e+04 |   +0.78% |  1.11e-07 |      
+      400 |   0.1481 |  4.879112e+04 |   +0.35% |  1.63e-07 |      
+      410 |   0.1196 |  4.899011e+04 |   +0.41% |  2.40e-07 |      
+      420 |   0.1009 |  4.917044e+04 |   +0.37% |  3.53e-07 |      
+      421 |   0.0996 |  4.921234e+04 |          |  3.82e-07 |      
+---------------------------------------------------------------
+[INFO GPL-1001] Global placement finished at iteration 421
+[INFO GPL-1002] Placed Cell Area            36812.7697
+[INFO GPL-1003] Available Free Area         85414.4192
+[INFO GPL-1004] Minimum Feasible Density        0.4400 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.4789
+[INFO GPL-1008]     - For 80% usage of free space: 0.5387
+[INFO GPL-1009]     - For 50% usage of free space: 0.8620
+[INFO GPL-1014] Final placement area: 36812.77 (+0.00%)
+##PRE
+worst slack max -13.71
+##PREPATH
+Startpoint: rst_n (input port clocked by clk)
+Endpoint: _3413_ (recovery check against rising-edge clock clk)
+Path Group: asynchronous
+Path Type: max
+
+Fanout      Slew     Delay      Time   Description
+----------------------------------------------------------------------------
+          0.0000    0.0000    0.0000   clock clk (rise edge)
+                    0.0000    0.0000   clock network delay (ideal)
+                    0.3000    0.3000 ^ input external delay
+   771   15.2444   10.5097   10.8097 ^ rst_n (in)
+         15.2446    0.0000   10.8097 ^ _3413_/RESET_B (sky130_fd_sc_hd__dfrtp_1)
+                             10.8097   data arrival time
+
+          0.0000    1.0000    1.0000   clock clk (rise edge)
+                    0.0000    1.0000   clock network delay (ideal)
+                    0.0000    1.0000   clock reconvergence pessimism
+                              1.0000 ^ _3413_/CLK (sky130_fd_sc_hd__dfrtp_1)
+                   -3.8961   -2.8961   library recovery time
+                             -2.8961   data required time
+----------------------------------------------------------------------------
+                             -2.8961   data required time
+                            -10.8097   data arrival time
+----------------------------------------------------------------------------
+                            -13.7058   slack (VIOLATED)
+
+
+Startpoint: _3827_ (rising edge-triggered flip-flop clocked by clk)
+Endpoint: _3857_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout      Slew     Delay      Time   Description
+----------------------------------------------------------------------------
+          0.0000    0.0000    0.0000   clock clk (rise edge)
+                    0.0000    0.0000   clock network delay (ideal)
+          0.0000    0.0000    0.0000 ^ _3827_/CLK (sky130_fd_sc_hd__dfxtp_1)
+     8    0.0965    0.3368    0.3368 v _3827_/Q (sky130_fd_sc_hd__dfxtp_1)
+    88   10.7525    8.1003    8.4371 ^ _2472_/Y (sky130_fd_sc_hd__nor3_1)
+     1    1.1339    1.2494    9.6865 v _2975_/Y (sky130_fd_sc_hd__a222oi_1)
+     1    0.2263    0.3723   10.0589 ^ _2976_/Y (sky130_fd_sc_hd__nand3_1)
+     1    0.8698    0.0701   10.1290 v _2977_/Y (sky130_fd_sc_hd__a221oi_1)
+     1    0.9585    0.7973   10.9263 ^ _2978_/Y (sky130_fd_sc_hd__o21ai_0)
+          0.9585    0.0003   10.9266 ^ _3857_/D (sky130_fd_sc_hd__dfxtp_1)
+                             10.9266   data arrival time
+
+          0.0000    1.0000    1.0000   clock clk (rise edge)
+                    0.0000    1.0000   clock network delay (ideal)
+                    0.0000    1.0000   clock reconvergence pessimism
+                              1.0000 ^ _3857_/CLK (sky130_fd_sc_hd__dfxtp_1)
+                   -0.2028    0.7972   library setup time
+                              0.7972   data required time
+----------------------------------------------------------------------------
+                              0.7972   data required time
+                            -10.9266   data arrival time
+----------------------------------------------------------------------------
+                            -10.1293   slack (VIOLATED)
+
+
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |      2494
+    final |    +14.3% |      93 |     535 |            87 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 38 slew violations.
+[INFO RSZ-0035] Found 77 fanout violations.
+[INFO RSZ-0039] Resized 93 instances.
+[INFO RSZ-0038] Inserted 535 buffers in 87 nets.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 1587 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1587 out of 1587 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -4.685 |     -367.4 |    -4036.4 |   1587 | _3722_/D
+    2800* |      23 |    1457 |       62 |      0 |    30 |    +7.0% |   -1.875 |     -164.1 |    -2288.8 |   1587 | _3189_/D
+    2800+ |      23 |    1457 |       62 |      0 |    30 |    +7.0% |   -1.875 |     -164.1 |    -2288.8 |   1563 | _3189_/D
+    final |      23 |    1533 |       62 |      0 |    30 |    +7.2% |   -1.874 |     -164.0 |    -1954.7 |   1530 | _3528_/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 23 buffers.
+[INFO RSZ-0040] Inserted 62 buffers.
+[INFO RSZ-0051] Resized 1533 instances: 1533 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 30 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+[INFO DPL-0006] Core area: 85414.42 um^2, Instances area: 42376.89 um^2, Utilization: 49.6%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                    2967
+Diamond Move Success:           2967 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+Placement Analysis
+---------------------------------
+total displacement      12052.5 u
+average displacement        4.1 u
+max displacement           26.6 u
+original HPWL           92298.9 u
+legalized HPWL         106004.6 u
+delta HPWL                   15 %
+
+##POST
+worst slack max -1.91
+tns max -1978.55
+Design area 42377 um^2 50% utilization.
+Group                    Internal    Switching      Leakage        Total
+                            Power        Power        Power        Power (Watts)
+------------------------------------------------------------------------
+Sequential           3.644846e-02 8.948223e-04 9.592530e-09 3.734330e-02  81.8%
+Combinational        4.513697e-03 3.801287e-03 1.006518e-08 8.314994e-03  18.2%
+Clock                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Macro                0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+Pad                  0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00   0.0%
+------------------------------------------------------------------------
+Total                4.096209e-02 4.696112e-03 1.965744e-08 4.565822e-02 100.0%
+                            89.7%        10.3%         0.0%
+##PATH
+Startpoint: rst_n (input port clocked by clk)
+Endpoint: _3592_ (recovery check against rising-edge clock clk)
+Path Group: asynchronous
+Path Type: max
+
+Fanout       Cap      Slew     Delay      Time   Description
+-------------------------------------------------------------------------------------
+                    0.0000    0.0000    0.0000   clock clk (rise edge)
+                              0.0000    0.0000   clock network delay (ideal)
+                              0.3000    0.3000 ^ input external delay
+     3    0.0261    0.1320    0.0938    0.3938 ^ rst_n (in)
+     5    0.0255    0.0798    0.1703    0.5640 ^ fanout374/X (sky130_fd_sc_hd__buf_4)
+     4    0.0208    0.2098    0.6040    1.1680 ^ fanout346/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
+     4    0.0143    0.1530    0.5988    1.7668 ^ fanout345/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
+     8    0.0336    0.3328    0.7121    2.4789 ^ fanout343/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
+                    0.3328    0.0001    2.4791 ^ _3592_/RESET_B (sky130_fd_sc_hd__dfrtp_1)
+                                        2.4791   data arrival time
+
+                    0.0000    1.0000    1.0000   clock clk (rise edge)
+                              0.0000    1.0000   clock network delay (ideal)
+                              0.0000    1.0000   clock reconvergence pessimism
+                                        1.0000 ^ _3592_/CLK (sky130_fd_sc_hd__dfrtp_1)
+                              0.1415    1.1415   library recovery time
+                                        1.1415   data required time
+-------------------------------------------------------------------------------------
+                                        1.1415   data required time
+                                       -2.4791   data arrival time
+-------------------------------------------------------------------------------------
+                                       -1.3376   slack (VIOLATED)
+
+
+Startpoint: rst_n (input port clocked by clk)
+Endpoint: _3768_ (recovery check against rising-edge clock clk)
+Path Group: asynchronous
+Path Type: max
+
+Fanout       Cap      Slew     Delay      Time   Description
+-------------------------------------------------------------------------------------
+                    0.0000    0.0000    0.0000   clock clk (rise edge)
+                              0.0000    0.0000   clock network delay (ideal)
+                              0.3000    0.3000 ^ input external delay
+     3    0.0261    0.1320    0.0938    0.3938 ^ rst_n (in)
+     5    0.0255    0.0798    0.1703    0.5640 ^ fanout374/X (sky130_fd_sc_hd__buf_4)
+     4    0.0208    0.2098    0.6040    1.1680 ^ fanout346/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
+     4    0.0143    0.1530    0.5988    1.7668 ^ fanout345/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
+     8    0.0336    0.3328    0.7121    2.4789 ^ fanout343/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
+                    0.3328    0.0001    2.4791 ^ _3768_/RESET_B (sky130_fd_sc_hd__dfrtp_1)
+                                        2.4791   data arrival time
+
+                    0.0000    1.0000    1.0000   clock clk (rise edge)
+                              0.0000    1.0000   clock network delay (ideal)
+                              0.0000    1.0000   clock reconvergence pessimism
+                                        1.0000 ^ _3768_/CLK (sky130_fd_sc_hd__dfrtp_1)
+                              0.1415    1.1415   library recovery time
+                                        1.1415   data required time
+-------------------------------------------------------------------------------------
+                                        1.1415   data required time
+                                       -2.4791   data arrival time
+-------------------------------------------------------------------------------------
+                                       -1.3376   slack (VIOLATED)
+
+
+Startpoint: _3229_ (rising edge-triggered flip-flop clocked by clk)
+Endpoint: _3534_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout       Cap      Slew     Delay      Time   Description
+-------------------------------------------------------------------------------------
+                    0.0000    0.0000    0.0000   clock clk (rise edge)
+                              0.0000    0.0000   clock network delay (ideal)
+                    0.0000    0.0000    0.0000 ^ _3229_/CLK (sky130_fd_sc_hd__dfrtp_1)
+     2    0.0057    0.0539    0.3532    0.3532 v _3229_/Q (sky130_fd_sc_hd__dfrtp_1)
+     1    0.0026    0.0326    0.1277    0.4809 v _1550_/Y (sky130_fd_sc_hd__nor2b_1)
+     1    0.0058    0.0767    0.3929    0.8738 v _1553_/X (sky130_fd_sc_hd__a2111o_1)
+     1    0.0053    0.2391    0.2829    1.1567 ^ _1558_/Y (sky130_fd_sc_hd__nor4_2)
+     3    0.0107    0.1668    0.1969    1.3535 v _1559_/Y (sky130_fd_sc_hd__nand4_1)
+     2    0.0099    0.0621    0.2312    1.5847 v _1596_/X (sky130_fd_sc_hd__a21o_1)
+     8    0.0362    0.0450    0.1461    1.7308 v fanout171/X (sky130_fd_sc_hd__buf_6)
+     8    0.0461    0.0480    0.1429    1.8737 v fanout170/X (sky130_fd_sc_hd__buf_8)
+     1    0.0036    0.1923    0.1208    1.9945 ^ _1741_/Y (sky130_fd_sc_hd__nor4_4)
+     2    0.0214    0.0704    0.1790    2.1735 ^ rebuffer546/X (sky130_fd_sc_hd__buf_4)
+     4    0.0400    0.0743    0.1316    2.3050 ^ fanout110/X (sky130_fd_sc_hd__buf_8)
+     8    0.0572    0.0994    0.1523    2.4573 ^ fanout109/X (sky130_fd_sc_hd__buf_8)
+     1    0.0027    0.0563    0.3229    2.7802 v _1768_/X (sky130_fd_sc_hd__mux2_1)
+                    0.0563    0.0000    2.7802 v _3534_/D (sky130_fd_sc_hd__dfrtp_1)
+                                        2.7802   data arrival time
+
+                    0.0000    1.0000    1.0000   clock clk (rise edge)
+                              0.0000    1.0000   clock network delay (ideal)
+                              0.0000    1.0000   clock reconvergence pessimism
+                                        1.0000 ^ _3534_/CLK (sky130_fd_sc_hd__dfrtp_1)
+                             -0.1295    0.8705   library setup time
+                                        0.8705   data required time
+-------------------------------------------------------------------------------------
+                                        0.8705   data required time
+                                       -2.7802   data arrival time
+-------------------------------------------------------------------------------------
+                                       -1.9097   slack (VIOLATED)
+
+
+Startpoint: _3229_ (rising edge-triggered flip-flop clocked by clk)
+Endpoint: _3549_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout       Cap      Slew     Delay      Time   Description
+-------------------------------------------------------------------------------------
+                    0.0000    0.0000    0.0000   clock clk (rise edge)
+                              0.0000    0.0000   clock network delay (ideal)
+                    0.0000    0.0000    0.0000 ^ _3229_/CLK (sky130_fd_sc_hd__dfrtp_1)
+     2    0.0057    0.0539    0.3532    0.3532 v _3229_/Q (sky130_fd_sc_hd__dfrtp_1)
+     1    0.0026    0.0326    0.1277    0.4809 v _1550_/Y (sky130_fd_sc_hd__nor2b_1)
+     1    0.0058    0.0767    0.3929    0.8738 v _1553_/X (sky130_fd_sc_hd__a2111o_1)
+     1    0.0053    0.2391    0.2829    1.1567 ^ _1558_/Y (sky130_fd_sc_hd__nor4_2)
+     3    0.0107    0.1668    0.1969    1.3535 v _1559_/Y (sky130_fd_sc_hd__nand4_1)
+     2    0.0099    0.0621    0.2312    1.5847 v _1596_/X (sky130_fd_sc_hd__a21o_1)
+     8    0.0362    0.0450    0.1461    1.7308 v fanout171/X (sky130_fd_sc_hd__buf_6)
+     8    0.0461    0.0480    0.1429    1.8737 v fanout170/X (sky130_fd_sc_hd__buf_8)
+     1    0.0036    0.1923    0.1208    1.9945 ^ _1741_/Y (sky130_fd_sc_hd__nor4_4)
+     2    0.0214    0.0704    0.1790    2.1735 ^ rebuffer546/X (sky130_fd_sc_hd__buf_4)
+     4    0.0428    0.0785    0.1346    2.3080 ^ wire111/X (sky130_fd_sc_hd__buf_8)
+     8    0.0513    0.0904    0.1477    2.4557 ^ fanout105/X (sky130_fd_sc_hd__buf_8)
+     1    0.0029    0.0573    0.3225    2.7782 v _1753_/X (sky130_fd_sc_hd__mux2_1)
+                    0.0573    0.0000    2.7782 v _3549_/D (sky130_fd_sc_hd__dfrtp_1)
+                                        2.7782   data arrival time
+
+                    0.0000    1.0000    1.0000   clock clk (rise edge)
+                              0.0000    1.0000   clock network delay (ideal)
+                              0.0000    1.0000   clock reconvergence pessimism
+                                        1.0000 ^ _3549_/CLK (sky130_fd_sc_hd__dfrtp_1)
+                             -0.1300    0.8700   library setup time
+                                        0.8700   data required time
+-------------------------------------------------------------------------------------
+                                        0.8700   data required time
+                                       -2.7782   data arrival time
+-------------------------------------------------------------------------------------
+                                       -1.9081   slack (VIOLATED)
+
+
