@@ -35,6 +35,7 @@ VARIANTS = [
     ("iotlb_t4", "iotlb", "iotlb/iotlb_t4.sv", "iotlb_t4"),
     ("iotlb_t5", "iotlb", "iotlb/iotlb_t5.sv", "iotlb_t5"),
     ("iotlb_t6", "iotlb", "iotlb/iotlb_t6.sv", "iotlb_t6"),
+    ("iotlb_t7", "iotlb", "iotlb/iotlb_t7.sv", "iotlb_t7"),
 ]
 
 

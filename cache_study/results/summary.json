@@ -105,6 +105,21 @@
     "crit_end": "_6171_"
   },
   {
+    "name": "iotlb_t7",
+    "func_pass": true,
+    "area_um2": 34197.7984,
+    "cells": 2316,
+    "dff_cells": 844,
+    "dff_area_um2": 20740.0,
+    "comb_area_um2": 13457.8,
+    "fmax_mhz": 331.0,
+    "fmax_unbuf_mhz": 188.0,
+    "logic_depth": 7,
+    "crit_path": "xnor2_1 -> o221ai_1 -> nor4b_2 -> and4_1 -> o211ai_1 -> or4_4 -> mux2_1",
+    "crit_start": "_3096_",
+    "crit_end": "_3204_"
+  },
+  {
     "name": "pwc_p0",
     "func_pass": true,
     "area_um2": 6965.4304,
