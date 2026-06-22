@@ -141,6 +141,43 @@ repair）で合成。前提は `ASSUMPTIONS.md`、実行は `README.md`、生デ
 
 ---
 
+## 2.5 PWC 結合型 (combined) vs 分離型 (split) — nested 2-stage の VS PWC 構成
+
+PWC の「タグ構成」とは別軸の探索：nested 2-stage（VS-stage + G-stage）で VS テーブルの
+page-walk cache を **どう作るか**。詳細・スクリプトは `results/pwc_combined_vs_split.md` /
+`syn/pwc_compare.py`、ワークスペース `syn/pwc_cmp/`（gitignore）。
+
+- **combined（現行設計）**：VS PWC が **G-stage 解決済みの SPA** を格納。VPN ルックアップ→ヒットで
+  即 SPA（**1 ルックアップ**）。`vml2(1)+vml1(2)` が SPA を持つ。
+- **split**：VS PWC は **GPA**（VS PTE の中身＝次 VS テーブルの GPA）を格納。VPN→GPA を引き、その GPA で
+  **別の G-PWC を連鎖ルックアップ**して SPA（**2 段連鎖**）。VS テーブル用 G-PWC を新設し walk FSM に
+  連鎖制御を追加。
+
+### 測定（VS-stage ルックアップ部のみ単体合成・同一フロー hd / post-opt @2.5ns target）
+| 方式 | Fmax [MHz] | area [µm²] | power [mW] |
+|---|---|---|---|
+| combined（VPN→SPA, 1 lookup） | 400.0 | 10,242 | 4.356 |
+| split（VPN→GPA →連鎖 G→SPA） | 406.5 | 20,048 | 8.680 |
+| **Δ split vs combined** | **+1.6%** | **+95.7%** | **+99.2%** |
+
+### 解釈
+- **面積・電力がほぼ 2 倍（+96% / +99%）**＝ロバストな主結果。split は VS PWC に加えて
+  **GPA→SPA 用 G-PWC を丸ごと追加**するため（一次見積もり「VS キャッシュ部がほぼ倍 +~15k µm²」と一致）。
+- **Fmax はこの分離測定では差が出ない**（両者 ≥400MHz）：モジュールが小さく slack が大きいので連鎖 2 段目の
+  段数増がまだ律速にならず resizer が両方 2.5ns を閉じる。**フルエンジンでは PWC ルックアップが
+  クリティカルパス近傍なので、連鎖 2 段目は Fmax を負方向に効かせる見込み**（厳密値はフルエンジン版が必要）。
+- **本タスク（単一コンテキスト・静的・VS テーブルは少数で高再利用）では split の機能的利得はゼロ**
+  （steady state はどちらもキャッシュヒットで追加メモリアクセス 0）。→ **combined が面積/電力で約 2 倍有利・
+  性能同等以上＝圧倒的に combined 優位**。
+- **split が逆転するのは多コンテキスト/多 VM で G 翻訳を共有する場合**（本タスクでは該当せず）。
+
+### 測定の限界（正直に）
+- VS ルックアップ構造のみの**分離測定**。フルエンジンの split はさらに walk FSM の連鎖制御
+  （VS ヒット→G ルックアップ→ミス時 G サブウォーク）が要り、オーバーヘッドは本測定（≒下限）**以上**。
+- データリーフ経路（IOTLB + データ用 G-PWC）は両者不変。差は VS テーブル caching のみ。
+
+---
+
 ## 3. cross-cutting 技法（X1–X6）の扱い
 
 実装した core variant にどう折り込まれたか／なぜ別 variant にしなかったか:
@@ -230,3 +267,5 @@ repair）で合成。前提は `ASSUMPTIONS.md`、実行は `README.md`、生デ
 強い**妥当な選択。T1（aligned window）は Fmax +35%・面積 −6%・段数 7→5 と魅力的だが **128B 整列前提**で、
 跨ぐと実効容量が落ちる（実測）ため、整列が保証できる特殊条件でのみ。PWC は現行が combined SPA を 1 段 mux
 で返す構造で、本研究の **P2/P4** の知見（算術を避け、index 直接選択／speculative read を使う）が適用できる。
+nested の VS PWC は **combined（SPA 格納・1 ルックアップ）が split（GPA→連鎖 G→SPA）に対し面積/電力 約 2 倍
+有利・性能同等以上**（§2.5）で、単一コンテキスト・静的の本タスクでは combined が明確に優位。
