@@ -178,6 +178,30 @@ page-walk cache を **どう作るか**。詳細・スクリプトは `results/p
 
 ---
 
+## 2.6 マルチレベル PWC の引き方：並列+優先 vs 直列（リーフ近い順）
+
+VS PWC を L1（tag=VPN[26:9] 18b）/ L2（VPN[26:18] 9b）/ root（レジスタ）で持つとき、**どう引くか**の
+比較（キャッシュ構造とは別軸）。詳細 `results/pwc_level_lookup.md`、`syn/pwc_level_compare.py`、
+`pwc/pwc_lvl_{par,seq}.sv`。
+- **parallel（並列+最リーフ優先, 現行）**：3 レベル同時ルックアップ→near>mid>root の優先 mux、**1 cycle**。
+- **sequential（直列, リーフ近い順）**：near→（ミス時）mid→（ミス時）root を 1 レベル/サイクル、FSM で **1–3 cyc**。
+
+| 方式 | func | Fmax [MHz] | area [µm²] | DFF | depth | レイテンシ |
+|---|---|---|---|---|---|---|
+| parallel + priority | ✅ | **416.8** | **10,167** | 248 | 7 | 1 cycle |
+| sequential（leaf-first） | ✅ | 375.6 | 12,508 | 303 | 7 | 1–3 cyc |
+| Δ seq vs par | | −9.9% | +23.0% | +22% | 同 | +latency |
+
+- **本構成では parallel が全軸で勝ち**。3 レベルとも tag 幅/内容が違い**比較器を共有できない**ので直列にしても
+  比較器も storage も減らず、**FSM オーバーヘッド（DFF +55）と追加レイテンシだけが乗る**。期待した「1 レベル/
+  サイクルで論理が浅く」も**実測段数は同じ 7**（並列の優先 mux は 3 レベルでは浅い）。
+- sequential が有利になり得るのは**動的電力のみ**（steady で near 常時ヒットなら mid/root の比較を使わない）
+  だが、flat-activity 見積もりでは出ず、FSM 常時稼働が相殺。レベル数が少ない本構成では面積/Fmax/レイテンシの
+  確実な不利を覆せない。直列が効くのは「多レベルで 1 個の大比較器を共有して面積を削れる」構成（本タスク非該当）。
+- → **現行 iommu_top の並列+most-complete-hit が妥当**。
+
+---
+
 ## 3. cross-cutting 技法（X1–X6）の扱い
 
 実装した core variant にどう折り込まれたか／なぜ別 variant にしなかったか:
