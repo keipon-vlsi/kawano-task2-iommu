@@ -1,0 +1,44 @@
+# IOTLB T1 alignment-boundary demo (results/iotlb_align_tb.sv)
+# 16 contiguous pages from NON-16-aligned base 0x85 (0x85..0x94, crosses 0x90).
+# T1 (single 16-aligned window) re-bases at the boundary -> loses the first half.
+
+=== iotlb_t1 ===
+after filling 16 contiguous pages 0x85..0x94:
+  tag=0000085 -> hit=0
+  tag=0000086 -> hit=0
+  tag=0000087 -> hit=0
+  tag=0000088 -> hit=0
+  tag=0000089 -> hit=0
+  tag=000008a -> hit=0
+  tag=000008b -> hit=0
+  tag=000008c -> hit=0
+  tag=000008d -> hit=0
+  tag=000008e -> hit=0
+  tag=000008f -> hit=0
+  tag=0000090 -> hit=1
+  tag=0000091 -> hit=1
+  tag=0000092 -> hit=1
+  tag=0000093 -> hit=1
+  tag=0000094 -> hit=1
+HITS = 5 / 16
+
+=== iotlb_t0 ===
+after filling 16 contiguous pages 0x85..0x94:
+  tag=0000085 -> hit=0
+  tag=0000086 -> hit=0
+  tag=0000087 -> hit=0
+  tag=0000088 -> hit=1
+  tag=0000089 -> hit=1
+  tag=000008a -> hit=1
+  tag=000008b -> hit=1
+  tag=000008c -> hit=1
+  tag=000008d -> hit=1
+  tag=000008e -> hit=1
+  tag=000008f -> hit=1
+  tag=0000090 -> hit=1
+  tag=0000091 -> hit=1
+  tag=0000092 -> hit=1
+  tag=0000093 -> hit=1
+  tag=0000094 -> hit=1
+HITS = 13 / 16
+
