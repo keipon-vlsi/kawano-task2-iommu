@@ -23,6 +23,48 @@
 
 （参考：T7 line-predictor 335 / 35,515、T2 seq-pointer 294 / 37,868 — どちらも予測/ポインタは Fmax を縮めず）
 
+## 各構造の特徴を表すコード（1〜2 行）
+
+match 計算は共通なので、それを SPA/hit にどう落とすか＝構造の個性が出る部分のみ。
+
+```systemverilog
+// T0  ライン構成（現行）: ライン tag 2 比較 + offset を無比較で 8:1 mux
+assign m0 = lval_q[0] & (ltag_q[0]==lt) & subv_q[0][lo];       // 24b ライン比較 ×2
+assign lk_spa = m0 ? data_q[0][lo] : data_q[1][lo];            // offset lo は直接 index
+
+// T1  整列単一窓: tag 比較 1 個 + 16:1 を VPN[3:0] で直接 index
+assign lk_hit = lval_q & (lk_tag[26:4]==base_q) & subv_q[idx]; // 23b 窓比較 1 系統だけ
+assign lk_spa = data_q[idx];                                   // idx=VPN[3:0] フラット 16:1
+
+// T2  sequential pointer: current ラインを優先比較
+assign mc = lval_q[cur_q] & (ltag_q[cur_q]==lt) & subv_q[cur_q][lo];  // cur を先に見る
+assign lk_spa = mc ? data_q[cur_q][lo] : data_q[~cur_q][lo];
+
+// T3  speculative read: index で即読み、tag は並列 validate（合成は T1 と同一に収束）
+assign lk_spa = data_q[idx];                                   // 比較を待たず読む
+assign lk_hit = lval_q & (lk_tag[26:4]==base_q) & subv_q[idx]; // hit は並列に作るだけ
+
+// T4  base + offset: SPA を捨て base_ppn + offset の加算器（最深）
+assign lk_spa = (m0 ? base_q[0] : base_q[1]) + {41'd0, lo};    // 44b 加算器が SPA 経路に乗る
+
+// T5  16-way CAM + 優先エンコーダ: 最小 index 優先（直列優先鎖）
+always_comb begin lk_spa='0; for (int i=15;i>=0;i--) if (match[i]) lk_spa=spa_q[i]; end // priority
+
+// T6  16-way CAM + one-hot: 優先廃止、AND-OR 平衡ツリー
+always_comb begin lk_spa='0; for (int i=0;i<16;i++) lk_spa |= ({44{match[i]}} & spa_q[i]); end // one-hot OR
+
+// T7  line predictor: 予測した current ライン 1 本だけ参照（外れたら即ミス）
+assign lk_hit = cur_val_q & (cur_tag_q==lt) & cur_subv_q[lo]; // もう一方は見ない
+assign lk_spa = cur_data_q[lo];
+
+// T8  優先を 2:1 mux 直列カスケードに埋込: 前向きネスト三項（16 段依存鎖）
+assign lk_spa = match[0]?spa_q[0]: match[1]?spa_q[1]: /*…*/ : match[15]?spa_q[15]: 44'd0;
+```
+
+対比の軸：**比較器の数/幅**（T1 23b×1 < T0/T2/T7 24bライン ≪ T5/T6/T8 27b×16）、**offset の扱い**
+（T0/T1/T3/T4 は無比較 index `[lo]`/`[idx]`）、**縮約**（T5 直列優先 / T8 mux カスケード=最深 /
+T6 one-hot OR ツリー=最速 CAM）、**算術**（T4 だけ `+` が SPA 経路＝28 段で最遅）。
+
 ## 効く / 効かない（スライド下部の学び 1 行）
 
 - **効く**：比較器を減らす・狭める（**ライン化**）／優先論理を消す（**one-hot, T6**）。
