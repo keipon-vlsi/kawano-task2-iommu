@@ -34,7 +34,8 @@ FAM = {"line": ("#2a7fb8", "o", "line-tag + offset index"),
 rows = []
 for v, (lab, fam) in VARS.items():
     d = json.load(open(os.path.join(RES, f"{v}.json")))
-    rows.append(dict(lab=lab, fam=fam, area=d["area_um2"], fmax=d["fmax_mhz"], depth=d["logic_depth"]))
+    rows.append(dict(lab=lab, fam=fam, area=d["area_um2"], fmax=d["fmax_mhz"],
+                     depth=d["logic_depth"], delay=1000.0 / d["fmax_mhz"]))  # delay[ns]=1000/Fmax
 
 
 def label_offsets(rows, key):
@@ -51,6 +52,14 @@ def label_offsets(rows, key):
             "T6 CAM one-hot": (6, -13), "T8 CAM mux-cascade": (8, 3),
             "T5 CAM+priority": (8, -3), "T0×3 line 3×8 (24)": (-8, 9),
             "T4 base+offset": (8, 2),
+        }
+    elif key == "delay":
+        tweak = {
+            "T3 speculative (=T1)": (6, 6), "T1 aligned window": (6, -13),
+            "T0 line 2×8 (current)": (-6, 9), "T7 line-predictor": (8, -10),
+            "T2 seq-pointer": (8, 4), "T6 CAM one-hot": (8, 5),
+            "T8 CAM mux-cascade": (8, -3), "T5 CAM+priority": (8, 3),
+            "T6 CAM one-hot": (8, -13), "T0×3 line 3×8 (24)": (-10, 10), "T4 base+offset": (8, 2),
         }
     else:  # depth
         tweak = {
@@ -90,11 +99,19 @@ def scatter(key, ylabel, title, fname, ylim=None):
     print("wrote", p)
 
 
-# (1) area vs Fmax -- note arrows toward "better" (smaller area, higher Fmax)
+# (1) PRIMARY: area vs critical-path DELAY [ns] = 1000/Fmax -- the physically accurate
+#     metric (real cell-delay sum, not just levels). "ns" (not "MHz") also avoids the
+#     wire-rate confusion. NOTE: ideal-clock/no-CTS-route -> absolute ns optimistic, use
+#     for RELATIVE comparison.
+scatter("delay", "critical-path delay (post-opt, sky130 hd) [ns]  (lower = faster)",
+        "IOTLB variants: area vs critical-path delay  (lower-left = smaller & faster)",
+        "iotlb_area_delay.png")
+# (2) area vs Fmax (= 1000/delay; same info, frequency view)
 scatter("fmax", "Fmax (post-opt, sky130 hd) [MHz]",
         "IOTLB variants: area vs Fmax  (lower-left→upper-left = smaller & faster)",
         "iotlb_area_fmax.png")
-# (2) area vs logic depth -- workload-neutral structural metric (no wire-rate confusion)
-scatter("depth", "critical-path logic depth [levels]  (lower = shorter path)",
-        "IOTLB variants: area vs critical-path depth  (lower-left = smaller & shallower)",
+# (3) area vs logic depth -- STRUCTURE proxy (P&R-noise-robust). Beware: same depth !=
+#     same delay (T8 depth 11 is FASTER than T5 depth 10 due to fanout).
+scatter("depth", "critical-path logic depth [levels]  (structure proxy, not delay)",
+        "IOTLB variants: area vs logic depth  (depth misranks delay when fanout differs)",
         "iotlb_area_depth.png")
