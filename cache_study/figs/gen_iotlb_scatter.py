@@ -9,6 +9,8 @@ import json, os
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+plt.rcParams['font.family']=['Noto Sans CJK JP','DejaVu Sans']
+plt.rcParams['axes.unicode_minus']=False
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.join(BASE, "..", "results")
