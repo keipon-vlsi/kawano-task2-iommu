@@ -63,3 +63,6 @@ cache_study/results/*.wrap.sv
 cache_study/results/*.ys
 cache_study/results/*.sta
 cache_study/results/sky130_hd_nolp.lib
+
+# ports routing sweep workspace (regenerable)
+cache_study/results/portsrt/
