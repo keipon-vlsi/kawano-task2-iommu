@@ -1,0 +1,94 @@
+Warning: Replacing memory \data_q with list of registers. See /foss/designs/rtl/fa_cache.sv:58
+Warning: Replacing memory \tag_q with list of registers. See /foss/designs/rtl/fa_cache.sv:57
+Warning: Replacing memory \valid_q with list of registers. See /foss/designs/rtl/fa_cache.sv:56
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_ADDR is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [27] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [26] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [25] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [24] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [23] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [22] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [21] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [20] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [19] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [18] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [17] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [16] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [15] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [14] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [13] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [12] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [11] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [10] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [9] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [8] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [7] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [6] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [5] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [4] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [3] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [2] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [1] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$51_DATA [0] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$50_ADDR is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$50_DATA [8] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$50_DATA [7] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$50_DATA [6] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$50_DATA [5] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$50_DATA [4] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$50_DATA [3] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$50_DATA [2] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$50_DATA [1] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$50_DATA [0] is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\valid_q$/foss/designs/rtl/fa_cache.sv:62$49_ADDR is used but has no driver.
+Warning: Wire $paramod$e51069b0ee4a9d97a73239b4de4f8cf833d24275\fa_cache.$mem2reg_wr$\valid_q$/foss/designs/rtl/fa_cache.sv:62$49_DATA is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_ADDR is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [27] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [26] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [25] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [24] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [23] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [22] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [21] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [20] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [19] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [18] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [17] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [16] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [15] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [14] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [13] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [12] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [11] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [10] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [9] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [8] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [7] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [6] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [5] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [4] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [3] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [2] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [1] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\data_q$/foss/designs/rtl/fa_cache.sv:64$88_DATA [0] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_ADDR is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [17] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [16] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [15] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [14] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [13] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [12] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [11] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [10] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [9] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [8] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [7] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [6] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [5] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [4] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [3] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [2] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [1] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\tag_q$/foss/designs/rtl/fa_cache.sv:63$87_DATA [0] is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\valid_q$/foss/designs/rtl/fa_cache.sv:62$86_ADDR is used but has no driver.
+Warning: Wire $paramod$0d0b0b711e2c4ae67263e622b90070d62a9eb643\fa_cache.$mem2reg_wr$\valid_q$/foss/designs/rtl/fa_cache.sv:62$86_DATA is used but has no driver.

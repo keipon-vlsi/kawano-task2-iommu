@@ -1,0 +1,15 @@
+{
+  "name": "iotlb_t8k",
+  "func_pass": true,
+  "area_um2": 55613.3376,
+  "cells": 3958,
+  "dff_cells": 1228,
+  "dff_area_um2": 30340.0,
+  "comb_area_um2": 25273.3,
+  "fmax_mhz": 161.7,
+  "fmax_unbuf_mhz": 138.3,
+  "logic_depth": 20,
+  "crit_path": "clkinvlp_4 -> a22o_1 -> nor4_1 -> nand4_1 -> or4_4 -> mux2_4 -> mux2_4 -> mux2_4 -> mux2_4 -> mux2_4 -> mux2_4 -> mux2_4 -> mux2_4 -> mux2_4 -> mux2_4 -> mux2_4 -> mux2_4 -> mux2_4 -> mux2_4 -> mux2_4",
+  "crit_start": "_5927_",
+  "crit_end": "_5961_"
+}

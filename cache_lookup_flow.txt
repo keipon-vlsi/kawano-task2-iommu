@@ -27,19 +27,19 @@
 * ステート15: IOTLB [Miss] → VM Leaf [Miss] → VM-L1 PWC [Miss] → VM-L2 PWC [Miss] → VM-root [Hit] → G-Leaf@VM-L2 [Miss] → G-L1 PWC@VM-L2 [Miss] → G-L2 PWC@VM-L2 [Miss] → G-root
 
 State	VMヒット	G-walk終端	mem acc	latency (cyc)	latency (ns)
-0	IOTLB	—	0
-1	VM-Leaf	G-L1@Final	1
-2	VM-Leaf	G-L2@Final	2
-3	VM-Leaf	G-root	3
-4	VM-L1	G-Leaf@VM-Leaf	4
-5	VM-L1	G-L1@VM-Leaf	5
-6	VM-L1	G-L2@VM-Leaf	6
-7	VM-L1	G-root	7
-8	VM-L2	G-Leaf@VM-L1	8
-9	VM-L2	G-L1@VM-L1	9
-10	VM-L2	G-L2@VM-L1	10
-11	VM-L2	G-root	11
-12	VM-root	G-Leaf@VM-L2	12
-13	VM-root	G-L1@VM-L2	13
-14	VM-root	G-L2@VM-L2	14
-15	VM-root	G-root	15
+0	IOTLB	—	0	3	7.5
+1	VM-Leaf	G-L1@Final	1	45	112.5
+2	VM-Leaf	G-L2@Final	2	85	212.5
+3	VM-Leaf	G-root	3	125	312.5
+4	VM-L1	G-Leaf@VM-Leaf	4	165	412.5
+5	VM-L1	G-L1@VM-Leaf	5	205	512.5
+6	VM-L1	G-L2@VM-Leaf	6	245	612.5
+7	VM-L1	G-root	7	285	712.5
+8	VM-L2	G-Leaf@VM-L1	8	325	812.5
+9	VM-L2	G-L1@VM-L1	9	365	912.5
+10	VM-L2	G-L2@VM-L1	10	405	1012.5
+11	VM-L2	G-root	11	445	1112.5
+12	VM-root	G-Leaf@VM-L2	12	485	1212.5
+13	VM-root	G-L1@VM-L2	13	525	1312.5
+14	VM-root	G-L2@VM-L2	14	565	1412.5
+15	VM-root	G-root	15	605	1512.5
